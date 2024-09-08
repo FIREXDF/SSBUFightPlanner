@@ -1,7 +1,7 @@
 import os
 import requests
 from zipfile import ZipFile
-import rarfile
+import patoolib
 import py7zr
 import shutil
 from urllib.error import HTTPError
@@ -134,8 +134,7 @@ class ModManagerApp:
             with ZipFile(file_path, 'r') as zip_ref:
                 zip_ref.extractall(self.mod_path)
         elif file_path.endswith('.rar'):
-            with rarfile.RarFile(file_path) as rar_ref:
-                rar_ref.extractall(self.mod_path)
+            patoolib.extract_archive(file_path, outdir=self.mod_path)
         elif file_path.endswith('.7z'):
             with py7zr.SevenZipFile(file_path, mode='r') as seven_z_ref:
                 seven_z_ref.extractall(self.mod_path)
