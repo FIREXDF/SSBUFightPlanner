@@ -5,7 +5,7 @@ def install(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 # Liste des bibliothèques nécessaires
-required_packages = ["requests", "rarfile", "py7zr", "customtkinter"]
+required_packages = ["requests", "rarfile", "py7zr", "customtkinter", "pillow"]
 
 for package in required_packages:
     try:
@@ -50,6 +50,7 @@ import tkinter as tk
 import shutil
 import os
 import zipfile
+from PIL import Image, ImageTk
 
 class ModManagerApp:
     def __init__(self, root):
@@ -75,6 +76,7 @@ class ModManagerApp:
         self.load_config()
 
     def create_widgets(self):
+    
         self.select_mods_button = ctk.CTkButton(self.root, text="Sélectionner le dossier de mods", command=self.select_mods_folder, cursor='hand2')
         self.select_mods_button.pack(pady=10, fill='x')
 
@@ -84,7 +86,7 @@ class ModManagerApp:
         self.uninstall_button = ctk.CTkButton(self.root, text="Désinstaller le mod", command=self.uninstall_mod, cursor='hand2')
         self.uninstall_button.pack(pady=5, fill='x')
 
-        self.download_button = ctk.CTkButton(self.root, text="Télécharger un mod", command=self.download_mod, cursor='hand2')
+        self.download_button = ctk.CTkButton(self.root, text="Télécharger un mod sur Gamebanana", command=self.download_mod, cursor='hand2')
         self.download_button.pack(pady=5, fill='x')
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self.root, width=580, height=4500)
