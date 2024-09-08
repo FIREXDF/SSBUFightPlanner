@@ -12,37 +12,37 @@ from tkinter import filedialog, messagebox
 class ModManagerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Gestionnaire de Mods")
+        self.root.title("Mod Manager")
         self.root.geometry("600x500")
         
-        # Initialiser CustomTkinter
+        # Initialize CustomTkinter
         ctk.set_appearance_mode("System")
         ctk.set_default_color_theme("blue")
         
         self.data_folder = self.create_data_folder()
         self.mod_path = self.get_mod_path()
         
-        # Interface utilisateur
+        # User interface
         self.create_widgets()
 
     def create_widgets(self):
-        # Entry pour le lien de téléchargement
-        self.download_link_label = ctk.CTkLabel(self.root, text="Lien de téléchargement du mod :")
+        # Entry for download link
+        self.download_link_label = ctk.CTkLabel(self.root, text="Mod download link:")
         self.download_link_label.pack(pady=5)
         
         self.download_link_entry = ctk.CTkEntry(self.root, width=400)
         self.download_link_entry.pack(pady=5)
         
-        # Bouton pour télécharger et installer le mod
-        self.download_button = ctk.CTkButton(self.root, text="Télécharger et Installer", command=self.download_and_install_mod)
+        # Button to download and install the mod
+        self.download_button = ctk.CTkButton(self.root, text="Download and Install", command=self.download_and_install_mod)
         self.download_button.pack(pady=10)
 
-        # Barre de progression
+        # Progress bar
         self.progress_bar = ctk.CTkProgressBar(self.root, mode="determinate")
         self.progress_bar.pack(pady=10, fill='x')
         self.progress_bar.pack_forget()
 
-        # Zone de texte pour les messages
+        # Text area for messages
         self.message_textbox = tk.Text(self.root, height=10, width=70)
         self.message_textbox.pack(pady=10)
         self.message_textbox.configure(state='disabled')
@@ -168,7 +168,7 @@ class ModManagerApp:
 
     def download_and_install_mod(self):
         if not self.mod_path:
-            messagebox.showerror("Erreur", "Veuillez sélectionner un dossier de mods valide.")
+            messagebox.showerror("Error", "Please select a valid mods folder.")
             return
 
         download_link = self.download_link_entry.get().strip()
@@ -183,11 +183,11 @@ class ModManagerApp:
             os.remove(dest)
             self.delete_non_folders()
             self.flatten_directory_structure()
-            self.log_message("\nMod téléchargé et extrait avec succès")
+            self.log_message("\nMod downloaded and extracted successfully")
         except ValueError as e:
             self.log_message(str(e))
         except HTTPError:
-            self.log_message("Erreur HTTP rencontrée, réessayez plus tard.")
+            self.log_message("HTTP error encountered, please try again later.")
 
 if __name__ == "__main__":
     root = ctk.CTk()
