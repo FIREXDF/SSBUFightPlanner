@@ -19,7 +19,7 @@ import requests
 
 # File download URL
 DOWNLOAD_URL = "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/download_en.pyw"
-FILE_NAME = "downloaden.pyw"
+FILE_NAME = "download_en.pyw"
 
 def download_file(url, filename):
     """Downloads a file from the URL and saves it under the specified name."""
@@ -52,6 +52,7 @@ import os
 import zipfile
 
 class ModManagerApp:
+    
     def __init__(self, root):
         self.root = root
         self.root.title("FightPlanner")
@@ -63,7 +64,7 @@ class ModManagerApp:
 
         # Initialize CustomTkinter
         ctk.set_appearance_mode("System")
-        ctk.set_default_color_theme("blue")
+        ctk.set_default_color_theme("blue") 
 
         if not os.path.exists("data"):
             os.makedirs("data")
@@ -75,6 +76,7 @@ class ModManagerApp:
         self.load_config()
 
     def create_widgets(self):
+
         self.select_mods_button = ctk.CTkButton(self.root, text="Select mods folder", command=self.select_mods_folder, cursor='hand2')
         self.select_mods_button.pack(pady=10, fill='x')
 
@@ -86,6 +88,10 @@ class ModManagerApp:
 
         self.download_button = ctk.CTkButton(self.root, text="Download mod from Gamebanana", command=self.download_mod, cursor='hand2')
         self.download_button.pack(pady=5, fill='x')
+
+        self.reload_button = ctk.CTkButton(self.root, text="⟳", command=self.update_mod_list, width=20, height=25, cursor='hand2')
+        self.reload_button.pack(pady=5)
+        self.reload_button.place(x=0, y=150)
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self.root, width=580, height=4500)
         self.scrollable_frame.pack(pady=10, fill='both', expand=True)
@@ -112,7 +118,7 @@ class ModManagerApp:
         # Create context menu
         self.context_menu = Menu(self.root, tearoff=0)
         self.context_menu.add_command(label="Disable mod", command=self.disable_mod)
-        self.context_menu.add_command(label="Enable mod", command=self.reenable_mod)
+        self.context_menu.add_command(label="Enable mod", command=self.enable_mod)
 
     def select_mods_folder(self):
         folder_path = filedialog.askdirectory()
@@ -121,17 +127,18 @@ class ModManagerApp:
             self.save_config()
             self.update_mod_list()
 
+
     def update_mod_list(self):
         if self.yuzu_mods_dir and os.path.isdir(self.yuzu_mods_dir) and hasattr(self, 'mod_textbox'):
             self.mod_textbox.configure(state='normal')
             self.mod_textbox.delete('1.0', tk.END)
 
-            disabled_mods_dir = os.path.join(self.yuzu_mods_dir, 'disabled_mod')
+            disabled_mods_dir = os.path.join(self.yuzu_mods_dir, '{disabled_mod}')
             if not os.path.exists(disabled_mods_dir):
                 os.makedirs(disabled_mods_dir)
 
             # Read active mods
-            mods = [d for d in os.listdir(self.yuzu_mods_dir) if os.path.isdir(os.path.join(self.yuzu_mods_dir, d)) and d != 'disabled_mod']
+            mods = [d for d in os.listdir(self.yuzu_mods_dir) if os.path.isdir(os.path.join(self.yuzu_mods_dir, d)) and d != '{disabled_mod}']
             
             # Read disabled mods
             disabled_mods = [d for d in os.listdir(disabled_mods_dir) if os.path.isdir(os.path.join(disabled_mods_dir, d))]
@@ -223,7 +230,7 @@ class ModManagerApp:
     def disable_mod(self):
         if self.selected_mod and self.yuzu_mods_dir:
             mod_path = os.path.join(self.yuzu_mods_dir, self.selected_mod)
-            disabled_mods_dir = os.path.join(self.yuzu_mods_dir, 'disabled_mod')
+            disabled_mods_dir = os.path.join(self.yuzu_mods_dir, '{disabled_mod}')
             if not os.path.exists(disabled_mods_dir):
                 os.makedirs(disabled_mods_dir)
             try:
@@ -238,21 +245,21 @@ class ModManagerApp:
         else:
             messagebox.showwarning("Error", "Please select a mod to disable.")
 
-    def reenable_mod(self):
+    def  enable_mod(self):
         if self.selected_mod and self.yuzu_mods_dir:
-            disabled_mods_dir = os.path.join(self.yuzu_mods_dir, 'disabled_mod')
+            disabled_mods_dir = os.path.join(self.yuzu_mods_dir, '{disabled_mod}')
             mod_path = os.path.join(disabled_mods_dir, self.selected_mod)
             if os.path.exists(mod_path):
                 try:
                     shutil.move(mod_path, os.path.join(self.yuzu_mods_dir, self.selected_mod))
                     self.update_mod_list()
-                    messagebox.showinfo("Success", f"Mod {self.selected_mod} reenabled.")
+                    messagebox.showinfo("Success", f"Mod {self.selected_mod} enabled.")
                 except Exception as e:
                     messagebox.showerror("Error", f"Error re-enabling mod: {e}")
             else:
                 messagebox.showwarning("Error", f"The mod '{self.selected_mod}' does not exist in the 'disabled_mod' folder.")
         else:
-            messagebox.showwarning("Error", "Please select a mod to reenable.")
+            messagebox.showwarning("Error", "Please select a mod to enable.")
 
     def show_context_menu(self, event):
         try:
@@ -261,12 +268,12 @@ class ModManagerApp:
             if 0 <= index < len(mod_list):
                 self.selected_mod = mod_list[index].strip()
                 self.selected_mod_label.configure(text=f"Selected mod: {self.selected_mod}")
-                if self.selected_mod in [d for d in os.listdir(os.path.join(self.yuzu_mods_dir, 'disabled_mod'))]:
+                if self.selected_mod in [d for d in os.listdir(os.path.join(self.yuzu_mods_dir, '{disabled_mod}'))]:
                     self.context_menu.entryconfigure("Disable mod", state="disabled")
-                    self.context_menu.entryconfigure("Reenable mod", state="normal")
+                    self.context_menu.entryconfigure("Enable mod", state="normal")
                 else:
                     self.context_menu.entryconfigure("Disable mod", state="normal")
-                    self.context_menu.entryconfigure("Reenable mod", state="disabled")
+                    self.context_menu.entryconfigure("Enable mod", state="disabled")
                 self.context_menu.post(event.x_root, event.y_root)
             else:
                 self.selected_mod = None
@@ -276,7 +283,7 @@ class ModManagerApp:
 
     def download_mod(self):
         try:
-            os.system('downloaden.pyw')
+            os.system('download_en.pyw')
             self.update_mod_list()
         except Exception as e:
             messagebox.showerror("Error", f"Error downloading mod: {e}")
@@ -297,6 +304,32 @@ class ModManagerApp:
                 self.yuzu_mods_dir = f.read().strip()
                 if self.yuzu_mods_dir:
                     self.update_mod_list()
+
+def check_first_run():
+    if not os.path.exists("data/config.txt"):
+        with open("data/config.txt", "w") as f:
+            f.write("first=1")
+        return True
+    else:
+        with open("data/config.txt", "r") as f:
+            config = f.read().strip()
+            if config == "first=1":
+                return False
+            else:
+                with open("data/config.txt", "w") as f:
+                    f.write("first=1")
+                return True
+
+
+def show_getting_started_window():
+    # Create a new window for getting started
+    getting_started_window = ctk.CTkToplevel(root)
+    getting_started_window.title("Getting Started")
+    getting_started_window.geometry("400x200")
+
+    # Add some text and buttons to the window
+    ctk.CTkLabel(getting_started_window, text="Welcome to the Mod Manager!").pack(pady=20)
+    ctk.CTkButton(getting_started_window, text="Get Started", command=getting_started_window.destroy).pack(pady=10)
 
 if __name__ == "__main__":
     root = ctk.CTk()
