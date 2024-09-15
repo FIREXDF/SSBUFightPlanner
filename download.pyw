@@ -1,22 +1,49 @@
 import os
 import requests
 from zipfile import ZipFile
-import patool
+import patoolib
 import py7zr
 import shutil
 from urllib.error import HTTPError
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from PIL import Image
+
+DOWNLOAD_URL = "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/dlmod.png"
+FILE_NAME = "dlmod.png"
+
+def download_file(url, filename):
+    """Télécharge un fichier depuis une URL et l'enregistre sous le nom spécifié."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Lève une exception pour les codes d'erreur
+        with open(filename, 'wb') as file:
+            file.write(response.content)
+        print(f"{filename} a été téléchargé avec succès.")
+    except requests.RequestException as e:
+        print(f"Erreur lors du téléchargement de {filename} : {e}")
+
+def check_and_download_file():
+    """Vérifie si le fichier existe, sinon le télécharge."""
+    if not os.path.exists(FILE_NAME):
+        print(f"{FILE_NAME} n'est pas présent. Téléchargement en cours...")
+        download_file(DOWNLOAD_URL, FILE_NAME)
+    else:
+        print(f"{FILE_NAME} est déjà présent.")
+
+if __name__ == "__main__":
+    check_and_download_file()
+
 
 class ModManagerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Gestionnaire de Mods")
+        self.root.title("Gamebanana")
         self.root.geometry("600x500")
         
         # Initialiser CustomTkinter
-        ctk.set_appearance_mode("System")
+        ctk.set_appearance_mode("Système")
         ctk.set_default_color_theme("blue")
         
         self.data_folder = self.create_data_folder()
@@ -26,19 +53,22 @@ class ModManagerApp:
         self.create_widgets()
 
     def create_widgets(self):
-        # Entry pour le lien de téléchargement
+        # Champ pour le lien de téléchargement
         self.download_link_label = ctk.CTkLabel(self.root, text="Lien de téléchargement du mod :")
         self.download_link_label.pack(pady=5)
         
         self.download_link_entry = ctk.CTkEntry(self.root, width=400)
         self.download_link_entry.pack(pady=5)
         
+        image_path = "dlmod.png"  # Remplacez par le chemin de votre image
+        self.image = ctk.CTkImage(Image.open(image_path), size=(28, 34))
+
         # Bouton pour télécharger et installer le mod
-        self.download_button = ctk.CTkButton(self.root, text="Télécharger et Installer", command=self.download_and_install_mod)
+        self.download_button = ctk.CTkButton(self.root, text="Télécharger et Installer", image=self.image, compound="left", font=("Arial", 16), command=self.download_and_install_mod)
         self.download_button.pack(pady=10)
 
         # Barre de progression
-        self.progress_bar = ctk.CTkProgressBar(self.root, mode="determinate")
+        self.progress_bar = ctk.CTkProgressBar(self.root, mode="déterminé")
         self.progress_bar.pack(pady=10, fill='x')
         self.progress_bar.pack_forget()
 
@@ -55,22 +85,30 @@ class ModManagerApp:
         return data_folder
 
     def get_mod_path(self):
-        path_file = os.path.join(self.data_folder, 'path.txt')
+        path_file = os.path.join(self.data_folder, 'config.txt')
+        
         if os.path.exists(path_file):
             with open(path_file, 'r') as f:
-                mod_path = f.read().strip()
-                if os.path.exists(mod_path):
-                    return mod_path
-                else:
-                    self.log_message(f"Path in {path_file} does not exist.")
-        
-        mod_path = filedialog.askdirectory(title="Select Your 'Mods' Directory")
+                lines = f.readlines()
+                for line in lines:
+                    if line.startswith("path="):
+                        mod_path = line.strip().split('=')[1]
+                        if os.path.exists(mod_path):
+                            return mod_path
+                        else:
+                            self.log_message(f"Le chemin '{mod_path}' dans {path_file} n'existe pas.")
+                            return None
+        else:
+            self.log_message(f"Le fichier de configuration {path_file} n'existe pas.")
+            return None
+
+        mod_path = filedialog.askdirectory(title="Sélectionnez le répertoire de vos 'Mods'")
         if not mod_path:
             return None
         
         while not os.path.exists(mod_path):
-            self.log_message("Path does not exist. Please try again.")
-            mod_path = filedialog.askdirectory(title="Select Your 'Mods' Directory")
+            self.log_message("Le chemin n'existe pas. Veuillez essayer à nouveau.")
+            mod_path = filedialog.askdirectory(title="Sélectionnez le répertoire de vos 'Mods'")
             if not mod_path:
                 return None
         
@@ -88,7 +126,7 @@ class ModManagerApp:
             parts = download_link.split("/")[-1].split("#FileInfo_")
             if len(parts) == 2:
                 return parts[0], parts[1]
-        raise ValueError("Invalid download link format.")
+        raise ValueError("Format de lien de téléchargement invalide.")
 
     def get_filename_from_api(self, mod_id, file_id):
         api_url = f"https://gamebanana.com/apiv11/Mod/{mod_id}/DownloadPage"
@@ -99,16 +137,16 @@ class ModManagerApp:
         for file_info in files:
             if str(file_info["_idRow"]) == file_id:
                 return file_info["_sFile"]
-        raise ValueError("Filename not found for the given file ID.")
+        raise ValueError("Nom de fichier non trouvé pour l'ID de fichier donné.")
 
     def download_file(self, url, filename):
-        self.log_message(f"\nDownloading {filename}")
+        self.log_message(f"\nTéléchargement de {filename}")
         response = requests.get(url, stream=True)
         response.raise_for_status()
         total_length = response.headers.get('content-length')
         
         if total_length is None:
-            raise ValueError("Unable to determine file size for download.")
+            raise ValueError("Impossible de déterminer la taille du fichier pour le téléchargement.")
         
         total_length = int(total_length)
         downloaded_size = 0
@@ -123,13 +161,13 @@ class ModManagerApp:
         
         if downloaded_size != total_length:
             os.remove(dest)
-            raise ValueError("Download incomplete, file removed.")
+            raise ValueError("Téléchargement incomplet, fichier supprimé.")
         
-        self.log_message(f"\nDownloaded to {dest}")
+        self.log_message(f"\nTéléchargé vers {dest}")
         return dest
 
     def extract_archive(self, file_path):
-        self.log_message(f"\nExtracting {file_path.split(os.path.sep)[-1]}")
+        self.log_message(f"\nExtraction de {file_path.split(os.path.sep)[-1]}")
         if file_path.endswith('.zip'):
             with ZipFile(file_path, 'r') as zip_ref:
                 zip_ref.extractall(self.mod_path)
@@ -139,10 +177,10 @@ class ModManagerApp:
             with py7zr.SevenZipFile(file_path, mode='r') as seven_z_ref:
                 seven_z_ref.extractall(self.mod_path)
         else:
-            self.log_message(f"Unsupported archive format: {file_path}")
+            self.log_message(f"Format d'archive non supporté : {file_path}")
 
     def flatten_directory_structure(self):
-        self.log_message(f"Flattening directory structure of {self.mod_path}")
+        self.log_message(f"Aplatir la structure de répertoire de {self.mod_path}")
         for root, dirs, files in os.walk(self.mod_path):
             for name in files:
                 shutil.move(os.path.join(root, name), self.mod_path)
@@ -152,7 +190,7 @@ class ModManagerApp:
         for item in os.listdir(self.mod_path):
             item_path = os.path.join(self.mod_path, item)
             if os.path.isfile(item_path):
-                self.log_message(f"Cleaning extraneous root items")
+                self.log_message(f"Nettoyage des éléments racines extrêmes")
                 os.remove(item_path)
 
     def update_progress_bar(self, downloaded_size, total_length):
@@ -186,7 +224,7 @@ class ModManagerApp:
         except ValueError as e:
             self.log_message(str(e))
         except HTTPError:
-            self.log_message("Erreur HTTP rencontrée, réessayez plus tard.")
+            self.log_message("Erreur HTTP rencontrée, veuillez réessayer plus tard.")
 
 if __name__ == "__main__":
     root = ctk.CTk()
