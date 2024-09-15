@@ -17,31 +17,38 @@ for package in required_packages:
 import os
 import requests
 
-# File download URL
-DOWNLOAD_URL = "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/download_en.pyw"
-FILE_NAME = "download_en.pyw"
+# URL de téléchargement du fichier
+FILES_TO_DOWNLOAD = {
+    "download_en.pyw": "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/download_en.pyw",
+    "dlgb.png": "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/dlgb.png",  # Remplace avec l'URL réelle
+    "dl.png": "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/dl.png",  # Remplace avec l'URL réelle
+    "delete.png": "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/delete.png",  # Remplace avec l'URL réelle
+    "redotuto.png": "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/redotuto.png",  # Remplace avec l'URL réelle
+    "folder.png": "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/folder.png"  # Remplace avec l'URL réelle
+}
 
 def download_file(url, filename):
-    """Downloads a file from the URL and saves it under the specified name."""
+    """Télécharge un fichier depuis une URL et l'enregistre sous le nom spécifié."""
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raises an exception for error status codes
+        response.raise_for_status()  # Lève une exception pour les codes d'erreur
         with open(filename, 'wb') as file:
             file.write(response.content)
-        print(f"{filename} has been downloaded successfully.")
+        print(f"{filename} a été téléchargé avec succès.")
     except requests.RequestException as e:
-        print(f"Error downloading {filename}: {e}")
+        print(f"Erreur lors du téléchargement de {filename} : {e}")
 
-def check_and_download_file():
-    """Checks if the file exists, otherwise downloads it."""
-    if not os.path.exists(FILE_NAME):
-        print(f"{FILE_NAME} is not present. Downloading...")
-        download_file(DOWNLOAD_URL, FILE_NAME)
-    else:
-        print(f"{FILE_NAME} is already present.")
+def check_and_download_files():
+    """Vérifie si chaque fichier existe, sinon le télécharge."""
+    for filename, url in FILES_TO_DOWNLOAD.items():
+        if not os.path.exists(filename):
+            print(f"{filename} n'est pas présent. Téléchargement en cours...")
+            download_file(url, filename)
+        else:
+            print(f"{filename} est déjà présent.")
 
 if __name__ == "__main__":
-    check_and_download_file()
+    check_and_download_files()
 
 
 import customtkinter as ctk
