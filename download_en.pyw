@@ -52,7 +52,7 @@ class ModManagerApp:
         self.create_widgets()
 
     def create_widgets(self):
-        image_path = "dlmob.png"  # Remplacez par le chemin de votre image
+        image_path = "dlmod.png"  # Remplacez par le chemin de votre image
         self.image = ctk.CTkImage(Image.open(image_path), size=(28, 32))
 
         # Entry for download link
