@@ -8,11 +8,37 @@ from urllib.error import HTTPError
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from PIL import Image
+
+DOWNLOAD_URL = "https://raw.githubusercontent.com/FIREXDF/SSBUFightPlanner/main/img/dlmod.png"
+FILE_NAME = "dlmod.png"
+
+def download_file(url, filename):
+    """Télécharge un fichier depuis une URL et l'enregistre sous le nom spécifié."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Lève une exception pour les codes d'erreur
+        with open(filename, 'wb') as file:
+            file.write(response.content)
+        print(f"{filename} a été téléchargé avec succès.")
+    except requests.RequestException as e:
+        print(f"Erreur lors du téléchargement de {filename} : {e}")
+
+def check_and_download_file():
+    """Vérifie si le fichier existe, sinon le télécharge."""
+    if not os.path.exists(FILE_NAME):
+        print(f"{FILE_NAME} n'est pas présent. Téléchargement en cours...")
+        download_file(DOWNLOAD_URL, FILE_NAME)
+    else:
+        print(f"{FILE_NAME} est déjà présent.")
+
+if __name__ == "__main__":
+    check_and_download_file()
 
 class ModManagerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Mod Manager")
+        self.root.title("Gamebanana")
         self.root.geometry("600x500")
         
         # Initialize CustomTkinter
@@ -26,6 +52,9 @@ class ModManagerApp:
         self.create_widgets()
 
     def create_widgets(self):
+        image_path = "dlmob.png"  # Remplacez par le chemin de votre image
+        self.image = ctk.CTkImage(Image.open(image_path), size=(28, 32))
+
         # Entry for download link
         self.download_link_label = ctk.CTkLabel(self.root, text="Mod download link:")
         self.download_link_label.pack(pady=5)
@@ -34,7 +63,7 @@ class ModManagerApp:
         self.download_link_entry.pack(pady=5)
         
         # Button to download and install the mod
-        self.download_button = ctk.CTkButton(self.root, text="Download and Install", command=self.download_and_install_mod)
+        self.download_button = ctk.CTkButton(self.root, text="Download and Install", image=self.image, command=self.download_and_install_mod)
         self.download_button.pack(pady=10)
 
         # Progress bar
@@ -55,14 +84,23 @@ class ModManagerApp:
         return data_folder
 
     def get_mod_path(self):
-        path_file = os.path.join(self.data_folder, 'path.txt')
+        path_file = os.path.join(self.data_folder, 'config.txt')
+    
         if os.path.exists(path_file):
             with open(path_file, 'r') as f:
-                mod_path = f.read().strip()
-                if os.path.exists(mod_path):
-                    return mod_path
-                else:
-                    self.log_message(f"Path in {path_file} does not exist.")
+                lines = f.readlines()
+            for line in lines:
+                if line.startswith("path="):
+                    mod_path = line.strip().split('=')[1]
+                    if os.path.exists(mod_path):
+                        return mod_path
+                    else:
+                        self.log_message(f"Path '{mod_path}' in {path_file} does not exist.")
+                        return None
+            else:
+                self.log_message(f"Configuration file {path_file} does not exist.")
+            return None
+
         
         mod_path = filedialog.askdirectory(title="Select Your 'Mods' Directory")
         if not mod_path:
