@@ -1,1 +1,1 @@
- Python version will now longer get update install the 3.0.0 .
+ Python version will now longer get update install the 3.X.X.
