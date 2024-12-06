@@ -11,10 +11,10 @@
 
 </div>
 
-# A mod manager for SSBU
+# A mod manager for SSBU (BETA)
 [![FightPlanner Use](https://skillicons.dev/icons?i=electron,html,css,js)](https://skillicons.dev)
 
-## FightPlanner is a mod manager for SSBU that make modding easier.
+## FightPlanner (BETA) is a mod manager for SSBU that make modding easier.
 
 - Disable/Enable mods.
 - Uninstall mods.
