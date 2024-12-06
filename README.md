@@ -12,3 +12,18 @@
 </div>
 
 # A mod manager for SSBU
+[![FightPlanner Use](https://skillicons.dev/icons?i=electron,html,css,js)](https://skillicons.dev)
+
+## FightPlanner is a mod manager for SSBU that make modding easier.
+
+- Disable/Enable mods.
+- Uninstall mods.
+
+------------------------------------------------
+
+### Build FightPlanner.
+
+### Clone the repository
+
+And do this command
+`npm run build`
