@@ -1,0 +1,38 @@
+{
+    "name": "fightplanner",
+    "version": "1.0.0",
+    "main": "main.js",
+    "dependencies": {
+      "axios": "^1.6.0"
+    },
+    "devDependencies": {
+      "electron": "^23.0.0",
+      "electron-builder": "^24.0.0"
+    },
+    "scripts": {
+      "start": "electron .",
+      "build": "electron-builder"
+    },
+    "electron": {
+      "nodeIntegration": true,
+      "contextIsolation": false
+    },
+    "build": {
+      "appId": "com.shatteredchaos.fightplanner",
+      "productName": "FightPlanner",
+      "files": [
+        "dist/**/*",
+        "main.js",
+        "index.html",
+        "renderer.js",
+        "gameBananaDownloader.js"
+      ],
+      "directories": {
+        "output": "build"
+      },
+      "win": {
+        "target": "nsis"
+      }
+    }
+  }
+  
