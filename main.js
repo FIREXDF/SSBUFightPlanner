@@ -63,6 +63,12 @@ function createWindow() {
         // Mark as launched
         store.set('hasLaunchedBefore', true);
     }
+    // Prevent opening internal Electron links by using new-window event
+    win.webContents.setWindowOpenHandler((details) => {
+        // This ensures links that are clicked are always opened externally
+        require('electron').shell.openExternal(details.url);
+        return { action: 'deny' }; // Deny opening the link inside Electron
+    });
 }
 
 // Auto-update event handlers

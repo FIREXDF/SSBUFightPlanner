@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
     downloadMod: (url) => ipcRenderer.invoke('download-mod', url),
+    openExternal: (url) => ipcRenderer.send('open-external', url)
 });
 contextBridge.exposeInMainWorld('api', {
 

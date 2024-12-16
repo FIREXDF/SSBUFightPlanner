@@ -40,6 +40,8 @@ class UIController {
     }
     
     
+
+    
     showLoading(message = 'Loading...') {
         // Create a loading element if it doesn't exist
         let loadingElement = document.getElementById('loading-overlay');
@@ -750,7 +752,7 @@ renderModList(mods) {
         e.preventDefault();
         e.stopPropagation();
     }
-
+    
     // Highlight drop zone
     function highlight() {
         dropZone.classList.add('drag-over');
@@ -1249,14 +1251,34 @@ async updateModPreview(modId) {
         console.log('Preview path:', previewPath);
         modImage.src = previewPath || ''; 
 
-        // Render metadata
         if (modInfo) {
+            // Generate the HTML content with dynamic values
+            let urlHtml = '';
+            if (modInfo.url) {
+                urlHtml = `<p><strong>URL:</strong> <a href="${this.escapeHtml(modInfo.url)}" id="urlLink">${this.escapeHtml(modInfo.url)}</a></p>`;
+            }
+        
             metadataContent.innerHTML = `
-                <h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || modId)}</h5>
+                <h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>
                 <p><strong>Version:</strong> ${this.escapeHtml(modInfo.version || 'N/A')}</p>
                 <p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors || 'N/A')}</p>
+                <p><strong>Category:</strong> ${this.escapeHtml(modInfo.category || 'N/A')}</p>
+                <p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe || 'Unknown')}</p>
                 <p><strong>Description:</strong> ${this.escapeHtml(modInfo.description || 'No description available')}</p>
+                ${urlHtml}
             `;
+        
+            // If URL is present, attach click event to the link
+            if (modInfo.url) {
+                const urlLink = document.getElementById('urlLink');
+                urlLink.addEventListener('click', (event) => {
+                    // Prevent the default behavior (which would open in Electron)
+                    event.preventDefault();
+        
+                    // Send the URL to the main process to open in the external browser
+                    window.electron.openExternal(modInfo.url);
+                });
+            }   
         } else {
             metadataContent.innerHTML = `
                 <h5>${this.escapeHtml(modId)}</h5>
@@ -1267,7 +1289,11 @@ async updateModPreview(modId) {
         console.error('Detailed error in updateModPreview:', error);
         this.showError('Failed to load mod details');
     }
+    function openExternal(url) {
+        window.location.href = url;
+    }
 }
+
     
     // Ensure this method is in your ModManager class
     async getMod(modId) {
@@ -1343,14 +1369,19 @@ async updateModPreview(modId) {
             
             // Render metadata
             if (modInfo) {
+                let urlHtml = '';
+                if (modInfo.url) {
+                    urlHtml = `<p><strong>URL:</strong> <a href="${this.escapeHtml(modInfo.url)}" onclick="openUrl('${modInfo.url}'); return false;">${this.escapeHtml(modInfo.url)}</a></p>`;
+                }
                 metadataContent.innerHTML = `
-                    <h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>
-                    <p><strong>Version:</strong> ${this.escapeHtml(modInfo.version || 'N/A')}</p>
-                    <p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors || 'N/A')}</p>
-                    <p><strong>Category:</strong> ${this.escapeHtml(modInfo.category || 'N/A')}</p>
-                    <p><strong>Description:</strong> ${this.escapeHtml(modInfo.description || 'No description available')}</p>
-                    <p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe || 'Unknown')}</p>
-                `;
+                <h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>
+                <p><strong>Version:</strong> ${this.escapeHtml(modInfo.version || 'N/A')}</p>
+                <p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors || 'N/A')}</p>
+                <p><strong>Category:</strong> ${this.escapeHtml(modInfo.category || 'N/A')}</p>
+                <p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe || 'Unknown')}</p>
+                <p><strong>Description:</strong> ${this.escapeHtml(modInfo.description || 'No description available')}</p>
+                ${urlHtml}
+            `;
             } else {
                 metadataContent.innerHTML = `
                     <h5>${this.escapeHtml(mod.name)}</h5>
@@ -1363,6 +1394,7 @@ async updateModPreview(modId) {
         }
     }
 
+    
     async handleFileDrop(event) {
         try {
             // Prevent default behavior
