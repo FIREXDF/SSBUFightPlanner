@@ -25,7 +25,7 @@
 
 ### Clone the repository
 First do this command 
-ˋnpm install`
+ˋnpm installˋ
 
 And do this command
 `npm run build`
