@@ -2,7 +2,7 @@
 
 <div style="text-align: center;">  
 
-<img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo.webm?raw=true" />
+<video src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo.webm?raw=true" />
 
 </div>
 
