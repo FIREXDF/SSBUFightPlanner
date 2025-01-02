@@ -10,39 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentStepEl = document.getElementById('currentStep');
     const totalStepsEl = document.getElementById('totalSteps');
 
-    // Image paths
-    const gifPaths = [
-        'https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo_1.gif?raw=true',
-        'https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/gif1.gif?raw=true',
-        'https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/gif2.gif?raw=true',
-        'https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/gif3.gif?raw=true',
-        'https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link.png?raw=true',
-        'https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link2.png?raw=true',
-    ];
-
-    // Load images
-    function loadImages() {
-        gifPaths.forEach((path, index) => {
-            const img = document.getElementById(`gif${index + 1}`);
-            const placeholder = img.nextElementSibling;
-
-            img.src = path;
-            
-            img.onload = () => {
-                placeholder.style.display = 'none';
-                img.style.display = 'block';
-            };
-
-            img.onerror = () => {
-                placeholder.textContent = 'Failed to load image';
-                console.error(`Failed to load image: ${path}`);
-            };
-        });
-    }
-
-    // Call load images when DOM is ready
-    loadImages();
-
     let currentStepIndex = 0;
 
     function updateStep(newIndex) {
@@ -144,4 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set initial state
     updateStep(0);
     totalStepsEl.textContent = steps.length;
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadMedia();
 });

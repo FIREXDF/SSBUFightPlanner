@@ -23,8 +23,11 @@ class UIController {
         this.hideLoading = this.hideLoading.bind(this);
         this.showError = this.showError.bind(this);
         this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
+        this.handleSelectCustomCssFile = this.handleSelectCustomCssFile.bind(this);
         window.uiController = this;
         this.mods = [];
+        this.initializePluginTab();
+        this.initializeSettingsTab();
     }
     initializeLogoEvent() {
         const appLogo = document.getElementById('appLogo');
@@ -39,52 +42,18 @@ class UIController {
         }
     }
     
-    
-    showLoading(message = 'Loading...') {
-        // Create a loading element if it doesn't exist
-        let loadingElement = document.getElementById('loading-overlay');
-        
-        if (!loadingElement) {
-            loadingElement = document.createElement('div');
-            loadingElement.id = 'loading-overlay';
-            loadingElement.innerHTML = `
-                <div class="loading-content">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>${message}</p>
-                </div>
-            `;
-            loadingElement.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;
-            `;
-            document.body.appendChild(loadingElement);
-        } else {
-            // Update message if loading element exists
-            const messageElement = loadingElement.querySelector('p');
-            if (messageElement) {
-                messageElement.textContent = message;
+    initializeLinkClickEvent() {
+        document.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.tagName === 'A' && target.href.startsWith('http')) {
+                event.preventDefault();
+                window.api.openExternal(target.href);
             }
-            loadingElement.style.display = 'flex';
-        }
+        });
     }
 
-    // Placeholder method for hiding loading state
-    hideLoading() {
-        const loadingElement = document.getElementById('loading-overlay');
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
-    }
+    
+
 
     // Placeholder method for showing errors
     showError(message) {
@@ -139,6 +108,45 @@ class UIController {
         }
     }
 
+    showToast(message, type = 'success') {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+    
+        // Create the toast element
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-bg-${type} border-0 show`;
+        toast.role = 'alert';
+        toast.ariaLive = 'assertive';
+        toast.ariaAtomic = 'true';
+    
+        // Create the toast body
+        const toastBody = document.createElement('div');
+        toastBody.className = 'd-flex';
+        toastBody.innerHTML = `
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        `;
+    
+        // Append the toast body to the toast
+        toast.appendChild(toastBody);
+    
+        // Append the toast to the toast container
+        toastContainer.appendChild(toast);
+    
+        // Automatically remove the toast after a certain time
+        setTimeout(() => {
+            toast.remove();
+        }, 5000); // 5 seconds
+    }
+
     handleGameBananaDownload() {
         // Get link from input
         const linkInput = document.getElementById('gameBananaLink');
@@ -146,7 +154,7 @@ class UIController {
 
         // Validate link
         if (!downloadLink) {
-            alert('Please enter a GameBanana mod link');
+            this.showToast('Please enter a GameBanana mod link', 'danger');
             return;
         }
 
@@ -154,13 +162,15 @@ class UIController {
         const confirmDownloadBtn = document.getElementById('confirmDownloadBtn');
         confirmDownloadBtn.disabled = true;
         confirmDownloadBtn.textContent = 'Downloading...';
+        this.showLoading('Installing mod...');
 
         // Check if electron API is available
         if (!window.electron || !window.electron.downloadMod) {
             console.error('Electron download API not available');
-            alert('Download service is not available');
+            this.showToast('Download service is not available', 'danger');
             confirmDownloadBtn.disabled = false;
             confirmDownloadBtn.textContent = 'Download';
+            this.hideLoading();
             return;
         }
 
@@ -172,9 +182,13 @@ class UIController {
                 if (downloadModal) {
                     downloadModal.hide();
                 }
+                
+
+                const audio = new Audio('./finish.mp3');
+                audio.play();
 
                 // Show success message
-                alert(`Mod downloaded successfully to ${filePath}`);
+                this.showToast(`Mod downloaded successfully to ${filePath}`, 'success');
 
                 // Reload mods if possible
                 if (this.loadMods && typeof this.loadMods === 'function') {
@@ -183,12 +197,13 @@ class UIController {
             })
             .catch((error) => {
                 console.error('Download error:', error);
-                alert(`Failed to download mod: ${error.message}`);
+                this.showToast(`Failed to download mod: ${error.message}`, 'danger');
             })
             .finally(() => {
                 // Re-enable download button
                 confirmDownloadBtn.disabled = false;
                 confirmDownloadBtn.textContent = 'Download';
+                this.hideLoading();
             });
     }
 
@@ -258,7 +273,7 @@ class UIController {
             return filePath;
         } catch (error) {
             console.error('Mod download error:', error);
-            this.showError('Failed to download mod');
+            this.showError('Failed to download mod, Cause ' +  ': ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -519,8 +534,14 @@ class UIController {
         try {
             const modsPath = await window.api.settings.getModsPath();
             document.getElementById('modsPath').value = modsPath || 'No folder selected';
+
+            const customCssPath = await window.api.settings.getCustomCssPath();
+            document.getElementById('customCssPath').value = customCssPath || 'No folder selected';
+
+            const pluginsPath = await window.api.settings.getPluginsPath();
+            document.getElementById('pluginsPath').value = pluginsPath || 'No folder selected';
         } catch (error) {
-            this.showError('Failed to load settings');
+            this.showError('Failed to load settings, error: ' + error.message);
         }
     }
 
@@ -534,7 +555,7 @@ async loadMods() {
         // Setup search after mods are loaded
         this.initializeSearchBar();
     } catch (error) {
-        this.showError('Failed to load mods');
+        this.showError('Failed to load mods, Cause ' +  ': ' + error.message);
     }
 }
 
@@ -750,7 +771,7 @@ renderModList(mods) {
         e.preventDefault();
         e.stopPropagation();
     }
-
+    
     // Highlight drop zone
     function highlight() {
         dropZone.classList.add('drag-over');
@@ -785,7 +806,7 @@ renderModList(mods) {
 
         // If no valid archives, show error
         if (archiveFiles.length === 0) {
-            this.showError('No valid mod archives found. Please drop .zip, .rar, or .7z files.');
+            this.showError('No valid mod archives found. Please drop .zip, .rar, .nro, or .7z files.');
             return;
         }
 
@@ -822,11 +843,18 @@ renderModList(mods) {
             this.provideInstallationFeedback(installResults);
         } catch (error) {
             console.error('Drag and drop installation error:', error);
-            this.showError('Failed to install mods');
+            this.showError('Failed to install mods, Cause ' +  ': ' + error.message);
         } finally {
             this.hideLoading();
         }
     };
+
+    // Drag and drop for plugins
+    const pluginDropZone = document.getElementById('pluginList');
+    if (pluginDropZone) {
+        pluginDropZone.addEventListener('dragover', (e) => e.preventDefault());
+        pluginDropZone.addEventListener('drop', (e) => this.handlePluginDrop(e));
+    }
 }
 
 // Provide detailed feedback about installations
@@ -884,7 +912,7 @@ provideInstallationFeedback(results) {
             if (error.message) {
                 this.showError(`Installation failed: ${error.message}`);
             } else {
-                this.showError('Failed to install mod');
+                this.showError('Failed to install mod, Cause ' +  ': ' + error.message);
             }
             
             throw error;
@@ -899,23 +927,13 @@ provideInstallationFeedback(results) {
         console.error(message);
     }
 
-    showLoading(message) {
-        // Your loading logic
-        console.log(message);
-    }
-
-    hideLoading() {
-        // Your hide loading logic
-        console.log('Loading complete');
-    }
-
     async handleUninstallMod() {
         if (!this.selectedMod) {
             this.showError('Please select a mod to uninstall');
             return;
         }
 
-        if (await this.showConfirmation('Are you sure you want to uninstall this mod?')) {
+        if (await this.showConfirmationModal('Are you sure you want to uninstall this mod?')) {
             try {
                 await this.showLoading('Uninstalling mod...');
                 await this.modManager.uninstallMod(this.selectedMod);
@@ -924,7 +942,7 @@ provideInstallationFeedback(results) {
                 this.updateModPreview();
                 this.showSuccess('Mod uninstalled successfully');
             } catch (error) {
-                this.showError('Failed to uninstall mod');
+                this.showError('Failed to uninstall mod, Cause ' +  ': ' + error.message);
             } finally {
                 this.hideLoading();
             }
@@ -937,7 +955,7 @@ provideInstallationFeedback(results) {
         try {
             await window.api.modOperations.openModsFolder();
         } catch (error) {
-            this.showError('Failed to open mods folder');
+            this.showError('Failed to open mods folder, Cause ' +  ': ' + error.message);
         }
     }
 
@@ -947,7 +965,7 @@ provideInstallationFeedback(results) {
             await this.loadMods();
             this.showSuccess('Mods reloaded successfully');
         } catch (error) {
-            this.showError('Failed to reload mods');
+            this.showError('Failed to reload mods, Cause ' +  ': ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -967,7 +985,7 @@ provideInstallationFeedback(results) {
                 this.showSuccess('Mods folder updated successfully');
             }
         } catch (error) {
-            this.showError('Failed to update mods folder');
+            this.showError('Failed to update mods folder, Cause ' +  ': ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -982,7 +1000,7 @@ provideInstallationFeedback(results) {
             await this.loadMods();
             this.showSuccess('Mod toggled successfully');
         } catch (error) {
-            this.showError('Failed to toggle mod');
+            this.showError('Failed to toggle mod, Cause ' +  ': ' + error.message);
         } finally {
             this.hideLoading();
             this.hideContextMenu();
@@ -997,7 +1015,7 @@ provideInstallationFeedback(results) {
         try {
             await this.modManager.openModFolder(this.selectedMod);
         } catch (error) {
-            this.showError('Failed to open mod folder');
+            this.showError('Failed to open mod folder, Cause ' +  ': ' + error.message);
         } finally {
             this.hideContextMenu();
         }
@@ -1069,67 +1087,45 @@ provideInstallationFeedback(results) {
                !/[<>:"/\\|?*]/g.test(name.trim());
     }
     
-    async promptDialog(title, message, defaultValue = '') {
-        return new Promise((resolve, reject) => {
-            // Remove any existing modals first
-            const existingModals = document.querySelectorAll('.modal');
-            existingModals.forEach(modal => modal.remove());
-    
-            const promptModal = document.createElement('div');
-            promptModal.classList.add('modal');
-            promptModal.setAttribute('tabindex', '-1');
-            promptModal.style.display = 'block';
-            promptModal.style.background = 'rgba(0,0,0,0.5)';
-    
-            promptModal.innerHTML = `
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">${this.escapeHtml(title)}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>${this.escapeHtml(message)}</p>
-                            <input type="text" class="form-control" id="renameInput" value="${this.escapeHtml(defaultValue)}">
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="confirmBtn">Rename</button>
-                        </div>
+async promptDialog(title, message, defaultValue) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.tabIndex = -1;
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                        <input type="text" class="form-control" value="${defaultValue}">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary">OK</button>
                     </div>
                 </div>
-            `;
-            
-            document.body.appendChild(promptModal);
-    
-            const input = promptModal.querySelector('#renameInput');
-            const cancelBtn = promptModal.querySelector('#cancelBtn');
-            const confirmBtn = promptModal.querySelector('#confirmBtn');
-            const closeBtn = promptModal.querySelector('.btn-close');
-    
-            const cleanup = () => {
-                document.body.removeChild(promptModal);
-                this.isDialogOpen = false;
-            };
-    
-            const resolveWithValue = (value) => {
-                cleanup();
-                resolve(value);
-            };
-    
-            cancelBtn.addEventListener('click', () => resolveWithValue(null));
-            confirmBtn.addEventListener('click', () => resolveWithValue(input.value));
-            closeBtn.addEventListener('click', () => resolveWithValue(null));
-    
-            // Prevent multiple submissions
-            confirmBtn.addEventListener('click', (e) => e.stopPropagation());
-            cancelBtn.addEventListener('click', (e) => e.stopPropagation());
-    
-            // Focus input and select all text
-            input.focus();
-            input.select();
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+
+        modal.querySelector('.btn-primary').addEventListener('click', () => {
+            const inputValue = modal.querySelector('input').value;
+            resolve(inputValue);
+            bsModal.hide();
         });
-    }
+
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
+    });
+}
 
     selectMod(modId) {
         document.querySelectorAll('.mod-item').forEach(item => {
@@ -1156,27 +1152,97 @@ provideInstallationFeedback(results) {
         document.getElementById('contextMenu').style.display = 'none';
     }
 
-    // Utility methods
-    escapeHtml(unsafe) {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
 
-    async showLoading(message) {
-        // Implement loading indicator
+    async showLoading(message = 'Loading...') {
+        // Create loading overlay
+        let loadingOverlay = document.getElementById('loading-overlay');
+        
+        if (!loadingOverlay) {
+            loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loading-overlay';
+            loadingOverlay.className = 'loading-overlay';
+            loadingOverlay.innerHTML = `
+            <div class="loading-content">
+                <div id="loadingAnimationContainer" class="loading-animation-crop">
+                    <lottie-player
+                        src="https://cdn.lottielab.com/l/BgbVdxvgksWEgv.json"
+                        background="transparent"
+                        speed="2"
+                        loop
+                        autoplay
+                        style="width: 200px; height: 200px;"
+                    ></lottie-player>
+                </div>
+                <div class="loading-message">${message}</div>
+            </div>
+        `;
+            document.body.appendChild(loadingOverlay);
+    
+            // Trigger fade-in
+            setTimeout(() => {
+                loadingOverlay.style.opacity = '1';
+            }, 10); // Small delay to ensure the transition occurs
+        } else {
+            // Update message if loading element exists
+            const messageElement = loadingOverlay.querySelector('.loading-message');
+            if (messageElement) {
+                messageElement.textContent = message;
+            }
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.style.opacity = '1';
+        }
     }
-
-    hideLoading() {
-        // Hide loading indicator
+    
+    async hideLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+            }, 500); // 500ms to match the transition duration
+        }
     }
 
     showError(message) {
-        // Implement error toast/notification
-        console.error(message);
+        // Log the error message to the console
+        console.error('Error:', message );
+    
+        // Create error toast container if it doesn't exist
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+    
+        // Create the toast element
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-bg-danger border-0 show';
+        toast.role = 'alert';
+        toast.ariaLive = 'assertive';
+        toast.ariaAtomic = 'true';
+    
+        // Create the toast body
+        const toastBody = document.createElement('div');
+        toastBody.className = 'd-flex';
+        toastBody.innerHTML = `
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        `;
+    
+        // Append the toast body to the toast
+        toast.appendChild(toastBody);
+    
+        // Append the toast to the toast container
+        toastContainer.appendChild(toast);
+    
+        // Automatically remove the toast after a certain time
+        setTimeout(() => {
+            toast.remove();
+        }, 5000); // 5 seconds
     }
 
     showSuccess(message) {
@@ -1184,8 +1250,29 @@ provideInstallationFeedback(results) {
         console.log(message);
     }
 
-    async showConfirmation(message) {
-        return confirm(message); // Replace with a better confirmation dialog
+    async showConfirmationModal(message) {
+        return new Promise((resolve) => {
+            const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            const confirmUninstallBtn = document.getElementById('confirmUninstallBtn');
+    
+            // Set the message
+            document.querySelector('#confirmationModal .modal-body').textContent = message;
+    
+            // Add event listener for the confirm button
+            confirmUninstallBtn.onclick = () => {
+                resolve(true);
+                confirmationModal.hide();
+            };
+    
+            // Show the modal
+            confirmationModal.show();
+    
+            // Add event listener for the cancel button
+            document.querySelector('#confirmationModal .btn-secondary').onclick = () => {
+                resolve(false);
+                confirmationModal.hide();
+            };
+        });
     }
 
     async showPrompt(message, defaultValue) {
@@ -1249,14 +1336,28 @@ async updateModPreview(modId) {
         console.log('Preview path:', previewPath);
         modImage.src = previewPath || ''; 
 
-        // Render metadata
         if (modInfo) {
-            metadataContent.innerHTML = `
-                <h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || modId)}</h5>
-                <p><strong>Version:</strong> ${this.escapeHtml(modInfo.version || 'N/A')}</p>
-                <p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors || 'N/A')}</p>
-                <p><strong>Description:</strong> ${this.escapeHtml(modInfo.description || 'No description available')}</p>
-            `;
+            // Generate the HTML content with dynamic values
+            let metadataHtml = `<h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>`;
+            if (modInfo.version) {
+                metadataHtml += `<p><strong>Version:</strong> ${this.escapeHtml(modInfo.version)}</p>`;
+            }
+            if (modInfo.authors) {
+                metadataHtml += `<p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors)}</p>`;
+            }
+            if (modInfo.category) {
+                metadataHtml += `<p><strong>Category:</strong> ${this.escapeHtml(modInfo.category)}</p>`;
+            }
+            if (modInfo.wifi_safe) {
+                metadataHtml += `<p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe)}</p>`;
+            }
+            if (modInfo.description) {
+                metadataHtml += `<p><strong>Description:</strong> ${this.escapeHtml(modInfo.description)}</p>`;
+            }
+            if (modInfo.url) {
+                metadataHtml += `<p><strong>URL:</strong> <a href="${this.escapeHtml(modInfo.url)}" onclick="window.api.openExternal('${modInfo.url}'); return false;">${this.escapeHtml(modInfo.url)}</a></p>`;
+            }
+            metadataContent.innerHTML = metadataHtml;
         } else {
             metadataContent.innerHTML = `
                 <h5>${this.escapeHtml(modId)}</h5>
@@ -1267,7 +1368,11 @@ async updateModPreview(modId) {
         console.error('Detailed error in updateModPreview:', error);
         this.showError('Failed to load mod details');
     }
+    function openExternal(url) {
+        window.location.href = url;
+    }
 }
+
     
     // Ensure this method is in your ModManager class
     async getMod(modId) {
@@ -1343,14 +1448,26 @@ async updateModPreview(modId) {
             
             // Render metadata
             if (modInfo) {
-                metadataContent.innerHTML = `
-                    <h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>
-                    <p><strong>Version:</strong> ${this.escapeHtml(modInfo.version || 'N/A')}</p>
-                    <p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors || 'N/A')}</p>
-                    <p><strong>Category:</strong> ${this.escapeHtml(modInfo.category || 'N/A')}</p>
-                    <p><strong>Description:</strong> ${this.escapeHtml(modInfo.description || 'No description available')}</p>
-                    <p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe || 'Unknown')}</p>
-                `;
+                let metadataHtml = `<h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>`;
+                if (modInfo.version) {
+                    metadataHtml += `<p><strong>Version:</strong> ${this.escapeHtml(modInfo.version)}</p>`;
+                }
+                if (modInfo.authors) {
+                    metadataHtml += `<p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors)}</p>`;
+                }
+                if (modInfo.category) {
+                    metadataHtml += `<p><strong>Category:</strong> ${this.escapeHtml(modInfo.category)}</p>`;
+                }
+                if (modInfo.wifi_safe) {
+                    metadataHtml += `<p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe)}</p>`;
+                }
+                if (modInfo.description) {
+                    metadataHtml += `<p><strong>Description:</strong> ${this.escapeHtml(modInfo.description)}</p>`;
+                }
+                if (modInfo.url) {
+                    metadataHtml += `<p><strong>URL:</strong> <a href="${this.escapeHtml(modInfo.url)}" onclick="window.api.openExternal('${modInfo.url}'); return false;">${this.escapeHtml(modInfo.url)}</a></p>`;
+                }
+                metadataContent.innerHTML = metadataHtml;
             } else {
                 metadataContent.innerHTML = `
                     <h5>${this.escapeHtml(mod.name)}</h5>
@@ -1360,54 +1477,6 @@ async updateModPreview(modId) {
         } catch (error) {
             console.error('Detailed error in updateModPreview:', error);
             this.showError('Failed to load mod details');
-        }
-    }
-
-    async handleFileDrop(event) {
-        try {
-            // Prevent default behavior
-            event.preventDefault();
-    
-            // Get dropped files
-            const files = event.dataTransfer.files;
-    
-            // Check if files were dropped
-            if (files.length === 0) return;
-    
-            // Filter for archive files
-            const archiveFiles = Array.from(files).filter(file => {
-                const validExtensions = ['.zip', '.rar', '.7z'];
-                return validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-            });
-    
-            // If no valid archive files, show error
-            if (archiveFiles.length === 0) {
-                this.showError('No valid mod archives found. Please drop .zip, .rar, or .7z files.');
-                return;
-            }
-    
-            // Show loading
-            await this.showLoading('Installing mods...');
-    
-            // Install each dropped archive
-            for (const file of archiveFiles) {
-                try {
-                    await this.modManager.installMod(file.path);
-                } catch (installError) {
-                    this.showError(`Failed to install ${file.name}: ${installError.message}`);
-                }
-            }
-    
-            // Reload mods list
-            await this.loadMods();
-    
-            // Show success message
-            this.showSuccess(`Installed ${archiveFiles.length} mod(s) successfully`);
-        } catch (error) {
-            console.error('Drag and drop installation error:', error);
-            this.showError('Failed to install mods');
-        } finally {
-            this.hideLoading();
         }
     }
     
@@ -1436,38 +1505,267 @@ async updateModPreview(modId) {
     
         } catch (error) {
             console.error('App initialization error:', error);
-            this.showError('Failed to initialize application');
+            this.showError('Failed to initialize application, Cause ' +  ': ' + error.message);
         } finally {
             this.hideLoading();
         }
     }
 
-    async showLoading(message) {
-        // Create loading overlay
-        let loadingOverlay = document.getElementById('loading-overlay');
-        if (!loadingOverlay) {
-            loadingOverlay = document.createElement('div');
-            loadingOverlay.id = 'loading-overlay';
-            loadingOverlay.innerHTML = `
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <p>${message}</p>
-                </div>
-            `;
-            document.body.appendChild(loadingOverlay);
+    initializePluginTab() {
+        this.loadPlugins();
+        document.getElementById('selectPluginsFolder').addEventListener('click', () => this.handleSelectPluginsFolder());
+        document.getElementById('installPlugin').addEventListener('click', () => this.handleInstallPlugin());
+        document.getElementById('reloadPluginsList').addEventListener('click', () => this.loadPlugins());
+    }
+
+    async loadPlugins() {
+        try {
+            const plugins = await window.api.pluginOperations.loadPlugins();
+            this.renderPluginList(plugins);
+        } catch (error) {
+            this.showError('Failed to load plugins, Cause ' +  ': ' + error.message);
         }
     }
 
-    hideLoading() {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        if (loadingOverlay) {
-            document.body.removeChild(loadingOverlay);
+    renderPluginList(plugins) {
+        const pluginList = document.getElementById('pluginList');
+        pluginList.innerHTML = '';
+
+        if (!plugins || plugins.length === 0) {
+            pluginList.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    No plugins found
+                </div>
+            `;
+            return;
+        }
+
+        plugins.forEach(plugin => {
+            const pluginElement = document.createElement('div');
+            pluginElement.classList.add('plugin-item', 'd-flex', 'justify-content-between', 'align-items-center', 'p-2', 'border-bottom');
+            pluginElement.innerHTML = `
+                <div class="plugin-info">
+                    <strong>${this.escapeHtml(plugin.name)}</strong>
+                </div>
+                <div class="plugin-actions">
+                    <button class="btn btn-sm btn-outline-secondary me-1 toggle-plugin" data-plugin-id="${plugin.id}">
+                        <i class="bi bi-${plugin.enabled ? 'toggle-on' : 'toggle-off'}"></i>
+                    <button class="btn btn-sm btn-outline-danger me-1 delete-plugin" data-plugin-id="${plugin.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+
+            pluginElement.querySelector('.toggle-plugin').addEventListener('click', () => this.handleTogglePlugin(plugin.id));
+            pluginElement.querySelector('.delete-plugin').addEventListener('click', () => this.handleDeletePlugin(plugin.id));
+            pluginList.appendChild(pluginElement);
+        });
+    }
+
+    async handleSelectPluginsFolder() {
+        try {
+            const result = await window.api.dialog.showOpenDialog({
+                properties: ['openDirectory']
+            });
+
+            if (!result.canceled) {
+                await this.showLoading('Updating plugins folder...');
+                await window.api.settings.setPluginsPath(result.filePaths[0]);
+                document.getElementById('pluginsPath').value = result.filePaths[0];
+                this.loadPlugins();
+                this.showSuccess('Plugins folder updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update plugins folder:', error);
+            this.showError('Failed to update plugins folder, Cause ' +  ': ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async handleInstallPlugin() {
+        try {
+            const result = await window.api.dialog.showOpenDialog({
+                filters: [{ name: 'Plugin Files', extensions: ['nro'] }],
+                properties: ['openFile']
+            });
+
+            if (!result.canceled) {
+                await this.showLoading('Installing plugin...');
+                await window.api.pluginOperations.installPlugin(result.filePaths[0]);
+                this.loadPlugins();
+                this.showSuccess('Plugin installed successfully');
+            }
+        } catch (error) {
+            this.showError('Failed to install plugin, Cause ' +  ': ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async handleDeletePlugin(pluginId) {
+        if (await this.showConfirmationModal('Are you sure you want to delete this plugin?')) {
+            try {
+                await this.showLoading('Deleting plugin...');
+                await window.api.pluginOperations.deletePlugin(pluginId);
+                this.loadPlugins();
+                this.showSuccess('Plugin deleted successfully');
+            } catch (error) {
+                this.showError('Failed to delete plugin, Cause ' +  ': ' + error.message);
+            } finally {
+                this.hideLoading();
+            }
+        }
+    }
+
+    async handleTogglePlugin(pluginId) {
+        try {
+            await this.showLoading('Toggling plugin...');
+            const enabled = await window.api.pluginOperations.togglePlugin(pluginId);
+            this.loadPlugins();
+            this.showSuccess(`Plugin ${enabled ? 'enabled' : 'disabled'} successfully`);
+        } catch (error) {
+            this.showError('Failed to toggle plugin, Cause ' +  ': ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async handleRenamePlugin(pluginId) {
+        // Get the current plugin name
+        const currentName = await window.api.pluginOperations.getPluginName(pluginId);
+        const nameParts = currentName.split('.');
+        const baseName = nameParts.slice(0, -1).join('.'); // Name without extension
+        const extension = nameParts.slice(-1); // Extension
+    
+        // Prompt the user to enter a new name
+        const newName = await this.promptDialog('Rename Plugin', 'Enter a new name for the plugin:', baseName);
+        if (newName) {
+            try {
+                this.showLoading('Renaming plugin...');
+                const fullNewName = `${newName}.${extension}`;
+                await window.api.pluginOperations.renamePlugin(pluginId, fullNewName);
+                this.loadPlugins();
+                this.showToast('Plugin renamed successfully', 'success');
+            } catch (error) {
+                this.showToast('Failed to rename plugin', 'danger');
+            } finally {
+                this.hideLoading();
+            }
+        }
+    }
+    
+    async handleOpenPluginsFolder() {
+        try {
+            await window.api.pluginOperations.openPluginsFolder();
+        } catch (error) {
+            this.showError('Failed to open plugins folder, Cause: ' + error.message);
+        }
+    }
+
+    async handlePluginDrop(event) {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+    
+        if (files.length === 0) return;
+    // 
+        const nroFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.nro'));
+    
+        if (nroFiles.length === 0) {
+            this.showError('No valid plugin files found. Please drop .nro files.');
+            return;
+        }
+    
+        try {
+            await this.showLoading('Installing plugins...');
+    
+            for (const file of nroFiles) {
+                try {
+                    await window.api.pluginOperations.installPlugin(file.path);
+                } catch (installError) {
+                    this.showError(`Failed to install ${file.name}: ${installError.message}`);
+                }
+            }
+    
+            this.loadPlugins();
+            this.showSuccess(`Installed ${nroFiles.length} plugin(s) successfully`);
+        } catch (error) {
+            console.error('Drag and drop installation error:', error);
+            this.showError('Failed to install plugins, Cause ' +  ': ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    initializeSettingsTab() {
+        document.getElementById('selectCustomCssFile').addEventListener('click', this.handleSelectCustomCssFile);
+        document.getElementById('removeCustomCssFile').addEventListener('click', this.handleRemoveCustomCssFile);
+        this.initializeDarkMode();
+    }
+
+    handleRemoveCustomCssFile() {
+        document.getElementById('customCssPath').value = '';
+        window.api.settings.removeCustomCss().catch(error => {
+            this.showError('Failed to remove custom CSS, Cause ' +  ': ' + error.message);
+        });
+        this.showSuccess('Custom CSS file removed successfully');
+        this.showRestartNeededPopup();
+    }
+
+    showRestartNeededPopup() {
+        const restartNeededModal = new bootstrap.Modal(document.getElementById('restartNeededModal'));
+        restartNeededModal.show();
+    }
+
+    applyCustomCss(enabled) {
+        if (enabled) {
+            const customCssPath = document.getElementById('customCssPath').value;
+            if (customCssPath) {
+                window.api.settings.loadCustomCss(customCssPath).catch(error => {
+                    this.showError('Failed to load custom CSS, Cause ' +  ': ' + error.message);
+                });
+            }
+        } else {
+            window.api.settings.removeCustomCss().catch(error => {
+                this.showError('Failed to remove custom CSS, Cause ' +  ': ' + error.message);
+            });
+        }
+    }
+
+    async handleSelectCustomCssFile() {
+        try {
+            const filePath = await window.electronAPI.selectCustomCssFile();
+            if (filePath) {
+                document.getElementById('customCssPath').value = filePath;
+                await window.electronAPI.setCustomCssPath(filePath);
+                this.showSuccess('Custom CSS file updated successfully');
+                this.showRestartNeededPopup();
+            }
+        } catch (error) {
+            this.showError('Failed to select custom CSS file, Cause ' +  ': ' + error.message);
         }
     }
 }
 
+async function selectCustomCssFile() {
+    const filePath = await window.electronAPI.selectCustomCssFile();
+    if (filePath) {
+        document.getElementById('customCssPath').value = filePath;
+        await window.electronAPI.setCustomCssPath(filePath);
+    }
+}
+
+window.uiController = {
+    selectCustomCssFile,
+};
 
 // Initialize the UI when the document is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const ui = new UIController();
+    const openPluginsFolderButton = document.getElementById('openPluginsFolderButton');
+    if (openPluginsFolderButton) {
+        openPluginsFolderButton.addEventListener('click', () => {
+            uiController.handleOpenPluginsFolder();
+        });
+    }
 });

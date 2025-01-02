@@ -1,100 +1,190 @@
 {
     "name": "fightplanner",
-    "version": "3.0.0",
+    "version": "3.1.1",
     "description": "Mod Manager for SSBU",
     "author": "Shattered Chaos",
     "main": "main.js",
     "license": "FOSS",
-    "keywords": ["mod", "manager", "electron"],
+    "keywords": [
+        "mod",
+        "manager",
+        "electron"
+    ],
     "repository": {
-      "type": "git",
-      "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
+        "type": "git",
+        "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
     },
     "scripts": {
-      "start": "electron .",
-      "pack": "electron-builder --dir",
-      "dist": "electron-builder",
-      "build": "electron-builder --win --x64"
+        "start": "electron .",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder",
+        "build": "electron-builder --win --x64 --publish always",
+        "beta": "electron-builder --win --x64",
+        "help": "electron-builder --help"
     },
     "dependencies": {
-      "adm-zip": "^0.5.16",
-      "axios": "^1.7.7",
-      "cheerio": "^1.0.0",
-      "discord-rpc": "^4.0.1",
-      "electron-log": "^5.2.2",
-      "electron-store": "^8.1.0",
-      "electron-updater": "^6.3.9",
-      "extract-zip": "^2.0.1",
-      "fs-extra": "^10.1.0",
-      "node-7z": "^3.0.0",
-      "node-unrar-js": "^2.0.2",
-      "original-fs": "^1.2.0",
-      "toml": "^3.0.0",
-      "unzipper": "^0.12.3"
+        "adm-zip": "^0.5.16",
+        "axios": "^1.7.7",
+        "cheerio": "^1.0.0",
+        "discord-rpc": "^4.0.1",
+        "electron-log": "^5.2.2",
+        "electron-store": "^8.1.0",
+        "electron-updater": "^6.3.9",
+        "extract-zip": "^2.0.1",
+        "fs-extra": "^10.1.0",
+        "msgbox": "^1.0.2",
+        "node-7z": "^3.0.0",
+        "node-unrar-js": "^2.0.2",
+        "open": "^10.1.0",
+        "original-fs": "^1.2.0",
+        "toml": "^3.0.0",
+        "unzipper": "^0.12.3"
     },
     "devDependencies": {
-      "electron": "^24.1.2",
-      "electron-builder": "^24.0.0"
+        "electron": "^24.1.2",
+        "electron-builder": "^24.0.0"
     },
     "build": {
-      "appId": "com.shatteredchaos.fightplanner",
-      "productName": "FightPlanner",
-      "publish": [
-        {
-          "provider": "github",
-          "owner": "FIREXDF",
-          "repo": "SSBUFightPlanner"
+        "appId": "com.shatteredchaos.fightplanner",
+        "productName": "FightPlanner",
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "FIREXDF",
+                "repo": "SSBUFightPlanner"
+            }
+        ],
+        "nsis": {
+            "oneClick": false,
+            "perMachine": false,
+            "installerIcon": "./build/installerIcon.ico",
+            "installerSidebar": "./build/installerSidebar.bmp",
+            "uninstallerIcon": "./build/uninstallerIcon.ico",
+            "artifactName": "${productName}-${version}.${ext}",
+            "createDesktopShortcut": "always",
+            "createStartMenuShortcut": true,
+            "deleteAppDataOnUninstall": true,
+            "runAfterFinish": true,
+            "allowToChangeInstallationDirectory": true
+        },
+        "files": [
+            "**/*",
+            "!**/*.{ts,map}",
+            "!*.{code-workspace,log}",
+            "!LICENSE.md",
+            "!README.md",
+            "!electron-builder.yml",
+            "!dist/",
+            "!e2e/",
+            "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+            "!**/node_modules/*/*.{md,markdown,txt}",
+            "!**/node_modules/*/LICENSE",
+            "!**/node_modules/*/license",
+            "preload.js",
+            "!gifs/",
+            "src/**/*",
+            "!custom.css"
+        ],
+        "extraResources": [
+            {
+                "from": "./build",
+                "to": "build",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "compression": "maximum"
+        },
+        "win": {
+            "target": "nsis",
+            "icon": "build/icon.ico",
+            "publisherName": "FIREXDF",
+            "verifyUpdateCodeSignature": false,
+            "requestedExecutionLevel": "asInvoker",
+            "certificateFile": "fightplanner.pfx",
+            "certificatePassword": "F0w2Ke7?$rW#",
+            "publish": [
+                "github"
+            ]
+        },
+    "beta": {
+        "appId": "com.shatteredchaos.fightplanner",
+        "productName": "FightPlanner",
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "FIREXDF",
+                "repo": "SSBUFightPlanner",
+                "branch": "betaelectron"
+            }
+        ],
+        "protocols": {
+            "name": "fightplanner",
+            "schemes": [
+                "fightplanner"
+            ]
+        },
+        "files": [
+            "**/*",
+            "!**/*.{ts,map}",
+            "!*.{code-workspace,log}",
+            "!LICENSE.md",
+            "!README.md",
+            "!electron-builder.yml",
+            "!src/",
+            "!e2e/",
+            "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+            "!**/node_modules/*/*.{md,markdown,txt}",
+            "!**/node_modules/*/LICENSE",
+            "!**/node_modules/*/license",
+            "preload.js",
+            "!gifs/",
+            "src/**/*"
+        ],
+        "extraResources": [
+            {
+                "from": "./build",
+                "to": "build",
+                "filter": [
+                    "**/*"
+                ]
+            }
+        ],
+        "compression": "maximum",
+        "mac": {
+            "category": "public.app-category.utilities",
+            "target": [
+                "dmg"
+            ],
+            "publish": [
+                "github"
+            ]
+        },
+        "win": {
+            "target": [
+                "nsis",
+                "portable"
+            ],
+            "icon": "build/icon.ico",
+            "publisherName": "FIREXDF",
+            "verifyUpdateCodeSignature": false,
+            "requestedExecutionLevel": "asInvoker",
+            "certificateFile": "fightplanner.pfx",
+            "certificatePassword": "F0w2Ke7?$rW#",
+            "publish": [
+                "github"
+            ]
+        },
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "category": "Utility",
+            "publish": [
+                "github"
+            ]
         }
-      ],
-      "protocols": {
-        "name": "fightplanner",
-        "schemes": ["fightplanner"]
-      },
-      "files": [
-        "**/*",
-        "!**/*.{ts,map}",
-        "!*.{code-workspace,log}",
-        "!LICENSE.md",
-        "!README.md",
-        "!electron-builder.yml",
-        "!src/",
-        "!e2e/",
-        "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-        "!**/node_modules/*/*.{md,markdown,txt}",
-        "!**/node_modules/*/LICENSE",
-        "!**/node_modules/*/license",
-        "preload.js",
-        "!gifs/",
-        "src/**/*"
-      ],
-      "extraResources": [
-        {
-          "from": "./build",
-          "to": "build",
-          "filter": ["**/*"]
-        }
-      ],
-      "compression": "maximum",
-      "mac": {
-        "category": "public.app-category.utilities",
-        "target": ["dmg"],
-        "publish": ["github"]
-      },
-      "win": {
-        "target": ["nsis", "portable"],
-        "icon": "build/icon.ico",
-        "publisherName": "FIREXDF",
-        "verifyUpdateCodeSignature": false,
-        "requestedExecutionLevel": "asInvoker",
-        "certificateFile": "fightplanner.pfx",
-        "certificatePassword": "F0w2Ke7?$rW#",
-        "publish": ["github"]
-      },
-      "linux": {
-        "target": ["AppImage", "deb"],
-        "category": "Utility",
-        "publish": ["github"]
-      }
     }
-  }
-  
+}
