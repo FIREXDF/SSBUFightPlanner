@@ -180,8 +180,7 @@
         },
         "linux": {
             "target": [
-                "AppImage",
-                "deb"
+                "snap"
             ],
             "category": "Utility",
             "publish": [
