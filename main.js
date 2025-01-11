@@ -1273,5 +1273,3 @@ ipcMain.handle('update-discord-rpc-mod-installation', async () => {
         throw error;
     }
 });
-
-// ...existing code...
