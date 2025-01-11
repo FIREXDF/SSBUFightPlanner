@@ -1,0 +1,65 @@
+name: Build Electron App
+
+on:
+  push:
+    branches:
+      - main  # Run the workflow when code is pushed to the 'main' branch
+  pull_request:
+    branches:
+      - main  # Run the workflow for pull requests to 'main'
+
+jobs:
+  build:
+    name: Build and Package Electron App
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18  # Use your app's Node.js version
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Build the app
+      - name: Build app
+        run: npm run buildlinux
+
+      # Package the app
+      - name: Package app
+        run: |
+          npm run package  # Update this command to match your packaging script
+
+  release:
+    name: Create Release and Upload Artifacts
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18  # Use your app's Node.js version
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Upload packaged files as release assets
+      - name: Upload Release Assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: ElectronApp
+          path: dist/  # Path to your packaged app files
