@@ -1,6 +1,6 @@
 {
     "name": "fightplanner",
-    "version": "3.1.1",
+    "version": "3.1.2",
     "description": "Mod Manager for SSBU",
     "author": "Shattered Chaos",
     "main": "main.js",
@@ -18,27 +18,22 @@
         "start": "electron .",
         "pack": "electron-builder --dir",
         "dist": "electron-builder",
-        "build": "electron-builder --win --x64 --publish always",
+        "build": "electron-builder --win --x64",
+        "buildandpublish": "electron-builder --win --x64 --publish always",
         "beta": "electron-builder --win --x64",
         "help": "electron-builder --help"
     },
     "dependencies": {
         "adm-zip": "^0.5.16",
         "axios": "^1.7.7",
-        "cheerio": "^1.0.0",
         "discord-rpc": "^4.0.1",
         "electron-log": "^5.2.2",
         "electron-store": "^8.1.0",
         "electron-updater": "^6.3.9",
         "extract-zip": "^2.0.1",
         "fs-extra": "^10.1.0",
-        "msgbox": "^1.0.2",
-        "node-7z": "^3.0.0",
-        "node-unrar-js": "^2.0.2",
-        "open": "^10.1.0",
         "original-fs": "^1.2.0",
-        "toml": "^3.0.0",
-        "unzipper": "^0.12.3"
+        "toml": "^3.0.0"
     },
     "devDependencies": {
         "electron": "^24.1.2",
@@ -80,6 +75,7 @@
             "!**/node_modules/*/*.{md,markdown,txt}",
             "!**/node_modules/*/LICENSE",
             "!**/node_modules/*/license",
+            "!*/node_modules/",
             "preload.js",
             "!gifs/",
             "src/**/*",
@@ -94,20 +90,26 @@
                 ]
             }
         ],
-        "compression": "maximum"
-        },
-        "win": {
-            "target": "nsis",
-            "icon": "build/icon.ico",
-            "publisherName": "FIREXDF",
-            "verifyUpdateCodeSignature": false,
-            "requestedExecutionLevel": "asInvoker",
-            "certificateFile": "fightplanner.pfx",
-            "certificatePassword": "F0w2Ke7?$rW#",
-            "publish": [
-                "github"
+        "compression": "maximum",
+        "protocols": {
+            "name": "fightplanner",
+            "schemes": [
+                "fightplanner"
             ]
-        },
+        }
+    },
+    "win": {
+        "target": "nsis",
+        "icon": "build/icon.ico",
+        "publisherName": "FIREXDF",
+        "verifyUpdateCodeSignature": false,
+        "requestedExecutionLevel": "asInvoker",
+        "certificateFile": "fightplanner.pfx",
+        "certificatePassword": "F0w2Ke7?$rW#",
+        "publish": [
+            "github"
+        ]
+    },
     "beta": {
         "appId": "com.shatteredchaos.fightplanner",
         "productName": "FightPlanner",

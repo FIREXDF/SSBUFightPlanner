@@ -1,6 +1,7 @@
 console.log('UIController loading...');
 import { ModManager } from './modManager.js';
 import { Tutorial } from './tutorial.js';
+import ModConflictDetector from './modConflictDetector.js';
 
 class UIController {
     constructor() {
@@ -24,10 +25,22 @@ class UIController {
         this.showError = this.showError.bind(this);
         this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
         this.handleSelectCustomCssFile = this.handleSelectCustomCssFile.bind(this);
+        this.handleAddDownloadField = this.handleAddDownloadField.bind(this);
+        this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
+        this.downloadQueue = [];
+        this.isDownloading = false;
         window.uiController = this;
         this.mods = [];
         this.initializePluginTab();
         this.initializeSettingsTab();
+        this.conflictDetector = new ModConflictDetector();
+        this.initializeDiscordRpcToggle();
+        this.downloadModal = null; // Define downloadModal as a class property
+
+        // Add event listener for update downloaded
+        window.electron.onUpdateDownloaded((changelog) => {
+            this.showToast(`New update installed:\n${changelog}`, 'info');
+        });
     }
     initializeLogoEvent() {
         const appLogo = document.getElementById('appLogo');
@@ -149,7 +162,7 @@ class UIController {
 
     handleGameBananaDownload() {
         // Get link from input
-        const linkInput = document.getElementById('gameBananaLink');
+        const linkInput = document.querySelector('.gameBananaLink');
         const downloadLink = linkInput.value.trim();
 
         // Validate link
@@ -178,12 +191,9 @@ class UIController {
         window.electron.downloadMod(downloadLink)
             .then((filePath) => {
                 // Close the modal
-                const downloadModal = bootstrap.Modal.getInstance(document.getElementById('gameBananaDownloadModal'));
-                if (downloadModal) {
-                    downloadModal.hide();
+                if (this.downloadModal) {
+                    this.downloadModal.hide();
                 }
-                
-
                 const audio = new Audio('./finish.mp3');
                 audio.play();
 
@@ -215,19 +225,16 @@ class UIController {
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Download Mod</h5>
+                            <h5 class="modal-title">Download Mods</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="gameBananaLink" class="form-label">GameBanana Mod Link</label>
-                                <input 
-                                    type="text" 
-                                    class="form-control" 
-                                    id="gameBananaLink" 
-                                    placeholder="Paste GameBanana mod link here"
-                                >
+                            <div id="downloadFieldsContainer">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control gameBananaLink" placeholder="Paste GameBanana mod link here">
+                                </div>
                             </div>
+                            <button type="button" class="btn btn-outline-secondary" id="addDownloadField">Add Another Mod</button>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -248,12 +255,17 @@ class UIController {
         document.body.insertAdjacentHTML('beforeend', dialog);
 
         // Initialize and show the modal
-        const downloadModal = new bootstrap.Modal(document.getElementById('gameBananaDownloadModal'));
-        downloadModal.show();
+        this.downloadModal = new bootstrap.Modal(document.getElementById('gameBananaDownloadModal'));
+        this.downloadModal.show();
 
-        // Add event listener for download confirmation
-        const confirmDownloadBtn = document.getElementById('confirmDownloadBtn');
-        confirmDownloadBtn.addEventListener('click', this.handleGameBananaDownload);
+        // Add event listeners
+        document.getElementById('addDownloadField').addEventListener('click', this.handleAddDownloadField);
+        document.getElementById('confirmDownloadBtn').addEventListener('click', this.handleGameBananaDownload);
+        document.getElementById('downloadFieldsContainer').addEventListener('click', (event) => {
+            if (event.target.classList.contains('remove-download-field') || event.target.closest('.remove-download-field')) {
+                event.target.closest('.input-group').remove();
+            }
+        });
     }
 
     async downloadMod(url) {
@@ -550,10 +562,24 @@ async loadMods() {
         // Load mods and store them for searching
         this.mods = await this.modManager.loadMods();
         
+        // Check if conflict check is enabled
+        const conflictCheckEnabled = await window.api.settings.getConflictCheckEnabled();
+        if (conflictCheckEnabled) {
+            // Check for conflicts after loading mods
+            const conflicts = await this.conflictDetector.detectConflicts(this.mods);
+            if (conflicts.size > 0) {
+                this.showConflictsWarning(conflicts);
+            }
+        }
+        
+        // Update Discord RPC
+        window.api.discordRpc.updateModCount(this.mods.length);
+        
         // Render initial list
         this.renderModList(this.mods);
         // Setup search after mods are loaded
         this.initializeSearchBar();
+        this.performSearch(); // Re-apply search after loading mods
     } catch (error) {
         this.showError('Failed to load mods, Cause ' +  ': ' + error.message);
     }
@@ -903,6 +929,9 @@ provideInstallationFeedback(results) {
                 await this.loadMods();
                 this.showSuccess('Mod installed successfully');
                 
+                // Update Discord RPC
+                window.api.discordRpc.updateModInstallation();
+                
                 return installResult;
             }
         } catch (error) {
@@ -954,6 +983,13 @@ provideInstallationFeedback(results) {
     async handleOpenFolder() {
         try {
             await window.api.modOperations.openModsFolder();
+            // Update Discord RPC
+            window.api.discordRpc.setActivity({
+                state: 'Browsing Mods Folder',
+                details: 'Exploring Mod Collection',
+                largeImageKey: 'app_logo',
+                largeImageText: 'FightPlanner'
+            });
         } catch (error) {
             this.showError('Failed to open mods folder, Cause ' +  ': ' + error.message);
         }
@@ -983,6 +1019,14 @@ provideInstallationFeedback(results) {
                 document.getElementById('modsPath').value = result.filePaths[0];
                 await this.loadMods();
                 this.showSuccess('Mods folder updated successfully');
+                
+                // Update Discord RPC
+                window.api.discordRpc.setActivity({
+                    state: 'Updating Mods Folder',
+                    details: 'Changing Mods Directory',
+                    largeImageKey: 'app_logo',
+                    largeImageText: 'FightPlanner'
+                });
             }
         } catch (error) {
             this.showError('Failed to update mods folder, Cause ' +  ': ' + error.message);
@@ -999,6 +1043,9 @@ provideInstallationFeedback(results) {
             await this.modManager.toggleMod(this.selectedMod);
             await this.loadMods();
             this.showSuccess('Mod toggled successfully');
+            
+            // Update Discord RPC
+            window.api.discordRpc.updateModCount(this.mods.length);
         } catch (error) {
             this.showError('Failed to toggle mod, Cause ' +  ': ' + error.message);
         } finally {
@@ -1065,6 +1112,9 @@ provideInstallationFeedback(results) {
                     await this.selectMod(trimmedNewName);
                     
                     this.showSuccess('Mod renamed successfully');
+                    
+                    // Update Discord RPC
+                    window.api.discordRpc.updateModCount(this.mods.length);
                 } catch (renameError) {
                     console.error('Rename error:', renameError);
                     this.showError(`Failed to rename mod: ${renameError.message}`);
@@ -1574,6 +1624,14 @@ async updateModPreview(modId) {
                 document.getElementById('pluginsPath').value = result.filePaths[0];
                 this.loadPlugins();
                 this.showSuccess('Plugins folder updated successfully');
+                
+                // Update Discord RPC
+                window.api.discordRpc.setActivity({
+                    state: 'Updating Plugins Folder',
+                    details: 'Changing Plugins Directory',
+                    largeImageKey: 'app_logo',
+                    largeImageText: 'FightPlanner'
+                });
             }
         } catch (error) {
             console.error('Failed to update plugins folder:', error);
@@ -1595,6 +1653,9 @@ async updateModPreview(modId) {
                 await window.api.pluginOperations.installPlugin(result.filePaths[0]);
                 this.loadPlugins();
                 this.showSuccess('Plugin installed successfully');
+                
+                // Update Discord RPC
+                window.api.discordRpc.updateModInstallation();
             }
         } catch (error) {
             this.showError('Failed to install plugin, Cause ' +  ': ' + error.message);
@@ -1610,6 +1671,9 @@ async updateModPreview(modId) {
                 await window.api.pluginOperations.deletePlugin(pluginId);
                 this.loadPlugins();
                 this.showSuccess('Plugin deleted successfully');
+                
+                // Update Discord RPC
+                window.api.discordRpc.updateModCount(this.mods.length);
             } catch (error) {
                 this.showError('Failed to delete plugin, Cause ' +  ': ' + error.message);
             } finally {
@@ -1624,6 +1688,9 @@ async updateModPreview(modId) {
             const enabled = await window.api.pluginOperations.togglePlugin(pluginId);
             this.loadPlugins();
             this.showSuccess(`Plugin ${enabled ? 'enabled' : 'disabled'} successfully`);
+            
+            // Update Discord RPC
+            window.api.discordRpc.updateModCount(this.mods.length);
         } catch (error) {
             this.showError('Failed to toggle plugin, Cause ' +  ': ' + error.message);
         } finally {
@@ -1647,6 +1714,9 @@ async updateModPreview(modId) {
                 await window.api.pluginOperations.renamePlugin(pluginId, fullNewName);
                 this.loadPlugins();
                 this.showToast('Plugin renamed successfully', 'success');
+                
+                // Update Discord RPC
+                window.api.discordRpc.updateModCount(this.mods.length);
             } catch (error) {
                 this.showToast('Failed to rename plugin', 'danger');
             } finally {
@@ -1658,6 +1728,13 @@ async updateModPreview(modId) {
     async handleOpenPluginsFolder() {
         try {
             await window.api.pluginOperations.openPluginsFolder();
+            // Update Discord RPC
+            window.api.discordRpc.setActivity({
+                state: 'Browsing Plugins Folder',
+                details: 'Exploring Plugin Collection',
+                largeImageKey: 'app_logo',
+                largeImageText: 'FightPlanner'
+            });
         } catch (error) {
             this.showError('Failed to open plugins folder, Cause: ' + error.message);
         }
@@ -1689,6 +1766,9 @@ async updateModPreview(modId) {
     
             this.loadPlugins();
             this.showSuccess(`Installed ${nroFiles.length} plugin(s) successfully`);
+            
+            // Update Discord RPC
+            window.api.discordRpc.updateModInstallation();
         } catch (error) {
             console.error('Drag and drop installation error:', error);
             this.showError('Failed to install plugins, Cause ' +  ': ' + error.message);
@@ -1701,6 +1781,38 @@ async updateModPreview(modId) {
         document.getElementById('selectCustomCssFile').addEventListener('click', this.handleSelectCustomCssFile);
         document.getElementById('removeCustomCssFile').addEventListener('click', this.handleRemoveCustomCssFile);
         this.initializeDarkMode();
+        this.initializeConflictCheckToggle();
+        this.initializeDiscordRpcToggle();
+    }
+
+    initializeDiscordRpcToggle() {
+        const discordRpcToggle = document.getElementById('discordRpcToggle');
+        window.api.settings.getDiscordRpcEnabled().then(enabled => {
+            discordRpcToggle.checked = enabled;
+        });
+
+        discordRpcToggle.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            window.api.settings.setDiscordRpcEnabled(enabled).then(() => {
+                if (enabled) {
+                    window.api.discordRpc.connect();
+                } else {
+                    window.api.discordRpc.disconnect();
+                }
+            });
+        });
+    }
+
+    initializeConflictCheckToggle() {
+        const conflictCheckToggle = document.getElementById('conflictCheckToggle');
+        window.api.settings.getConflictCheckEnabled().then(enabled => {
+            conflictCheckToggle.checked = enabled;
+        });
+
+        conflictCheckToggle.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            window.api.settings.setConflictCheckEnabled(enabled);
+        });
     }
 
     handleRemoveCustomCssFile() {
@@ -1745,6 +1857,146 @@ async updateModPreview(modId) {
             this.showError('Failed to select custom CSS file, Cause ' +  ': ' + error.message);
         }
     }
+
+    handleAddDownloadField() {
+        const downloadFieldsContainer = document.getElementById('downloadFieldsContainer');
+        const newField = document.createElement('div');
+        newField.classList.add('mb-3', 'input-group');
+        newField.innerHTML = `
+            <input type="text" class="form-control gameBananaLink" placeholder="Paste GameBanana mod link here">
+            <button type="button" class="btn btn-outline-danger remove-download-field">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+        downloadFieldsContainer.appendChild(newField);
+    }
+
+    async handleGameBananaDownload() {
+        const linkInputs = document.querySelectorAll('.gameBananaLink');
+        this.downloadQueue = Array.from(linkInputs).map(input => input.value.trim()).filter(link => link);
+        
+        if (this.downloadQueue.length === 0) {
+            this.showToast('Please enter at least one GameBanana mod link', 'danger');
+            return;
+        }
+
+        this.isDownloading = true;
+        this.totalDownloads = this.downloadQueue.length;
+        await this.processDownloadQueue();
+    }
+
+    async processDownloadQueue() {
+        if (this.downloadQueue.length === 0) {
+            this.isDownloading = false;
+            this.hideLoading();
+            this.showToast('All mods downloaded successfully', 'success');
+            if (this.downloadModal) {
+                this.downloadModal.hide();
+            }
+            return;
+        }
+
+        const currentIndex = this.totalDownloads - this.downloadQueue.length + 1;
+        const downloadLink = this.downloadQueue.shift();
+        this.showLoading(`Downloading mod ${currentIndex}/${this.totalDownloads}...`);
+
+        try {
+            const filePath = await window.electron.downloadMod(downloadLink);
+            this.showToast(`Mod downloaded successfully to ${filePath}`, 'success');
+            await this.loadMods();
+        } catch (error) {
+            this.showToast(`Failed to download mod: ${error.message}`, 'danger');
+        } finally {
+            this.processDownloadQueue();
+        }
+    }
+
+    showDownloadConfirmation(downloadLink) {
+        const confirmDownload = confirm(`Do you want to download this mod?\n\n${downloadLink}`);
+        if (confirmDownload) {
+            window.electron.downloadMod(downloadLink)
+                .then((filePath) => {
+                    // Close the modal
+                    const downloadModal = bootstrap.Modal.getInstance(document.getElementById('gameBananaDownloadModal'));
+                    if (downloadModal) {
+                        downloadModal.hide();
+                    }
+
+                    // Play sound when download finishes
+                    const audio = new Audio('./finish.mp3');
+                    audio.play();
+
+                    this.showToast(`Mod downloaded successfully to ${filePath}`, 'success');
+                    this.loadMods();
+                })
+                .catch((error) => {
+                    this.showToast(`Failed to download mod: ${error.message}`, 'danger');
+                });
+        }
+    }
+
+
+    showConflictsWarning(conflicts) {
+        const descriptions = this.conflictDetector.getConflictDescriptions();
+        
+        // Create modal for conflicts
+        const modalHtml = `
+            <div class="modal fade" id="conflictsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning">
+                            <h5 class="modal-title">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Mod Conflicts Detected
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>The following conflicts were found between mods:</p>
+                            <div class="list-group">
+                                ${descriptions.map(conflict => `
+                                    <div class="list-group-item">
+                                        <h6 class="mb-1">Conflict in file: ${conflict.file}</h6>
+                                        <p class="mb-1">Conflicting mods:</p>
+                                        <ul>
+                                            ${conflict.mods.map(mod => `
+                                                <li>${mod}</li>
+                                            `).join('')}
+                                        </ul>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if present
+        const existingModal = document.getElementById('conflictsModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to document
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('conflictsModal'));
+        modal.show();
+    }
+
+    handleTabChange(tabName) {
+        window.api.discordRpc.setActivity({
+            state: `Browsing ${tabName} Tab`,
+            details: `Exploring ${tabName}`,
+            largeImageKey: 'app_logo',
+            largeImageText: 'FightPlanner'
+        });
+    }
 }
 
 async function selectCustomCssFile() {
@@ -1768,4 +2020,12 @@ document.addEventListener('DOMContentLoaded', () => {
             uiController.handleOpenPluginsFolder();
         });
     }
+
+    // Add event listeners for tab changes
+    document.querySelectorAll('.nav-link').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const tabName = e.target.textContent.trim();
+            ui.handleTabChange(tabName);
+        });
+    });
 });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const fse = require('fs-extra');
@@ -26,6 +26,33 @@ const DISABLED_PLUGINS_FOLDER_NAME = 'disabled_plugins';
 const PLUGIN_EXTENSION = '.nro';
 
 let mainWindow;
+
+// Ensure single instance
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, we should focus our window.
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+        }
+    });
+
+    app.whenReady().then(() => {
+        createWindow();
+        checkExtractionTools();
+        app.on('activate', function () {
+            if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        });
+    });
+
+    app.on('window-all-closed', function () {
+        if (process.platform !== 'darwin') app.quit();
+    });
+}
 
 async function createWindow() {
     // Check if it's the first launch
@@ -124,12 +151,15 @@ autoUpdater.on('update-available', () => {
     });
 });
 
-autoUpdater.on('update-downloaded', () => {
+autoUpdater.on('update-downloaded', async () => {
     log.info('Update downloaded.');
+    const changelog = await fetchChangelog();
+    mainWindow.webContents.send('update-downloaded', changelog);
     dialog.showMessageBox({
         type: 'info',
         title: 'Update ready',
         message: 'A new update is ready. Restart the application to apply the updates.',
+        detail: changelog,
         buttons: ['Restart', 'Later']
     }).then(result => {
         if (result.response === 0) {
@@ -141,6 +171,17 @@ autoUpdater.on('update-downloaded', () => {
 autoUpdater.on('error', (err) => {
   log.error('Error in auto-updater:', err);
 });
+
+async function fetchChangelog() {
+    try {
+        const response = await axios.get('https://api.github.com/repos/FIREXDF/SSBUFightPlanner/releases/latest');
+        const changelog = response.data.body;
+        return changelog;
+    } catch (error) {
+        console.error('Failed to fetch changelog:', error);
+        return 'Failed to fetch changelog.';
+    }
+}
 
 function openTutorialWindow() {
     tutorialWindow = new BrowserWindow({
@@ -197,20 +238,6 @@ ipcMain.on('download-confirmation', async (event, { confirmed, details }) => {
         // Optionally send cancellation notification
         mainWindow.webContents.send('download-cancelled');
     }
-});
-
-app.whenReady().then(() => {
-    createWindow();
-    checkExtractionTools();
-    setupProtocolHandler();
-
-    app.on('activate', function () {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
-    });
-});
-
-app.on('window-all-closed', function () {
-    if (process.platform !== 'darwin') app.quit();
 });
 
 // 7-Zip paths for different platforms
@@ -610,6 +637,14 @@ ipcMain.handle('select-custom-css-file', async () => {
     }
 });
 
+ipcMain.handle('get-conflict-check-enabled', () => {
+    return store.get('conflictCheckEnabled', true);
+});
+
+ipcMain.handle('set-conflict-check-enabled', (event, enabled) => {
+    store.set('conflictCheckEnabled', enabled);
+    return true;
+});
 
 // Dark mode handler
 ipcMain.handle('set-dark-mode', (event, enabled) => {
@@ -891,7 +926,6 @@ ipcMain.handle('rename-mod', async (event, { oldName, newName }) => {
     // Export the Discord RPC instance
     module.exports = new DiscordRichPresence();
     app.whenReady().then(() => {
-        setupProtocolHandler();
     });
     ipcMain.on('open-external', (event, url) => {
         shell.openExternal(url);
@@ -997,56 +1031,6 @@ ipcMain.handle('get-plugins-path', () => {
 ipcMain.handle('set-plugins-path', (event, newPath) => {
     store.set('pluginsPath', newPath);
     return true;
-});
-
-function setupProtocolHandler() {
-    protocol.registerHttpProtocol('fightplanner', async (request) => {
-        const url = request.url.replace('fightplanner:', '');
-        const mainWindow = BrowserWindow.getAllWindows()[0];
-
-        const parsedUrl = new URL(url);
-        const modId = parsedUrl.searchParams.get('modId');
-        const fileId = parsedUrl.searchParams.get('fileId');
-        const fileType = parsedUrl.searchParams.get('fileType');
-
-        if (modId && fileId && fileType) {
-            const downloadLink = `https://gamebanana.com/mmdl/${fileId},Mod,${modId},${fileType}`;
-            mainWindow.webContents.send('download-confirmation', { downloadLink });
-        }
-    });
-}
-
-ipcMain.handle('register-protocol', async () => {
-    try {
-        protocol.registerHttpProtocol('fightplanner', async (request) => {
-            const url = request.url.replace('fightplanner:', '');
-            const mainWindow = BrowserWindow.getAllWindows()[0];
-
-            const parsedUrl = new URL(url);
-            const modId = parsedUrl.searchParams.get('modId');
-            const fileId = parsedUrl.searchParams.get('fileId');
-            const fileType = parsedUrl.searchParams.get('fileType');
-
-            if (modId && fileId && fileType) {
-                const downloadLink = `https://gamebanana.com/mmdl/${fileId},Mod,${modId},${fileType}`;
-                mainWindow.webContents.send('download-confirmation', { downloadLink });
-            }
-        });
-        return true;
-    } catch (error) {
-        console.error('Failed to register protocol:', error);
-        throw error;
-    }
-});
-
-ipcMain.handle('unregister-protocol', async () => {
-    try {
-        protocol.unregisterProtocol('fightplanner');
-        return true;
-    } catch (error) {
-        console.error('Failed to unregister protocol:', error);
-        throw error;
-    }
 });
 
 ipcMain.on('download-confirmation', async (event, { downloadLink }) => {
@@ -1181,3 +1165,113 @@ ipcMain.handle('open-plugins-folder', async () => {
         throw error;
     }
 });
+
+// Add this function to recursively get all files in a directory
+async function getAllFiles(dirPath, arrayOfFiles = []) {
+    const files = await fs.readdir(dirPath);
+
+    for (const file of files) {
+        const filePath = path.join(dirPath, file);
+        const stat = await fs.stat(filePath);
+
+        if (stat.isDirectory()) {
+            arrayOfFiles = await getAllFiles(filePath, arrayOfFiles);
+        } else {
+            arrayOfFiles.push(filePath);
+        }
+    }
+
+    return arrayOfFiles;
+}
+
+// Add these IPC handlers
+ipcMain.handle('get-mod-files', async (event, modPath) => {
+    try {
+        // Verify the path exists and is within the mods directory
+        const realPath = path.resolve(modPath);
+        const modsPath = store.get('modsPath');
+        
+        if (!realPath.startsWith(modsPath)) {
+            throw new Error('Access denied: Path is outside mods directory');
+        }
+
+        const stat = await fs.stat(realPath);
+        if (!stat.isDirectory()) {
+            throw new Error('Not a directory');
+        }
+
+        // Get all files recursively
+        const files = await getAllFiles(realPath);
+        
+        // Convert absolute paths to relative paths from the mod directory
+        return files.map(file => path.relative(realPath, file));
+    } catch (error) {
+        console.error('Error getting mod files:', error);
+        throw new Error(`Failed to get mod files: ${error.message}`);
+    }
+});
+
+// Add conflict checking handler
+
+// Settings handlers
+ipcMain.handle('get-discord-rpc-enabled', () => {
+    return store.get('discordRpcEnabled', true);
+});
+
+ipcMain.handle('set-discord-rpc-enabled', (event, enabled) => {
+    store.set('discordRpcEnabled', enabled);
+    return true;
+});
+
+// Discord RPC handlers
+ipcMain.handle('connect-discord-rpc', async () => {
+    try {
+        await discordRPC.connect();
+        return true;
+    } catch (error) {
+        console.error('Failed to connect Discord RPC:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('disconnect-discord-rpc', async () => {
+    try {
+        discordRPC.disconnect();
+        return true;
+    } catch (error) {
+        console.error('Failed to disconnect Discord RPC:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('set-discord-rpc-activity', async (event, activity) => {
+    try {
+        discordRPC.setActivity(activity);
+        return true;
+    } catch (error) {
+        console.error('Failed to set Discord RPC activity:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('update-discord-rpc-mod-count', async (event, count) => {
+    try {
+        discordRPC.updateModBrowsing(count);
+        return true;
+    } catch (error) {
+        console.error('Failed to update Discord RPC mod count:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('update-discord-rpc-mod-installation', async () => {
+    try {
+        discordRPC.updateModInstalling();
+        return true;
+    } catch (error) {
+        console.error('Failed to update Discord RPC mod installation:', error);
+        throw error;
+    }
+});
+
+// ...existing code...

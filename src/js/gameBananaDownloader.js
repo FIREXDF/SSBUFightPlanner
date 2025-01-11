@@ -12,6 +12,7 @@ class GameBananaDownloader {
     const patterns = [
       /https:\/\/gamebanana\.com\/dl\/(\d+)(?:#FileInfo_(\d+))?/,
       /https:\/\/gamebanana\.com\/mods\/download\/(\d+)(?:#FileInfo_(\d+))?/,
+      /https:\/\/gamebanana\.com\/sounds\/download\/(\d+)(?:#FileInfo_(\d+))?/,
       /https:\/\/gamebanana\.com\/mods\/(\d+)/
     ];
 
@@ -26,13 +27,13 @@ class GameBananaDownloader {
   }
 
   async downloadMod(downloadLink) {
+    const tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
     try {
       const [modId, fileId] = GameBananaDownloader.extractModAndFileId(downloadLink);
       const filename = await this.getFilenameFromApi(modId, fileId);
       const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
       
       // Create a temporary folder for extraction
-      const tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
       fs.mkdirSync(tempFolder, { recursive: true });
       
       // Download to temp folder
@@ -44,15 +45,16 @@ class GameBananaDownloader {
   
       // Find the extracted content
       const extractedContents = fs.readdirSync(tempFolder)
-        .filter(f => f !== filename && fs.statSync(path.join(tempFolder, f)).isDirectory())
-        [0];
+        .filter(f => f !== filename && fs.statSync(path.join(tempFolder, f)).isDirectory());
   
-      if (!extractedContents) {
-        throw new Error('No content found after extraction');
+      if (extractedContents.length === 0) {
+        console.error('Extraction error: No folder found after extraction. Try to install it manually.');
+        console.error('Contents of temp folder:', fs.readdirSync(tempFolder));
+        throw new Error('No folder found after extraction');
       }
   
-      const extractedPath = path.join(tempFolder, extractedContents);
-      const finalPath = path.join(this.modsPath, extractedContents);
+      const extractedPath = path.join(tempFolder, extractedContents[0]);
+      const finalPath = path.join(this.modsPath, extractedContents[0]);
   
       // Move to final location
       if (fs.existsSync(finalPath)) {
@@ -88,6 +90,11 @@ class GameBananaDownloader {
     } catch (error) {
       console.error('Mod download error:', error);
       throw error;
+    } finally {
+      // Ensure temp folder is deleted
+      if (fs.existsSync(tempFolder)) {
+        fs.rmSync(tempFolder, { recursive: true });
+      }
     }
   }
 
@@ -211,7 +218,7 @@ class GameBananaDownloader {
               if (extractedFolders.length > 0) {
                 resolve(extractedFolders[0]);
               } else {
-                reject(new Error('No folder found after extraction'));
+                resolve(null);
               }
             }
           }
@@ -239,7 +246,7 @@ class GameBananaDownloader {
               if (extractedFolders.length > 0) {
                 resolve(extractedFolders[0]);
               } else {
-                reject(new Error('No folder found after extraction'));
+                resolve(null);
               }
             }
           }
@@ -266,7 +273,7 @@ class GameBananaDownloader {
               if (extractedFolders.length > 0) {
                 resolve(extractedFolders[0]);
               } else {
-                reject(new Error('No folder found after extraction'));
+                resolve(null);
               }
             }
           }

@@ -2,10 +2,13 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
     downloadMod: (url) => ipcRenderer.invoke('download-mod', url),
+    onDownloadConfirmation: (callback) => ipcRenderer.on('download-confirmation', (event, args) => callback(args)),
+    onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, changelog) => callback(changelog))
 });
 
 contextBridge.exposeInMainWorld('api', {
     tutorial: {
+        finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
         finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
         initializeConfigurations: () => ipcRenderer.invoke('initialize-configurations')
     },
@@ -16,7 +19,9 @@ contextBridge.exposeInMainWorld('api', {
         toggle: (modId) => ipcRenderer.invoke('toggle-mod', modId),
         openModFolder: (modId) => ipcRenderer.invoke('open-mod-folder', modId),
         openModsFolder: () => ipcRenderer.invoke('open-mods-folder'),
-        loadMods: () => ipcRenderer.invoke('load-mods')
+        loadMods: () => ipcRenderer.invoke('load-mods'),
+        getModFiles: (modPath) => ipcRenderer.invoke('get-mod-files', modPath),
+        checkConflicts: () => ipcRenderer.invoke('check-mod-conflicts')
     },
     pluginOperations: {
         loadPlugins: () => ipcRenderer.invoke('load-plugins'),
@@ -50,7 +55,18 @@ contextBridge.exposeInMainWorld('api', {
         }),
         removeCustomCss: () => ipcRenderer.invoke('remove-custom-css').catch(error => {
             console.error('Failed to remove custom CSS:', error);
-        })
+        }),
+        getConflictCheckEnabled: () => ipcRenderer.invoke('get-conflict-check-enabled'),
+        setConflictCheckEnabled: (enabled) => ipcRenderer.invoke('set-conflict-check-enabled', enabled),
+        getDiscordRpcEnabled: () => ipcRenderer.invoke('get-discord-rpc-enabled'),
+        setDiscordRpcEnabled: (enabled) => ipcRenderer.invoke('set-discord-rpc-enabled', enabled)
+    },
+    discordRpc: {
+        connect: () => ipcRenderer.invoke('connect-discord-rpc'),
+        disconnect: () => ipcRenderer.invoke('disconnect-discord-rpc'),
+        setActivity: (activity) => ipcRenderer.invoke('set-discord-rpc-activity', activity),
+        updateModCount: (count) => ipcRenderer.invoke('update-discord-rpc-mod-count', count),
+        updateModInstallation: () => ipcRenderer.invoke('update-discord-rpc-mod-installation')
     },
     dialog: {
         showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options)
@@ -61,6 +77,9 @@ contextBridge.exposeInMainWorld('api', {
 contextBridge.exposeInMainWorld('electronAPI', {
     selectCustomCssFile: () => ipcRenderer.invoke('select-custom-css-file'),
     setCustomCssPath: (path) => ipcRenderer.invoke('set-custom-css-path', path),
+    handleProtocolLink: (url) => ipcRenderer.send('handle-protocol-link', url),
+    registerProtocol: () => ipcRenderer.invoke('register-protocol'),
+    unregisterProtocol: () => ipcRenderer.invoke('unregister-protocol'),
 });
 
 console.log('Preload script loaded, API methods exposed');
