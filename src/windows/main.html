@@ -8,27 +8,44 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
-<body 
-    ondragover="event.preventDefault()"
-    ondrop="event.preventDefault(); window.uiController.handleFileDrop(event);">
+<body>
+    <div class="downloads-panel" id="downloadsPanel">
+        <div class="downloads-header">
+            <span>Downloads</span>
+            <div class="d-flex align-items-center">
+                <span class="me-2" id="downloadCount"></span>
+                <button class="btn btn-sm btn-link p-0" id="minimizeDownloads">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div class="downloads-list" id="downloadsList">
+        </div>
+    </div>
+    <div class="drag-drop-hint-container">
+        <div class="drag-drop-hint">
+            <i class="bi bi-cloud-upload"></i>
+            <p>Drop files here to import</p>
+        </div>
+    </div>
     <!-- Top Navigation Tabs -->
     <ul class="nav nav-tabs position-relative animate__animated animate__fadeInDown" id="mainTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="mods-tab" data-bs-toggle="pill" 
                     data-bs-target="#mods" type="button" role="tab">
-                <i class="bi bi-grid me-2"></i>Mods
+                <i class="bi bi-grid me-2"></i><span data-i18n="nav.mods">Mods</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="plugins-tab" data-bs-toggle="pill" 
                     data-bs-target="#plugins" type="button" role="tab">
-                <i class="bi bi-plug me-2"></i>Plugins
+                <i class="bi bi-plug me-2"></i><span data-i18n="nav.plugins">Plugins</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
                     data-bs-target="#settings" type="button" role="tab">
-                <i class="bi bi-gear me-2"></i>Settings
+                <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
             </button>
             <li class="nav-item ms-auto me-3">
                 <img 
@@ -51,14 +68,15 @@
                 <div class="row h-100">
                     <!-- Mod List (Left Side) -->
                     <div class="col-8 p-3 position-relative">
-                        <div class="card h-100 animate__animated animate__fadeInLeft">
+                        <div class="card h-100">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
-                                    <h5 class="mb-0 me-3">Mod List</h5>
+                                    <h5 class="mb-0 me-3" data-i18n="mods.title">Mod List</h5>
                                     <input 
                                         type="text" 
                                         id="modSearchInput" 
                                         class="form-control form-control-sm" 
+                                        data-i18n-placeholder="mods.search"
                                         placeholder="Search mods..."
                                         style="width: 200px;"
                                     >
@@ -70,7 +88,7 @@
                                             type="checkbox" 
                                             id="enabledFilter"
                                         >
-                                        <label class="form-check-label" for="enabledFilter">
+                                        <label class="form-check-label" for="enabledFilter" data-i18n="mods.filters.enabled">
                                             Enabled
                                         </label>
                                     </div>
@@ -80,7 +98,7 @@
                                             type="checkbox" 
                                             id="disabledFilter"
                                         >
-                                        <label class="form-check-label" for="disabledFilter">
+                                        <label class="form-check-label" for="disabledFilter" data-i18n="mods.filters.disabled">
                                             Disabled
                                         </label>
                                     </div>
@@ -91,7 +109,6 @@
                             </div>
                             <div class="card-body p-0">
                                 <div class="mod-list overflow-auto" id="modList" style="height: calc(100vh - 160px);">
-                                    <!-- Mods will be inserted here -->
                                 </div>
                             </div>
                         </div>
@@ -100,7 +117,7 @@
                     <!-- Mod Details and Preview (Right Side) -->
                     <div class="col-4 p-3 d-flex flex-column">
                         <!-- Mod Preview -->
-                        <div class="card flex-grow-1 mb-3 animate__animated animate__fadeInRight">
+                        <div class="card flex-grow-1 mb-3">
                             <div class="card-header">
                                 <h5 class="mb-0">Mod Details</h5>
                             </div>
@@ -119,19 +136,19 @@
                 </div>
 
                 <!-- Floating Action Buttons -->
-                <div class="floating-actions animate__animated animate__fadeInUp">
-                    <div class="btn-group">
-                        <button class="btn btn-primary" id="installMod" title="Install Mod">
+                <div class="floating-actions">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-primary rounded-start" id="installMod" title="Install Mod">
                             <i class="bi bi-plus-circle"></i>
-                        </button>
-                        <button class="btn btn-danger" id="uninstallMod" title="Uninstall Mod">
-                            <i class="bi bi-trash"></i>
                         </button>
                         <button class="btn btn-secondary" id="openFolder" title="Open Mods Folder">
                             <i class="bi bi-folder"></i>
                         </button>
-                        <button id="gameBananaDownloadBtn" class="btn btn-success">
+                        <button id="gameBananaDownloadBtn" class="btn btn-success" title="Download from GameBanana">
                             <i class="bi bi-download"></i>
+                        </button>
+                        <button id="launchGame" class="btn btn-info rounded-end" title="Launch Game" style="margin-left: 0;">
+                            <i class="bi bi-play-fill"></i>
                         </button>
                     </div>
                 </div>
@@ -147,7 +164,7 @@
                         <div class="card h-100 animate__animated animate__fadeInLeft">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
-                                    <h5 class="mb-0 me-3">Plugin List</h5>
+                                    <h5 class="mb-0 me-3" data-i18n="plugins.title">Plugin List</h5>
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <button class="btn btn-sm btn-outline-secondary" id="reloadPluginsList">
@@ -157,7 +174,6 @@
                             </div>
                             <div class="card-body p-0">
                                 <div class="plugin-list overflow-auto" id="pluginList" style="height: calc(100vh - 160px);">
-                                    <!-- Plugins will be inserted here -->
                                 </div>
                             </div>
                         </div>
@@ -177,83 +193,248 @@
                 </div>
             </div>
         </div>
-
-        <!-- Plugin Tab (unchanged) -->
-        <div class="tab-pane fade" id="plugins" role="tabpanel">
-            <div class="container-fluid p-4">
-                <div class="card">
-                    <div class="card-header">
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-4">
-                            WORK IN PROGRESS</div>
-                            <div class="input-group">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-
-
         <!-- Settings Tab -->
         <div class="tab-pane fade" id="settings" role="tabpanel">
             <div class="container-fluid p-4 h-100">
                 <div class="card h-100 animate__animated animate__fadeIn">
                     <div class="card-header">
                         <h5 class="mb-0">Settings</h5>
-                    </div>
+                    </div>                     
                     <div class="card-body overflow-auto" style="max-height: calc(100vh - 160px);">
-                        <div class="mb-4">
-                            <h3>Path</h3>
-                            <label class="form-label">Mods Directory</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="modsPath" readonly>
-                                <button class="btn btn-outline-primary" id="selectModsFolder">
-                                    <i class="bi bi-folder2-open"></i>
+                        <!-- Settings Tabs Navigation -->
+                        <ul class="nav nav-pills mb-3" id="settingsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="paths-tab" data-bs-toggle="pill" data-bs-target="#paths-content" type="button" role="tab">
+                                    <i class="bi bi-folder me-2"></i>Setup
                                 </button>
-                            </div>
-                            <small class="textmuted">Select the folder where your mods are stored</small>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label">Plugins Directory</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="pluginsPath" readonly>
-                                <button class="btn btn-outline-primary" id="selectPluginsFolder">
-                                    <i class="bi bi-folder2-open"></i>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="appearance-tab" data-bs-toggle="pill" data-bs-target="#appearance-content" type="button" role="tab">
+                                    <i class="bi bi-palette me-2"></i>Appearance
                                 </button>
-                            </div>
-                            <small class="textmuted">Select the folder where your plugins are stored</small>
-                        </div>
-                        <div class="settings-section">
-                            <h3>Customize</h3>
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="darkModeToggle">
-                                <label class="form-check-label" for="darkModeToggle">Dark Mode</label>
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label">Custom CSS File</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="customCssPath" readonly>
-                                    <button class="btn btn-outline-primary" id="selectCustomCssFile">
-                                        <i class="bi bi-folder2-open"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger" id="removeCustomCssFile">
-                                        <i class="bi bi-x-circle"></i>
-                                    </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="integration-tab" data-bs-toggle="pill" data-bs-target="#integration-content" type="button" role="tab">
+                                    <i class="bi bi-plug me-2"></i>Features
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="emulator-tab" data-bs-toggle="pill" data-bs-target="#emulator-content" type="button" role="tab">
+                                    <i class="bi bi-controller me-2"></i>Emulator
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="logs-tab" data-bs-toggle="pill" data-bs-target="#logs-content" type="button" role="tab">
+                                    <i class="bi bi-journal-text me-2"></i>Logs
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="feedback-tab" data-bs-toggle="pill" data-bs-target="#feedback-content" type="button" role="tab">
+                                    <i class="bi bi-chat-dots me-2"></i>Feedback
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Settings Tabs Content -->
+                        <div class="tab-content" id="settingsTabsContent">
+                            <!-- Paths Tab -->
+                            <div class="tab-pane fade show active" id="paths-content" role="tabpanel">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Directory Settings</h6>
+                                    <label class="form-label" data-i18n="settings.paths.modsDir">Mods Directory</label>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" id="modsPath" readonly>
+                                        <button class="btn btn-outline-primary" id="selectModsFolder">
+                                            <i class="bi bi-folder2-open"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <label class="form-label" data-i18n="settings.paths.pluginsDir">Plugins Directory</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="pluginsPath" readonly>
+                                        <button class="btn btn-outline-primary" id="selectPluginsFolder">
+                                            <i class="bi bi-folder2-open"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <small class="textmuted">Select the custom CSS file for styling (Restart needed)</small>
                             </div>
-                        </div>
-                        <div class="settings-section">
-                            <h3>General Settings</h3>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="conflictCheckToggle">
-                            <label class="form-check-label" for="conflictCheckToggle">Enable Conflict Check (Takes longer to load mods)</label>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="discordRpcToggle">
-                            <label class="form-check-label" for="discordRpcToggle">Enable Discord RPC</label>
+
+                            <!-- Appearance Tab -->
+                            <div class="tab-pane fade" id="appearance-content" role="tabpanel">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Theme Settings</h6>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                                        <label class="form-check-label" for="darkModeToggle">Dark Mode</label>
+                                    </div>
+
+                                    <label class="form-label">Custom CSS File</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="customCssPath" readonly>
+                                        <button class="btn btn-outline-primary" id="selectCustomCssFile">
+                                            <i class="bi bi-folder2-open"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" id="removeCustomCssFile">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                    <small class="textmuted">Select the custom CSS file for styling (Restart needed)</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <h6 class="mb-3">Language</h6>
+                                    <select class="form-select" id="languageSelect">
+                                        <option value="en">English</option>
+                                        <option value="fr">Français</option>
+                                        <option value="es">Español</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Integration Tab -->
+                            <div class="tab-pane fade" id="integration-content" role="tabpanel">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Features</h6>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="protocolConfirmToggle">
+                                        <label class="form-check-label" for="protocolConfirmToggle">Skip Protocol Confirmation</label>
+                                        <small class="form-text textmuted d-block">Skip the confirmation dialog when opening FightPlanner links</small>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="conflictCheckToggle">
+                                        <label class="form-check-label" for="conflictCheckToggle">Enable Conflict Check (Takes longer to load mods)</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="discordRpcToggle">
+                                        <label class="form-check-label" for="discordRpcToggle">Enable Discord RPC</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="sendVersionToggle">
+                                        <label class="form-check-label" for="sendVersionToggle">Send Version of FightPlanner to Server</label>
+                                        <small class="form-text textmuted d-block">Your data and identity are hidden with a random userId</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="volumeControl" class="form-label">Finish Sound Volume</label>
+                                        <input type="range" class="form-range" id="volumeControl" min="0" max="100" step="1">
+                                        <small class="textmuted">Adjust the volume for finish download sound</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">User ID:</label>
+                                        <p id="userId" class="textmuted"></p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button class="btn btn-danger" id="clearTempFiles">
+                                            <i class="bi bi-trash me-2"></i>Clear Temporary Files
+                                        </button>
+                                        <small class="form-text textmuted d-block">Remove all temporary files to free up space</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Emulator Tab -->
+                            <div class="tab-pane fade" id="emulator-content" role="tabpanel">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Emulator Settings</h6>
+                                    
+                                    <!-- Emulator Selection -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Select Emulator</label>
+                                        <select class="form-select" id="emulatorSelect">
+                                            <option value="">Select an emulator...</option>
+                                            <option value="yuzu">yuzu (any fork of yuzu should work with no problem)</option>
+                                            <option value="ryujinx">Ryujinx</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Emulator Path -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Emulator Path</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="emulatorPath" readonly>
+                                            <button class="btn btn-outline-primary" id="selectEmulatorPath">
+                                                <i class="bi bi-folder2-open"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Game Path -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Game Path</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="gamePath" readonly>
+                                            <button class="btn btn-outline-primary" id="selectGamePath">
+                                                <i class="bi bi-folder2-open"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Yuzu Fullscreen Option -->
+                                    <div class="mb-3" id="yuzuOptions" style="display: none;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="yuzuFullscreen">
+                                            <label class="form-check-label" for="yuzuFullscreen">
+                                                Launch in Fullscreen
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Feedback Tab -->
+                            <div class="tab-pane fade" id="feedback-content" role="tabpanel">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Suggestions & Support</h6>
+                                    <p>Got a suggestion for FightPlanner? Want a feature to be added? Let me know!</p>
+                                    <a href="https://forms.gle/X2qvhxXgvxsbizAz5" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                        <i class="bi bi-send me-2"></i>Submit Feedback
+                                    </a>
+                                    
+                                    <hr class="my-4">
+                                    
+                                    <p>FightPlanner dev searching for people to test Early Access ! Go check it out</p>
+                                    <a href="https://forms.gle/EWdDC1ApLos4zRT49" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                        <i class="bi bi-send me-2"></i>Apply for Early Access
+                                    </a>
+                                    
+                                    <hr class="my-4">
+
+                                    <p>Want to get your UserID deleted from the server?</p>
+                                    <a href="https://forms.gle/Ahb7xsmVbY2sR2bn9" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger">
+                                        <i class="bi bi-trash me-2"></i>Request Data Deletion
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Add this new tab content -->
+                            <div class="tab-pane fade" id="logs-content" role="tabpanel">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Application Logs</h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <button class="btn btn-primary" id="openCurrentLog">
+                                            <i class="bi bi-file-text me-2"></i>Open Current Log
+                                        </button>
+                                        <button class="btn btn-outline-secondary" id="openLogsFolder">
+                                            <i class="bi bi-folder me-2"></i>Open Logs Folder
+                                        </button>
+                                    </div>
+                                    <div class="log-preview card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span>Console Output</span>
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-secondary" id="clearLogs">
+                                                    <i class="bi bi-trash"></i> Clear
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-primary" id="refreshLogs">
+                                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-2">
+                                            <pre id="logContent" class="log-content" style="max-height: 400px; overflow-y: auto;">Loading logs...</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -272,12 +453,40 @@
         <a class="dropdown-item" href="#" id="renameMod">
             <i class="bi bi-pencil me-2"></i>Rename
         </a>
+        <a class="dropdown-item" href="#" id="changeSlots">
+            <i class="bi bi-arrow-left-right me-2"></i>Change Character Slot
+        </a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item text-danger" href="#" id="uninstallMod">
+            <i class="bi bi-trash me-2"></i>Uninstall
+        </a>
     </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="../js/uiController.js" type="module"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userIdElement = document.getElementById('userId');
+            const userId = await window.api.getUserId();
+            userIdElement.textContent = userId;
+
+            const dontShowAgain = localStorage.getItem('dontShowEarlyAccessModal');
+            if (!dontShowAgain) {
+                const earlyAccessModal = new bootstrap.Modal(document.getElementById('earlyAccessModal'));
+                earlyAccessModal.show();
+            }
+
+            document.getElementById('dontShowAgain').addEventListener('change', (event) => {
+                if (event.target.checked) {
+                    localStorage.setItem('dontShowEarlyAccessModal', 'true');
+                } else {
+                    localStorage.removeItem('dontShowEarlyAccessModal');
+                }
+            });
+        });
+    </script>
 
     <!-- Credits Modal -->
     <div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsModalLabel" aria-hidden="true">
@@ -289,17 +498,20 @@
                 </div>
                 <div class="modal-body">
                     <div class="container-fluid text-center credits-container">
-                        <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" alt="App Logo" class="img-fluid mb-4" style="max-height: 200px;">
+                        <a href="https://gamebanana.com/tools/17950" target="_blank">
+                            <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" alt="App Logo" id="appLogo" class="img-fluid mb-4" style="max-height: 200px;">
+                        </a>
                         <h1 class="credits-title">FightPlanner</h1>
                         <p class="lead credits-subtitle">Mod Manager for SSBU</p>
-                        <p class="lead credits-subtitle">3.1.2</p>
+                        <p class="lead credits-subtitle">3.3.16</p>
                         
                         <div class="credits-section mt-4">
                             <h3 class="credits-section-title">Development Team :</h3>
                             <p class="credits-section-description">FloweyGaming : Logo</p>
                             <p class="credits-section-description">FIREXDF : Code</p>
+                            <p class="credits-section-description">Mario45 : Helping for real hardware</p>
                             <div class="mt-4">
-                                <h4 class="credits-technologies-title">Technologies</h4>
+                                <h4 class="credits-technologies-title">Made with</h4>
                                 <div class="d-flex justify-content-center">
                                     <span class="badge bg-primary me-2">Electron</span>
                                     <span class="badge bg-success me-2">Node.js</span>
@@ -332,6 +544,52 @@
         </div>
     </div>
 
+    <!-- Send Version Modal -->
+    <div class="modal fade" id="sendVersionModal" tabindex="-1" aria-labelledby="sendVersionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sendVersionModalLabel">Enable Version Reporting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Would you like to enable the feature to send the version of FightPlanner to the server? Your data will not be sent and your identity will be hidden with a random userId sent to the server.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-primary" id="enableSendVersionBtn">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Early Access Modal -->
+    <div class="modal fade" id="earlyAccessModal" tabindex="-1" aria-labelledby="earlyAccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="earlyAccessModalLabel">Early Access Testing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>We are searching for people to test the early access version of FightPlanner. These versions should help make the release version more stable and with fewer errors.</p>
+                    <a href="https://forms.gle/EWdDC1ApLos4zRT49" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        <i class="bi bi-send me-2"></i>Apply for Early Access
+                    </a>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="dontShowAgain">
+                        <label class="form-check-label" for="dontShowAgain">
+                            Don't show this message again
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container position-fixed top-0 end-0 p-3">
         <div id="toastContainer"></div>
     </div>
@@ -341,55 +599,93 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                <h5 class="modal-title" id="confirmationModalLabel" data-i18n="modals.confirm.title">Confirmation</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" data-i18n="modals.confirm.uninstall">
                 Are you sure you want to uninstall this mod?
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmUninstallBtn">Yes, Uninstall</button>
-            </div>
-        </div>
-    </div>
+            <div class="modal-footer">                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="modals.confirm.cancel">Cancel</button>                <button type="button" class="btn btn-primary" id="confirmUninstallBtn" data-i18n="modals.confirm.confirm">Yes, Uninstall</button>            </div>        </div>    </div>
 </div>
 
-<!-- GameBanana Download Modal -->
-<div class="modal fade" id="gameBananaDownloadModal" tabindex="-1">
+<!-- Change Slots Modal -->
+<div class="modal fade" id="changeSlotsModal" tabindex="-1" aria-labelledby="changeSlotsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Download Mods</h5>
+                <h5 class="modal-title" id="changeSlotsModalLabel">Change Character Slots</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div id="downloadFieldsContainer">
-                    <div class="mb-3 input-group">
-                        <input type="text" class="form-control gameBananaLink" placeholder="Paste GameBanana mod link here">
-                        <button type="button" class="btn btn-outline-danger remove-download-field">
-                            <i class="bi bi-x"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-outline-secondary" id="addDownloadField">Add Another Mod</button>
+                <div id="currentSlotsInfo"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmDownloadBtn">Download</button>
+                <button type="button" class="btn btn-primary" id="confirmChangeSlots">Change Slots</button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const protocolLink = urlParams.get('protocolLink');
-        if (protocolLink) {
-            window.electronAPI.handleProtocolLink(protocolLink);
-        }
-    });
-</script>
+<!-- Select Mods Modal -->
+<div class="modal fade" id="selectModsModal" tabindex="-1" aria-labelledby="selectModsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="selectModsModalLabel">Select Mods to Change Slots</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select the mods you want to change slots for:</p>
+                <div class="list-group">
+                    <!-- Mod list will be dynamically inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSelectMods">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .slot-group {
+        position: relative;
+    }
+    .slot-group.removed .overlay {
+        display: block;
+    }
+    .overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 0, 0, 0.5);
+        z-index: 1;
+    }
+</style>
+
+<!-- Update the loading overlay with close button -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-content">
+        <div id="loadingAnimationContainer" class="loading-animation-crop">
+            <lottie-player
+                src="https://cdn.lottielab.com/l/BgbVdxvgksWEgv.json"
+                background="transparent"
+                speed="2"
+                loop
+                autoplay
+                style="width: 200px; height: 200px;"
+            ></lottie-player>
+        </div>
+        <div id="loadingMessage" class="loading-message loading-message-fade"></div>
+        <button id="cancelDownloadBtn" class="btn btn-danger mt-3" style="display: none;">
+            <i class="bi bi-x-circle me-2"></i>Cancel Download
+        </button>
+    </div>
+</div>
 </body>
 </html>

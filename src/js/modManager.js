@@ -20,7 +20,6 @@ export class ModManager {
     
             // Additional validation or processing if needed
             if (!result.success) {
-                throw new Error(result.message || 'Mod installation failed');
             }
     
             return result;

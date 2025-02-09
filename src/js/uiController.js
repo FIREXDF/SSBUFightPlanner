@@ -2,46 +2,90 @@ console.log('UIController loading...');
 import { ModManager } from './modManager.js';
 import { Tutorial } from './tutorial.js';
 import ModConflictDetector from './modConflictDetector.js';
+import { languageService } from './services/languageService.js';
+import { ChangeSlots } from './changeSlots.js';
 
 class UIController {
     constructor() {
-        
-        this.modManager = new ModManager();
-        this.tutorial = new Tutorial();
-        this.selectedMod = null;
-        this.initializeEventListeners();
-        this.loadSettings();
-        this.loadMods();
-        this.initializeDarkMode();
-        this.initializeErrorHandling();
-        this.initializeSearchBar();
-        this.initializeSearchBar = this.initializeSearchBar.bind(this);
-        this.performSearch = this.performSearch.bind(this);
-        this.addErrorStyles();
-        this.loadMods = this.loadMods.bind(this);
-        this.initializeEventListeners = this.initializeEventListeners.bind(this);
-        this.showLoading = this.showLoading.bind(this);
-        this.hideLoading = this.hideLoading.bind(this);
-        this.showError = this.showError.bind(this);
-        this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
-        this.handleSelectCustomCssFile = this.handleSelectCustomCssFile.bind(this);
-        this.handleAddDownloadField = this.handleAddDownloadField.bind(this);
-        this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
-        this.downloadQueue = [];
-        this.isDownloading = false;
-        window.uiController = this;
-        this.mods = [];
-        this.initializePluginTab();
-        this.initializeSettingsTab();
-        this.conflictDetector = new ModConflictDetector();
-        this.initializeDiscordRpcToggle();
-        this.downloadModal = null; // Define downloadModal as a class property
+        try {
+            this.modManager = new ModManager();
+            this.tutorial = new Tutorial();
+            this.selectedMod = null;
+            this.initializeEventListeners();
+            this.loadSettings();
+            this.loadMods();
+            this.initializeDarkMode();
+            this.initializeErrorHandling();
+            this.initializeSearchBar();
+            this.initializeSearchBar = this.initializeSearchBar.bind(this);
+            this.performSearch = this.performSearch.bind(this);
+            this.addErrorStyles();
+            this.loadMods = this.loadMods.bind(this);
+            this.initializeEventListeners = this.initializeEventListeners.bind(this);
+            this.showLoading = this.showLoading.bind(this);
+            this.hideLoading = this.hideLoading.bind(this);
+            this.showError = this.showError.bind(this);
+            this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
+            this.handleSelectCustomCssFile = this.handleSelectCustomCssFile.bind(this);
+            this.handleAddDownloadField = this.handleAddDownloadField.bind(this);
+            this.handleGameBananaDownload = this.handleGameBananaDownload.bind(this);
+            this.downloadQueue = [];
+            this.isDownloading = false;
+            window.uiController = this;
+            this.mods = [];
+            this.initializePluginTab();
+            this.initializeSettingsTab();
+            this.conflictDetector = new ModConflictDetector();
+            this.initializeDiscordRpcToggle();
+            this.downloadModal = null; // Define downloadModal as a class property
+            this.initializeSendVersionToggle();
+            this.handleClearLogs = this.handleClearLogs.bind(this);
+            this.handleRefreshLogs = this.handleRefreshLogs.bind(this);
+            this.handleChangeSlots = this.handleChangeSlots.bind(this);
+            this.showChangeSlotsDialog = this.showChangeSlotsDialog.bind(this);
+            this.activeDownloads = new Map();
+            this.initializeDownloadsPanel();
 
-        // Add event listener for update downloaded
-        window.electron.onUpdateDownloaded((changelog) => {
-            this.showToast(`New update installed:\n${changelog}`, 'info');
-        });
+            // Add event listener for update downloaded
+            window.electron.onUpdateDownloaded((changelog) => {
+                try {
+                    this.showToast(`New update installed:\n${changelog}`, 'info');
+                } catch (error) {
+                    console.error('Error showing update toast:', error);
+                }
+            });
+
+            // Add download status listener
+            window.electron.onDownloadStatus((status) => {
+                switch (status.type) {
+                    case 'start':
+                        this.hideLoading();
+                        break;
+                    case 'progress':
+                        this.updateLoadingMessage(`${status.message}`);
+                        break;
+                    case 'finish':
+                        this.hideLoading();
+                        this.showToast(status.message, 'success');
+                        this.loadMods(); // Refresh mod list
+                        break;
+                    case 'cancelled':
+                        this.hideLoading();
+                        this.showToast(status.message, 'info');
+                        break;
+                    case 'error':
+                        this.hideLoading();
+                        this.showError(status.message);
+                        break;
+                }
+            });
+        } catch (error) {
+            console.error('UIController initialization error:', error);
+            this.showError('Failed to initialize UI: ' + error.message);
+        }
     }
+
+    
     initializeLogoEvent() {
         const appLogo = document.getElementById('appLogo');
         
@@ -65,8 +109,13 @@ class UIController {
         });
     }
 
-    
-
+    initialize() {
+        // Add event listener to the Install Mod button
+        const installModButton = document.getElementById('installModButton');
+        if (installModButton) {
+            installModButton.addEventListener('click', () => this.showInstallModConfirmationDialog());
+        }
+    }
 
     // Placeholder method for showing errors
     showError(message) {
@@ -160,63 +209,26 @@ class UIController {
         }, 5000); // 5 seconds
     }
 
-    handleGameBananaDownload() {
-        // Get link from input
-        const linkInput = document.querySelector('.gameBananaLink');
-        const downloadLink = linkInput.value.trim();
-
-        // Validate link
-        if (!downloadLink) {
-            this.showToast('Please enter a GameBanana mod link', 'danger');
-            return;
-        }
-
-        // Disable download button
-        const confirmDownloadBtn = document.getElementById('confirmDownloadBtn');
-        confirmDownloadBtn.disabled = true;
-        confirmDownloadBtn.textContent = 'Downloading...';
-        this.showLoading('Installing mod...');
-
-        // Check if electron API is available
-        if (!window.electron || !window.electron.downloadMod) {
-            console.error('Electron download API not available');
-            this.showToast('Download service is not available', 'danger');
-            confirmDownloadBtn.disabled = false;
-            confirmDownloadBtn.textContent = 'Download';
-            this.hideLoading();
-            return;
-        }
-
-        // Perform download via exposed API
-        window.electron.downloadMod(downloadLink)
-            .then((filePath) => {
-                // Close the modal
-                if (this.downloadModal) {
-                    this.downloadModal.hide();
-                }
-                const audio = new Audio('./finish.mp3');
-                audio.play();
-
-                // Show success message
-                this.showToast(`Mod downloaded successfully to ${filePath}`, 'success');
-
-                // Reload mods if possible
-                if (this.loadMods && typeof this.loadMods === 'function') {
-                    this.loadMods();
-                }
-            })
-            .catch((error) => {
-                console.error('Download error:', error);
-                this.showToast(`Failed to download mod: ${error.message}`, 'danger');
-            })
-            .finally(() => {
-                // Re-enable download button
-                confirmDownloadBtn.disabled = false;
-                confirmDownloadBtn.textContent = 'Download';
-                this.hideLoading();
-            });
+async handleGameBananaDownload() {
+    const linkInputs = document.querySelectorAll('.gameBananaLink');
+    const links = Array.from(linkInputs)
+        .map(input => input.value.trim())
+        .filter(link => link);
+    
+    if (links.length === 0) {
+        this.showToast('Please enter at least one GameBanana mod link', 'danger');
+        return;
     }
 
+    // Download each mod in parallel
+    links.forEach(link => {
+        window.electron.downloadMod(link);
+    });
+
+    if (this.downloadModal) {
+        this.downloadModal.hide();
+    }
+}
 
     showGameBananaDownloadDialog() {
         // Create a modal dialog
@@ -268,16 +280,20 @@ class UIController {
         });
     }
 
+
+    
     async downloadMod(url) {
         try {
             // Show loading
             await this.showLoading('Downloading mod...');
-
+        
             // Download mod
             const filePath = await this.modDownloader.downloadMod(url);
+            
 
             // Reload mods
             await this.loadMods();
+            await this.showLoading('Reloading...');
 
             // Show success
             this.showSuccess('Mod downloaded successfully');
@@ -290,15 +306,6 @@ class UIController {
             this.hideLoading();
         }
     }
-
-    // Optional: Download with progress
-    downloadModWithProgress(url) {
-        this.modDownloader.downloadWithProgress(url, (progress) => {
-            // Update progress UI
-            console.log(`Download progress: ${progress.percent * 100}%`);
-        });
-    }
-
 
     showCreditsModal() {
         console.log('Credits modal triggered');
@@ -628,7 +635,7 @@ renderModList(mods) {
         // Check if mods is empty
         if (!mods || mods.length === 0) {
             modList.innerHTML = `
-                <div class="text-center text-muted py-3">
+                <div class="text-center textmuted py-3">
                     No mods found
                 </div>
             `;
@@ -651,7 +658,7 @@ renderModList(mods) {
             modElement.innerHTML = `
                 <div class="mod-info">
                     <strong>${this.escapeHtml(mod.name)}</strong>
-                    <small class="d-block text-muted">
+                    <small class="d-block textmuted">
                         ${mod.enabled ? 'Enabled' : 'Disabled'}
                     </small>
                 </div>
@@ -691,7 +698,7 @@ renderModList(mods) {
         
         if (!mods.length) {
             modList.innerHTML = `
-                <div class="text-center p-4 text-muted">
+                <div class="text-center p-4 textmuted">
                     <i class="bi bi-inbox-fill fs-1"></i>
                     <p class="mt-2">No mods found</p>
                 </div>
@@ -765,20 +772,24 @@ renderModList(mods) {
         document.getElementById('toggleMod').addEventListener('click', () => this.handleToggleMod());
         document.getElementById('openModFolder').addEventListener('click', () => this.handleOpenModFolder());
         document.getElementById('renameMod').addEventListener('click', () => this.handleRenameMod());
+        document.getElementById('changeSlots').addEventListener('click', () => {
+            if (this.selectedMod) {
+                this.showChangeSlotsDialog([this.selectedMod]);
+            } else {
+                this.showError('Please select at least one mod');
+            }
+        });
 
         // Hide context menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('#contextMenu')) {
+            const modItem = e.target.closest('.mod-item');
+            if (modItem) {
+                console.log('Mod item clicked:', modItem.dataset.modId); // Debug log
+                this.selectMod(modItem.dataset.modId);
+            } else {
                 this.hideContextMenu();
             }
         });
-            document.getElementById('modList').addEventListener('click', async (e) => {
-        const modItem = e.target.closest('.mod-item');
-        if (modItem) {
-            console.log('Mod item clicked:', modItem.dataset.modId); // Debug log
-            await this.selectMod(modItem.dataset.modId);
-        }
-    });
     const dropZone = document.body; // Or a specific container
 
     // Prevent default drag behaviors
@@ -798,10 +809,108 @@ renderModList(mods) {
         e.stopPropagation();
     }
     
-    // Highlight drop zone
+
+window.electron.onProtocolUrl(async (data) => {
+    try {
+        const { url, skipConfirmation } = data;
+        const modUrl = parseFightPlannerUrl(url);
+        console.log('Converted Mod URL:', modUrl);
+        console.log('Skip confirmation:', skipConfirmation);
+
+        let shouldInstall = false;
+
+        if (skipConfirmation) {
+            shouldInstall = true;
+        } else {
+            // Show confirmation modal
+            shouldInstall = await new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.tabIndex = -1;
+                modal.innerHTML = `
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Install Mod</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Do you want to install this mod?</p>
+                                <p><strong>URL:</strong> ${modUrl}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="confirmInstall">Install</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+
+                modal.querySelector('#confirmInstall').addEventListener('click', () => {
+                    resolve(true);
+                    bsModal.hide();
+                });
+
+                modal.addEventListener('hidden.bs.modal', () => {
+                    resolve(false);
+                    document.body.removeChild(modal);
+                });
+            });
+        }
+
+        if (shouldInstall) {
+            this.showToast('Mod download started !', 'success');
+            const result = await window.electron.downloadMod(modUrl);
+            this.updateLoadingMessage('Finishing up...');
+            console.log('Mod downloaded successfully:', result);
+            this.showToast('Mod downloaded successfully', 'success');
+            this.updateLoadingMessage('Reloading Mods...');
+            this.loadMods();
+        }
+    } catch (error) {
+        console.error('Error downloading mod:', error);
+        this.showError('Failed to download mod: ' + error.message);
+    } finally {
+        this.hideLoading();
+    }
+});
+
     function highlight() {
         dropZone.classList.add('drag-over');
     }
+
+    function parseFightPlannerUrl(url) {
+
+        const sanitizedUrl = url.replace('fightplanner:', '');
+      
+
+        const parts = sanitizedUrl.split(',');
+      
+        if (parts.length !== 4) {
+          throw new Error('Invalid download link format');
+        }
+      
+        const baseUrl = parts[0]; 
+        const modType = parts[1]; 
+        const fileId = parts[2];   
+        const archiveType = parts[3]; 
+      
+        // Extract the modId from the base URL
+        const modIdMatch = baseUrl.match(/https:\/\/gamebanana\.com\/mmdl\/(\d+)/);
+        if (!modIdMatch) {
+          throw new Error('Invalid mod URL');
+        }
+        const modId = modIdMatch[1];
+      
+        // Construct the new download URL
+        const downloadUrl = `https://gamebanana.com/mods/download/${fileId}#FileInfo_${modId}`;
+      
+        return downloadUrl;
+      }
 
     // Remove highlight
     function unhighlight() {
@@ -823,53 +932,49 @@ renderModList(mods) {
     // Handle files
     const handleFiles = async (files) => {
         // Convert FileList to Array and filter
-        const archiveFiles = Array.from(files).filter(file => {
-            const validExtensions = ['.zip', '.rar', '.7z'];
+        const validFiles = Array.from(files).filter(file => {
+            const validExtensions = ['.zip', '.rar', '.7z', '.nro'];
             return validExtensions.some(ext => 
                 file.name.toLowerCase().endsWith(ext.toLowerCase())
             );
         });
 
-        // If no valid archives, show error
-        if (archiveFiles.length === 0) {
-            this.showError('No valid mod archives found. Please drop .zip, .rar, .nro, or .7z files.');
+        // If no valid files, show error
+        if (validFiles.length === 0) {
+            this.showError('No valid mod or plugin files found. Please drop .zip, .rar, .7z, or .nro files.');
             return;
         }
 
         try {
             // Show loading
-            await this.showLoading('Installing mods...');
+            await this.showLoading('Installing files...');
 
             // Track installation results
             const installResults = [];
 
-            // Install each dropped archive
-            for (const file of archiveFiles) {
-                try {
-                    const result = await window.api.modOperations.installMod(file.path);
-                    installResults.push({
-                        fileName: file.name,
-                        success: true,
-                        mod: result
-                    });
-                } catch (installError) {
-                    console.error(`Installation error for ${file.name}:`, installError);
-                    installResults.push({
-                        fileName: file.name,
-                        success: false,
-                        error: installError.message
-                    });
+            // Install each dropped file
+            for (const file of validFiles) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'nro') {
+                    // Handle .nro files as plugins
+                    const result = await window.api.pluginOperations.installPlugin(file.path);
+                    installResults.push({ fileName: file.name, success: true, result });
+                } else {
+                    // Handle other archive files as mods
+                    const result = await this.modManager.installMod(file.path);
+                    installResults.push({ fileName: file.name, success: true, result });
                 }
             }
 
-            // Reload mods list
+            // Reload mods and plugins list
             await this.loadMods();
+            await this.loadPlugins();
 
             // Provide detailed feedback
             this.provideInstallationFeedback(installResults);
         } catch (error) {
             console.error('Drag and drop installation error:', error);
-            this.showError('Failed to install mods, Cause ' +  ': ' + error.message);
+            this.showError('Failed to install files: ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -1204,52 +1309,66 @@ async promptDialog(title, message, defaultValue) {
 
 
     async showLoading(message = 'Loading...') {
-        // Create loading overlay
         let loadingOverlay = document.getElementById('loading-overlay');
+        console.log('Showing loading message:', message);
         
-        if (!loadingOverlay) {
-            loadingOverlay = document.createElement('div');
-            loadingOverlay.id = 'loading-overlay';
-            loadingOverlay.className = 'loading-overlay';
-            loadingOverlay.innerHTML = `
-            <div class="loading-content">
-                <div id="loadingAnimationContainer" class="loading-animation-crop">
-                    <lottie-player
-                        src="https://cdn.lottielab.com/l/BgbVdxvgksWEgv.json"
-                        background="transparent"
-                        speed="2"
-                        loop
-                        autoplay
-                        style="width: 200px; height: 200px;"
-                    ></lottie-player>
-                </div>
-                <div class="loading-message">${message}</div>
-            </div>
-        `;
-            document.body.appendChild(loadingOverlay);
+        if (!loadingOverlay) return;
     
-            // Trigger fade-in
-            setTimeout(() => {
-                loadingOverlay.style.opacity = '1';
-            }, 10); // Small delay to ensure the transition occurs
-        } else {
-            // Update message if loading element exists
-            const messageElement = loadingOverlay.querySelector('.loading-message');
-            if (messageElement) {
-                messageElement.textContent = message;
-            }
-            loadingOverlay.style.display = 'flex';
-            loadingOverlay.style.opacity = '1';
+        const messageElement = loadingOverlay.querySelector('#loadingMessage');
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+    
+        // Show overlay
+        loadingOverlay.classList.add('visible');
+    
+        // Add close button event listener
+        const closeBtn = document.getElementById('closeLoadingBtn');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.hideLoading();
+        }
+    
+        // Show/hide cancel button based on if it's a download
+        const cancelBtn = document.getElementById('cancelDownloadBtn');
+        if (cancelBtn) {
+            cancelBtn.style.display = message.toLowerCase().includes('download') ? 'block' : 'none';
+            
+            // Remove old listener before adding new one
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            
+            // Add new listener
+            document.getElementById('cancelDownloadBtn').addEventListener('click', async () => {
+                try {
+                    await window.electron.cancelDownload();
+                    this.hideLoading();
+                    this.showToast('Download cancelled', 'info');
+                } catch (error) {
+                    console.error('Error cancelling download:', error);
+                    this.showError('Failed to cancel download: ' + error.message);
+                }
+            });
         }
     }
     
-    async hideLoading() {
+    hideLoading() {
         const loadingOverlay = document.getElementById('loading-overlay');
         if (loadingOverlay) {
-            loadingOverlay.style.opacity = '0';
+            loadingOverlay.classList.add('fade-out');
+            // Remove the overlay from DOM after transition completes
             setTimeout(() => {
-                loadingOverlay.style.display = 'none';
-            }, 500); // 500ms to match the transition duration
+                loadingOverlay.classList.remove('visible', 'fade-out');
+            }, 300); // Match this with the CSS transition duration
+        }
+    }
+
+    updateLoadingMessage(message) {
+        const messageElement = document.querySelector('#loadingMessage');
+        if (messageElement) {
+            messageElement.classList.remove('loading-message-fade');
+            // Trigger reflow
+            void messageElement.offsetWidth;
+            messageElement.textContent = message;
+            messageElement.classList.add('loading-message-fade');
         }
     }
 
@@ -1360,66 +1479,118 @@ async promptDialog(title, message, defaultValue) {
     }
     
 async updateModPreview(modId) {
-    console.log('updateModPreview called with modId:', modId);
-    
-    const metadataContent = document.querySelector('.metadata-content');
-    const modImage = document.getElementById('modImage');
+    const modMetadata = document.getElementById('modMetadata');
+    if (!modMetadata) {
+        console.error('Metadata container not found');
+        return;
+    }
 
+    let metadataContent = modMetadata.querySelector('.metadata-content');
+    if (!metadataContent) {
+        metadataContent = document.createElement('div');
+        metadataContent.className = 'metadata-content';
+        modMetadata.appendChild(metadataContent);
+    }
+
+    const modImage = document.getElementById('modImage');
+    if (!modImage) {
+        console.error('Mod image element not found');
+        return;
+    }
+
+    // Clear preview if no mod selected
     if (!modId) {
-        console.log('No modId provided');
-        metadataContent.innerHTML = 'Select a mod to view details';
+        metadataContent.innerHTML = `<p class="textmuted">${await languageService.translate('mods.details.selectToView')}</p>`;
         modImage.src = '';
         return;
     }
 
     try {
-        console.log('Attempting to get mod info');
-        const modInfo = await window.api.modDetails.getInfo(
-            path.join(this.modsPath, modId)
-        );
-        console.log('Mod info retrieved:', modInfo);
+        const mod = await this.modManager.getMod(modId);
+        if (!mod) {
+            metadataContent.innerHTML = `<p class="text-danger">${await languageService.translate('metadata.unknown')}</p>`;
+            modImage.src = '';
+            return;
+        }
 
-        // Get preview image
-        const previewPath = await window.api.modDetails.getPreview(
-            path.join(this.modsPath, modId)
-        );
-        console.log('Preview path:', previewPath);
-        modImage.src = previewPath || ''; 
+        try {
+            const [previewPath, modInfo] = await Promise.all([
+                window.api.modDetails.getPreview(mod.path),
+                window.api.modDetails.getInfo(mod.path)
+            ]);
 
-        if (modInfo) {
-            // Generate the HTML content with dynamic values
-            let metadataHtml = `<h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>`;
-            if (modInfo.version) {
-                metadataHtml += `<p><strong>Version:</strong> ${this.escapeHtml(modInfo.version)}</p>`;
-            }
-            if (modInfo.authors) {
-                metadataHtml += `<p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors)}</p>`;
-            }
-            if (modInfo.category) {
-                metadataHtml += `<p><strong>Category:</strong> ${this.escapeHtml(modInfo.category)}</p>`;
-            }
-            if (modInfo.wifi_safe) {
-                metadataHtml += `<p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe)}</p>`;
-            }
-            if (modInfo.description) {
-                metadataHtml += `<p><strong>Description:</strong> ${this.escapeHtml(modInfo.description)}</p>`;
-            }
-            if (modInfo.url) {
-                metadataHtml += `<p><strong>URL:</strong> <a href="${this.escapeHtml(modInfo.url)}" onclick="window.api.openExternal('${modInfo.url}'); return false;">${this.escapeHtml(modInfo.url)}</a></p>`;
-            }
+            modImage.src = previewPath || '';
+
+            // Build metadata HTML with translations
+            const metadataHtml = `
+                <h5>${this.escapeHtml(modInfo?.display_name || modInfo?.mod_name || mod.name)}</h5>
+                ${modInfo?.version ? `
+                    <p><strong>${await languageService.translate('metadata.version.label')}:</strong> 
+                    ${this.escapeHtml(modInfo.version)}</p>` : ''
+                }
+                ${modInfo?.authors ? `
+                    <p><strong>${await languageService.translate('metadata.author.name')}:</strong> 
+                    ${this.escapeHtml(modInfo.authors)}</p>` : ``
+                }
+                ${modInfo?.category ? `
+                    <p><strong>${await languageService.translate('metadata.category.label')}:</strong> 
+                    ${await languageService.translate(`metadata.category.${modInfo.category.toLowerCase()}`) || this.escapeHtml(modInfo.category)}</p>` : ''
+                }
+                ${typeof modInfo?.wifi_safe !== 'undefined' ? `
+                    <p><strong>${await languageService.translate('mods.details.wifiSafe')}:</strong> 
+                    ${modInfo.wifi_safe ? '✔️' : '❌'}</p>` : ''
+                }
+                ${modInfo?.description ? `
+                    <div class="description-section">
+                        <strong>${await languageService.translate('metadata.description.title')}:</strong>
+                        <p class="description-text">
+                            ${this.escapeHtml(modInfo.description)
+                            }
+                        </p>
+                    </div>` : ``
+                }
+                ${modInfo?.url ? `
+                    <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
+                    <a href="#" onclick="window.api.openExternal('${this.escapeHtml(modInfo.url)}'); return false;">
+                        ${this.escapeHtml(modInfo.url)}
+                    </a></p>` : ''
+                }
+            `;
+            
             metadataContent.innerHTML = metadataHtml;
-        } else {
+
+            // Add event listener for description toggle
+            const toggleBtn = metadataContent.querySelector('.toggle-description');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', async (e) => {
+                    const descText = e.target.parentElement;
+                    const isExpanded = e.target.dataset.expanded === 'true';
+                    descText.style.maxHeight = isExpanded ? '100px' : 'none';
+                    e.target.textContent = await languageService.translate(
+                        isExpanded ? 'metadata.description.readMore' : 'metadata.description.readLess'
+                    );
+                    e.target.dataset.expanded = !isExpanded;
+                });
+            }
+
+        } catch (error) {
+            console.error('Error loading mod details:', error);
             metadataContent.innerHTML = `
-                <h5>${this.escapeHtml(modId)}</h5>
-                <p>No additional information available</p>
+                <div class="alert alert-warning">
+                    <p>${await languageService.translate('mods.details.title')}:</p>
+                    <h5>${this.escapeHtml(mod.name)}</h5>
+                    <p class="textmuted">${await languageService.translate('metadata.description.empty')}</p>
+                </div>
             `;
         }
     } catch (error) {
-        console.error('Detailed error in updateModPreview:', error);
-        this.showError('Failed to load mod details');
-    }
-    function openExternal(url) {
-        window.location.href = url;
+        console.error('Error in updateModPreview:', error);
+        metadataContent.innerHTML = `
+            <div class="alert alert-danger">
+                <p>${await languageService.translate('metadata.unknown')}</p>
+                <small>${this.escapeHtml(error.message)}</small>
+            </div>
+        `;
     }
 }
 
@@ -1465,70 +1636,6 @@ async updateModPreview(modId) {
             console.error('No mod item found for ID:', modId);
         }
     }
-    async updateModPreview(modId) {
-        console.log('Updating mod preview for:', modId);
-    
-        const metadataContent = document.querySelector('.metadata-content');
-        const modImage = document.getElementById('modImage');
-    
-        if (!modId) {
-            metadataContent.innerHTML = 'Select a mod to view details';
-            modImage.src = '';
-            return;
-        }
-    
-        try {
-            const mod = await this.modManager.getMod(modId);
-            console.log('Mod details:', mod);
-            
-            if (!mod) {
-                metadataContent.innerHTML = 'Mod not found';
-                modImage.src = '';
-                return;
-            }
-    
-            // Get preview image
-            const previewPath = await window.api.modDetails.getPreview(mod.path);
-            console.log('Preview path:', previewPath);
-            modImage.src = previewPath || ''; 
-    
-            // Get mod info from TOML
-            const modInfo = await window.api.modDetails.getInfo(mod.path);
-            console.log('Mod info:', modInfo);
-            
-            // Render metadata
-            if (modInfo) {
-                let metadataHtml = `<h5>${this.escapeHtml(modInfo.display_name || modInfo.mod_name || mod.name)}</h5>`;
-                if (modInfo.version) {
-                    metadataHtml += `<p><strong>Version:</strong> ${this.escapeHtml(modInfo.version)}</p>`;
-                }
-                if (modInfo.authors) {
-                    metadataHtml += `<p><strong>Author:</strong> ${this.escapeHtml(modInfo.authors)}</p>`;
-                }
-                if (modInfo.category) {
-                    metadataHtml += `<p><strong>Category:</strong> ${this.escapeHtml(modInfo.category)}</p>`;
-                }
-                if (modInfo.wifi_safe) {
-                    metadataHtml += `<p><strong>Wi-Fi Safe:</strong> ${this.escapeHtml(modInfo.wifi_safe)}</p>`;
-                }
-                if (modInfo.description) {
-                    metadataHtml += `<p><strong>Description:</strong> ${this.escapeHtml(modInfo.description)}</p>`;
-                }
-                if (modInfo.url) {
-                    metadataHtml += `<p><strong>URL:</strong> <a href="${this.escapeHtml(modInfo.url)}" onclick="window.api.openExternal('${modInfo.url}'); return false;">${this.escapeHtml(modInfo.url)}</a></p>`;
-                }
-                metadataContent.innerHTML = metadataHtml;
-            } else {
-                metadataContent.innerHTML = `
-                    <h5>${this.escapeHtml(mod.name)}</h5>
-                    <p>No additional information available</p>
-                `;
-            }
-        } catch (error) {
-            console.error('Detailed error in updateModPreview:', error);
-            this.showError('Failed to load mod details');
-        }
-    }
     
 
     async initializeApp() {
@@ -1570,11 +1677,13 @@ async updateModPreview(modId) {
 
     async loadPlugins() {
         try {
+            await this.showLoading('Reloading Plugins...');
             const plugins = await window.api.pluginOperations.loadPlugins();
             this.renderPluginList(plugins);
         } catch (error) {
             this.showError('Failed to load plugins, Cause ' +  ': ' + error.message);
         }
+        this.hideLoading();
     }
 
     renderPluginList(plugins) {
@@ -1583,7 +1692,7 @@ async updateModPreview(modId) {
 
         if (!plugins || plugins.length === 0) {
             pluginList.innerHTML = `
-                <div class="text-center text-muted py-3">
+                <div class="text-center textmuted py-3">
                     No plugins found
                 </div>
             `;
@@ -1684,17 +1793,16 @@ async updateModPreview(modId) {
 
     async handleTogglePlugin(pluginId) {
         try {
-            await this.showLoading('Toggling plugin...');
-            const enabled = await window.api.pluginOperations.togglePlugin(pluginId);
+            const result = await window.api.pluginOperations.togglePlugin(pluginId);
+            if (result) {
+                this.showToast('Plugin enabled successfully', 'success');
+            } else {
+                this.showToast('Plugin disabled successfully', 'success');
+            }
             this.loadPlugins();
-            this.showSuccess(`Plugin ${enabled ? 'enabled' : 'disabled'} successfully`);
-            
-            // Update Discord RPC
-            window.api.discordRpc.updateModCount(this.mods.length);
         } catch (error) {
-            this.showError('Failed to toggle plugin, Cause ' +  ': ' + error.message);
-        } finally {
-            this.hideLoading();
+            console.error('Failed to toggle plugin:', error);
+            this.showError('Failed to toggle plugin: ' + error.message);
         }
     }
 
@@ -1783,6 +1891,105 @@ async updateModPreview(modId) {
         this.initializeDarkMode();
         this.initializeConflictCheckToggle();
         this.initializeDiscordRpcToggle();
+        this.initializeEmulatorSettings();
+        // Add log viewer functionality
+        document.getElementById('openCurrentLog').addEventListener('click', this.handleOpenCurrentLog.bind(this));
+        document.getElementById('openLogsFolder').addEventListener('click', this.handleOpenLogsFolder.bind(this));
+        document.getElementById('clearLogs').addEventListener('click', this.handleClearLogs);
+        document.getElementById('refreshLogs').addEventListener('click', this.handleRefreshLogs);
+        this.initializeLogViewer();
+        this.initializeProtocolConfirmToggle();
+        this.initializeAprilFoolsToggle();
+
+        // Add clear temp files handler
+        document.getElementById('clearTempFiles').addEventListener('click', async () => {
+            try {
+                await this.showLoading('Clearing temporary files...');
+                const cleared = await window.api.settings.clearTempFiles();
+                if (cleared) {
+                    this.showToast('Temporary files cleared successfully', 'success');
+                } else {
+                    this.showToast('No temporary files to clear', 'info');
+                }
+            } catch (error) {
+                this.showError('Failed to clear temporary files: ' + error.message);
+            } finally {
+                this.hideLoading();
+            }
+        });
+
+        // Initialize volume control
+        const volumeControl = document.getElementById('volumeControl');
+        if (volumeControl) {
+            // Load saved volume
+            window.api.settings.getVolume().then(volume => {
+                volumeControl.value = volume;
+            });
+
+            // Add change event listener
+            volumeControl.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value);
+                window.api.settings.setVolume(volume);
+            });
+        }
+    }
+
+    async initializeLogViewer() {
+        try {
+            const logContent = await window.api.logs.getCurrentLog();
+            const logElement = document.getElementById('logContent');
+            if (logElement) {
+                logElement.textContent = logContent;
+                // Auto-scroll to bottom
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+        } catch (error) {
+            this.showError('Failed to load logs: ' + error.message);
+        }
+    }
+
+    async handleOpenCurrentLog() {
+        try {
+            await window.api.logs.openCurrentLog();
+        } catch (error) {
+            this.showError('Failed to open current log: ' + error.message);
+        }
+    }
+
+    async handleOpenLogsFolder() {
+        try {
+            await window.api.logs.openLogsFolder();
+        } catch (error) {
+            this.showError('Failed to open logs folder: ' + error.message);
+        }
+    }
+
+    async handleRefreshLogs() {
+        try {
+            const logContent = await window.api.logs.getCurrentLog();
+            const logElement = document.getElementById('logContent');
+            if (logElement) {
+                const wasScrolledToBottom = logElement.scrollHeight - logElement.clientHeight <= logElement.scrollTop + 1;
+                logElement.textContent = logContent;
+                // If it was scrolled to bottom, keep it scrolled to bottom
+                if (wasScrolledToBottom) {
+                    logElement.scrollTop = logElement.scrollHeight;
+                }
+            }
+            this.showSuccess('Logs refreshed');
+        } catch (error) {
+            this.showError('Failed to refresh logs: ' + error.message);
+        }
+    }
+
+    async handleClearLogs() {
+        try {
+            await window.api.logs.clearLogs();
+            await this.handleRefreshLogs(); // Refresh logs after clearing
+            this.showToast('Logs cleared successfully', 'success');
+        } catch (error) {
+            this.showError('Failed to clear logs: ' + error.message);
+        }
     }
 
     initializeDiscordRpcToggle() {
@@ -1904,6 +2111,7 @@ async updateModPreview(modId) {
             const filePath = await window.electron.downloadMod(downloadLink);
             this.showToast(`Mod downloaded successfully to ${filePath}`, 'success');
             await this.loadMods();
+            // The sound will be played automatically by the hidden window when download finishes
         } catch (error) {
             this.showToast(`Failed to download mod: ${error.message}`, 'danger');
         } finally {
@@ -1921,11 +2129,8 @@ async updateModPreview(modId) {
                     if (downloadModal) {
                         downloadModal.hide();
                     }
-
-                    // Play sound when download finishes
-                    const audio = new Audio('./finish.mp3');
-                    audio.play();
-
+                    
+                    // The sound will be played automatically by the hidden window
                     this.showToast(`Mod downloaded successfully to ${filePath}`, 'success');
                     this.loadMods();
                 })
@@ -1934,7 +2139,6 @@ async updateModPreview(modId) {
                 });
         }
     }
-
 
     showConflictsWarning(conflicts) {
         const descriptions = this.conflictDetector.getConflictDescriptions();
@@ -1968,6 +2172,7 @@ async updateModPreview(modId) {
                             </div>
                         </div>
                         <div class="modal-footer">
+                            <button class="btn btn-primary" id="changeSlotButton">Change Slot</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
                     </div>
@@ -1987,17 +2192,551 @@ async updateModPreview(modId) {
         // Show the modal
         const modal = new bootstrap.Modal(document.getElementById('conflictsModal'));
         modal.show();
+
+        // Add event listener for change slot button
+        document.getElementById('changeSlotButton').addEventListener('click', () => {
+            modal.hide();
+            this.showSelectModsModal(descriptions);
+        });
     }
 
-    handleTabChange(tabName) {
-        window.api.discordRpc.setActivity({
-            state: `Browsing ${tabName} Tab`,
-            details: `Exploring ${tabName}`,
-            largeImageKey: 'app_logo',
-            largeImageText: 'FightPlanner'
+    showSelectModsModal(conflicts) {
+        // Create a set to store unique mods
+        const uniqueMods = new Set(conflicts.flatMap(conflict => conflict.mods));
+
+        // Create a modal dialog for selecting mods to change slots
+        const selectModsModalHtml = `
+            <div class="modal fade" id="selectModsModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Select Mods to Change Slots</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Select the mod you want to change slots for:</p>
+                            <div class="list-group">
+                                ${Array.from(uniqueMods).map(mod => `
+                                    <button type="button" class="list-group-item list-group-item-action mod-button" data-mod-id="${mod}">
+                                        ${mod}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if present
+        const existingSelectModsModal = document.getElementById('selectModsModal');
+        if (existingSelectModsModal) {
+            existingSelectModsModal.remove();
+        }
+
+        // Add modal to document
+        document.body.insertAdjacentHTML('beforeend', selectModsModalHtml);
+
+        // Show the modal
+        const selectModsModal = new bootstrap.Modal(document.getElementById('selectModsModal'));
+        selectModsModal.show();
+
+        // Add event listener for mod buttons
+        document.querySelectorAll('.mod-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const selectedMod = button.dataset.modId;
+                this.showChangeSlotsDialog([selectedMod]);
+                selectModsModal.hide();
+            });
+        });
+    }
+
+    async showChangeSlotsDialog(selectedMods, file) {
+        if (!selectedMods || selectedMods.length === 0) {
+            this.showError('Please select at least one mod');
+            return;
+        }
+
+        try {
+            this.showLoading('Scanning mod files...');
+            
+            const modDetails = await Promise.all(selectedMods.map(async modId => {
+                const mod = await this.modManager.getMod(modId);
+                const { currentSlots, affectedFiles } = await ChangeSlots.scanForSlots(mod.path);
+                return { mod, currentSlots, affectedFiles };
+            }));
+
+            // Update the modal with current slots info and files preview
+            const slotsInfo = document.getElementById('currentSlotsInfo');
+            slotsInfo.innerHTML = modDetails.map(({ mod, currentSlots, affectedFiles }) => `
+                <div class="mb-3">
+                    <strong>${mod.name} - Current slots found:</strong> 
+                    ${currentSlots.map(slot => `
+                        <div class="input-group mb-2 slot-group" data-slot="${slot}">
+                            <span class="input-group-text">${slot}</span>
+                            <select class="form-select target-slot" data-current-slot="${slot}">
+                                <option value="">Select new slot</option>
+                                ${Array.from({ length: 8 }, (_, i) => `c0${i}`).map(newSlot => `
+                                    <option value="${newSlot}">${newSlot}</option>
+                                `).join('')}
+                            </select>
+                            <button class="btn btn-danger remove-slot" data-slot="${slot}">Remove Slot</button>
+                            <div class="overlay"></div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mb-3">
+                    <strong>Files to be changed (${affectedFiles.length}):</strong>
+                    <div class="small textmuted" style="max-height: 100px; overflow-y: auto;">
+                        ${affectedFiles.map(file => `<div>${file}</div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('changeSlotsModal'));
+            modal.show();
+
+            // Handle slot change confirmation
+            const confirmBtn = document.getElementById('confirmChangeSlots');
+            confirmBtn.onclick = async () => {
+                try {
+                    const slotChanges = {};
+                    const slotsToRemove = [];
+                    document.querySelectorAll('.target-slot').forEach(select => {
+                        const currentSlot = select.getAttribute('data-current-slot');
+                        const targetSlot = select.value.trim();
+                        if (targetSlot) {
+                            slotChanges[currentSlot] = targetSlot;
+                        }
+                    });
+
+                    document.querySelectorAll('.slot-group.removed').forEach(group => {
+                        const slot = group.getAttribute('data-slot');
+                        slotsToRemove.push(slot);
+                    });
+
+                    await Promise.all(modDetails.map(({ mod, affectedFiles }) => this.handleChangeSlots(mod.path, slotChanges, slotsToRemove, affectedFiles)));
+                    modal.hide();
+                } catch (error) {
+                    this.showError(`Failed to change slots: ${error.message}`);
+                }
+            };
+
+            // Handle slot removal
+            document.querySelectorAll('.remove-slot').forEach(button => {
+                button.onclick = () => {
+                    const slotGroup = button.closest('.slot-group');
+                    slotGroup.classList.toggle('removed');
+                };
+            });
+
+        } catch (error) {
+            this.showError(`Failed to scan mod: ${error.message}`);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async handleChangeSlots(modPath, slotChanges, slotsToRemove, files) {
+        try {
+            this.showLoading('Changing character slots...');
+            const changedFiles = await ChangeSlots.changeSlots(modPath, slotChanges, files);
+            let deletedFiles = 0;
+            for (const slot of slotsToRemove) {
+                deletedFiles += await ChangeSlots.removeSlot(modPath, slot, files);
+            }
+            this.showSuccess(`Character slots changed successfully (${changedFiles} files/folders updated, ${deletedFiles} files/folders deleted)`);
+            await this.loadMods(); // Reload mod list
+        } catch (error) {
+            this.showError(`Failed to change slots: ${error.message}`);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    initializeEmulatorSettings() {
+        // Get elements
+        const emulatorSelect = document.getElementById('emulatorSelect');
+        const emulatorPath = document.getElementById('emulatorPath');
+        const gamePath = document.getElementById('gamePath');
+        const yuzuFullscreen = document.getElementById('yuzuFullscreen');
+        const yuzuOptions = document.getElementById('yuzuOptions');
+        const selectEmulatorPath = document.getElementById('selectEmulatorPath');
+        const selectGamePath = document.getElementById('selectGamePath');
+        const launchGame = document.getElementById('launchGame');
+
+        // Load saved settings
+        window.api.emulator.getSelectedEmulator().then(emulator => {
+            emulatorSelect.value = emulator;
+            yuzuOptions.style.display = emulator === 'yuzu' ? 'block' : 'none';
+        });
+        window.api.emulator.getEmulatorPath().then(path => emulatorPath.value = path);
+        window.api.emulator.getGamePath().then(path => gamePath.value = path);
+        window.api.emulator.getYuzuFullscreen().then(enabled => yuzuFullscreen.checked = enabled);
+
+        // Add event listeners
+        emulatorSelect.addEventListener('change', async (e) => {
+            const emulator = e.target.value;
+            await window.api.emulator.setSelectedEmulator(emulator);
+            yuzuOptions.style.display = emulator === 'yuzu' ? 'block' : 'none';
+        });
+
+        selectEmulatorPath.addEventListener('click', async () => {
+            const result = await window.api.dialog.showOpenDialog({
+                properties: ['openFile']
+            });
+            if (!result.canceled) {
+                const path = result.filePaths[0];
+                emulatorPath.value = path;
+                await window.api.emulator.setEmulatorPath(path);
+            }
+        });
+
+        selectGamePath.addEventListener('click', async () => {
+            const result = await window.api.dialog.showOpenDialog({
+                properties: ['openFile']
+            });
+            if (!result.canceled) {
+                const path = result.filePaths[0];
+                gamePath.value = path;
+                await window.api.emulator.setGamePath(path);
+            }
+        });
+
+        yuzuFullscreen.addEventListener('change', async (e) => {
+            const enabled = e.target.checked;
+            await window.api.emulator.setYuzuFullscreen(enabled);
+        });
+
+        launchGame.addEventListener('click', async () => {
+            try {
+                await window.api.emulator.launchGame();
+            } catch (error) {
+                this.showError(`Failed to launch game: ${error.message}`);
+            }
+        });
+    }
+
+    initializeProtocolConfirmToggle() {
+        const protocolConfirmToggle = document.getElementById('protocolConfirmToggle');
+        window.api.settings.getProtocolConfirmEnabled().then(enabled => {
+            protocolConfirmToggle.checked = enabled;
+        });
+
+        protocolConfirmToggle.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            window.api.settings.setProtocolConfirmEnabled(enabled);
+        });
+    }
+
+    initializeSendVersionToggle() {
+        const sendVersionToggle = document.getElementById('sendVersionToggle');
+        window.api.settings.getSendVersionEnabled().then(enabled => {
+            sendVersionToggle.checked = enabled;
+        });
+
+        sendVersionToggle.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            window.api.settings.setSendVersionEnabled(enabled);
+        });
+    }
+
+    initializeDownloadsPanel() {
+        const panel = document.getElementById('downloadsPanel');
+        const header = panel.querySelector('.downloads-header');
+        const downloadCount = document.getElementById('downloadCount');
+        let activeDownloads = 0;
+        
+        header.addEventListener('click', () => {
+            panel.classList.toggle('expanded');
+        });
+
+        // Handle download status updates
+        window.electron.onDownloadStatus((status) => {
+            const { id, type, message, progress } = status;
+            
+            if (type === 'start') {
+                activeDownloads++;
+                downloadCount.textContent = `${activeDownloads} active`;
+                this.addDownloadItem(id, message);
+                panel.classList.add('expanded');
+            } else if (type === 'progress') {
+                this.updateDownloadProgress(id, message, progress);
+            } else if (type === 'finish' || type === 'error' || type === 'cancelled') {
+                activeDownloads--;
+                downloadCount.textContent = activeDownloads > 0 ? `${activeDownloads} active` : '';
+                this.completeDownload(id, type, message);
+                
+                // Auto-minimize panel if no active downloads
+                if (activeDownloads === 0) {
+                    setTimeout(() => {
+                        if (activeDownloads === 0) {
+                            panel.classList.remove('expanded');
+                        }
+                    }, 3000);
+                }
+            }
+        });
+    }
+
+    addDownloadItem(id, message) {
+        const downloadsList = document.getElementById('downloadsList');
+        const item = document.createElement('div');
+        item.className = 'download-item';
+        item.id = `download-${id}`;
+        item.innerHTML = `
+            <div class="download-info">${message}</div>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <div class="download-actions">
+                <button class="btn btn-sm btn-danger" onclick="window.uiController.cancelDownload('${id}')">
+                    Cancel
+                </button>
+            </div>
+        `;
+        downloadsList.appendChild(item);
+        document.getElementById('downloadsPanel').classList.add('expanded');
+    }
+
+    updateDownloadProgress(id, message, progress) {
+        const item = document.getElementById(`download-${id}`);
+        if (item) {
+            item.querySelector('.download-info').textContent = message;
+            item.querySelector('.progress-bar').style.width = `${progress}%`;
+        }
+    }
+
+    completeDownload(id, type, message) {
+        const item = document.getElementById(`download-${id}`);
+        if (item) {
+            item.querySelector('.download-info').textContent = message;
+            item.querySelector('.progress-bar').style.width = '100%';
+            item.querySelector('.progress-bar').className = 
+                `progress-bar ${type === 'error' ? 'bg-danger' : 
+                              type === 'cancelled' ? 'bg-warning' : 
+                              'bg-success'}`;
+            
+            // Remove download item after delay
+            setTimeout(() => {
+                item.remove();
+                // Hide panel if no more downloads
+                if (!document.querySelector('.download-item')) {
+                    document.getElementById('downloadsPanel').classList.remove('expanded');
+                }
+            }, 3000);
+        }
+    }
+
+    async cancelDownload(id) {
+        try {
+            // Show cancellation in progress
+            const item = document.getElementById(`download-${id}`);
+            if (item) {
+                const progressBar = item.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.className = 'progress-bar bg-warning';
+                }
+                const info = item.querySelector('.download-info');
+                if (info) {
+                    info.textContent = 'Cancelling download...';
+                }
+            }
+
+            // Actually cancel the download
+            await window.electron.cancelDownload(id);
+            this.hideLoading();
+            
+            // Update UI to show cancelled state
+            if (item) {
+                const info = item.querySelector('.download-info');
+                if (info) {
+                    info.textContent = 'Download cancelled';
+                }
+                const progressBar = item.querySelector('.progress-bar');
+                if (progressBar) {
+                    progressBar.className = 'progress-bar bg-warning';
+                    progressBar.style.width = '100%';
+                }
+                setTimeout(() => {
+                    item.remove();
+                    // Check if there are any remaining downloads
+                    if (!document.querySelector('.download-item')) {
+                        document.getElementById('downloadsPanel').classList.remove('expanded');
+                    }
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Failed to cancel download:', error);
+            this.showError('Failed to cancel download: ' + error.message);
+        }
+    }
+
+    initializeAprilFoolsToggle() {
+        const aprilFoolsToggle = document.getElementById('aprilFoolsToggle');
+        if (!aprilFoolsToggle) return;
+        
+        // Load saved setting
+        window.api.settings.getAprilFoolsEnabled().then(enabled => {
+            aprilFoolsToggle.checked = enabled;
+            
+            // Check if it's April 1st and setting is enabled
+            const today = new Date();
+            if ((today.getMonth() === 3 && today.getDate() === 1) || enabled) {  // Month is 0-based, so 3 = April
+                this.applyAprilFoolsMode();
+            }
+        });
+
+        // Add change event listener
+        aprilFoolsToggle.addEventListener('change', async (e) => {
+            const enabled = e.target.checked;
+            await window.api.settings.setAprilFoolsEnabled(enabled);
+            
+            // Apply changes immediately
+            if (enabled) {
+                this.applyAprilFoolsMode();
+            } else {
+                // Reload the page to reset to normal mode
+                window.location.reload();
+            }
+            this.showRestartNeededPopup();
+        });
+    }
+
+    async applyAprilFoolsMode() {
+        // Change window title
+        document.title = 'FeetPlanner';
+        
+        // Change main app name in the interface
+        const appTitles = document.querySelectorAll('h5.mb-0');
+        appTitles.forEach(title => {
+            if (title.textContent.includes('FightPlanner')) {
+                title.textContent = title.textContent.replace('FightPlanner', 'FeetPlanner');
+            }
+        });
+        
+        // Change logo
+        const appLogo = document.getElementById('appLogo');
+        if (appLogo) {
+            // Create a new image
+            const newLogo = new Image();
+            newLogo.onload = () => {
+                appLogo.src = newLogo.src;
+            };
+            newLogo.src = 'https://files.gamebanana.com/bitpit/feetplanner.png';
+            appLogo.alt = 'FeetPlanner Logo';
+        }
+
+        // Update credits modal
+        const creditsModal = document.getElementById('creditsModal');
+        if (creditsModal) {
+            // Update modal title
+            const modalTitle = creditsModal.querySelector('#creditsModalLabel');
+            if (modalTitle) {
+                modalTitle.textContent = 'About FeetPlanner';
+            }
+
+            // Update modal content
+            const modalBody = creditsModal.querySelector('.modal-body');
+            if (modalBody) {
+                // Change logo in modal
+                const modalLogo = modalBody.querySelector('img');
+                if (modalLogo) {
+                    modalLogo.src = 'https://files.gamebanana.com/bitpit/feetplanner.png';
+                    modalLogo.alt = 'FeetPlanner Logo';
+                }
+
+                // Change heading
+                const modalHeading = modalBody.querySelector('h4');
+                if (modalHeading) {
+                    modalHeading.textContent = 'FeetPlanner';
+                }
+
+                // Change description
+                const modalDesc = modalBody.querySelector('p:not(.small)');
+                if (modalDesc) {
+                    modalDesc.textContent = 'A foot manager for Smash Ultimate';
+                }
+            }
+        }
+
+        // Change any other mentions of FightPlanner in the interface
+        document.querySelectorAll('*').forEach(element => {
+            if (element.childNodes && element.childNodes.length === 1 && element.childNodes[0].nodeType === 3) {
+                if (element.textContent.includes('FightPlanner')) {
+                    element.textContent = element.textContent.replace(/FightPlanner/g, 'FeetPlanner');
+                }
+            }
         });
     }
 }
+// Add drag and drop handling
+document.body.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    document.body.classList.add('dragging');
+});
+
+document.body.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    // Only remove class if we're leaving the body element itself
+    const rect = document.body.getBoundingClientRect();
+    if (
+        e.clientX <= rect.left ||
+        e.clientX >= rect.right ||
+        e.clientY <= rect.top ||
+        e.clientY >= rect.bottom
+    ) {
+        document.body.classList.remove('dragging');
+    }
+});
+
+document.body.addEventListener('dragover', (e) => {
+    e.preventDefault();
+});
+
+document.body.addEventListener('drop', (e) => {
+    e.preventDefault();
+    document.body.classList.remove('dragging');
+    // Your existing drop handling code
+});
+
+// Add a dragend event listener as a fallback
+document.body.addEventListener('dragend', (e) => {
+    e.preventDefault();
+    document.body.classList.remove('dragging');
+});
+
+// Export the handler function for the HTML
+window.uiController = {
+    // ...existing exports...
+    
+    handleFileDrop: async (event) => {
+        event.preventDefault();
+        document.body.classList.remove('dragging');
+
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length === 0) return;
+
+        // Process each dropped file
+        for (const file of files) {
+            // Add your file processing logic here
+            // For example:
+            if (file.path.endswith('.zip')) {
+                try {
+                    // Handle mod installation
+                    await installMod(file.path);
+                } catch (error) {
+                    console.error('Error installing mod:', error);
+                    // Show error toast or notification
+                }
+            }
+        }
+    }
+};
 
 async function selectCustomCssFile() {
     const filePath = await window.electronAPI.selectCustomCssFile();
@@ -2011,6 +2750,17 @@ window.uiController = {
     selectCustomCssFile,
 };
 
+async function initializeUI() {
+    await languageService.init();
+    
+    // Add language change handler
+    const languageSelect = document.getElementById('languageSelect');
+    languageSelect.value = languageService.currentLanguage;
+    
+    languageSelect.addEventListener('change', async (e) => {
+        await languageService.loadTranslations(e.target.value);
+    });
+}
 // Initialize the UI when the document is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const ui = new UIController();
@@ -2025,7 +2775,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.nav-link').forEach(tab => {
         tab.addEventListener('click', (e) => {
             const tabName = e.target.textContent.trim();
-            ui.handleTabChange(tabName);
         });
     });
+
+    initializeUI();
 });

@@ -1,11 +1,47 @@
 const axios = require('axios');
 const fs = require('fs');
+const fse = require('fs-extra');  // Add this import
 const path = require('path');
 const child_process = require('child_process');
+const Store = require('electron-store');
+const store = new Store();
 
 class GameBananaDownloader {
-  constructor(modsPath) {
+  constructor(modsPath, loadingCallbacks = {}) {
     this.modsPath = modsPath;
+    // Add loading callback handlers
+    this.loadingCallbacks = {
+      onStart: loadingCallbacks.onStart || (() => {}),
+      onProgress: loadingCallbacks.onProgress || (() => {}),
+      onFinish: loadingCallbacks.onFinish || (() => {}),
+      onError: loadingCallbacks.onError || (() => {})
+    };
+    this.isCancelled = false;
+    this.tempFolder = null;
+    this.currentWriter = null;
+    this.isCleaningUp = false;
+  }
+
+  async cancel() {
+    try {
+      this.isCancelled = true;
+      
+      // Close current write stream if exists
+      if (this.currentWriter) {
+        this.currentWriter.end();
+      }
+      
+      this.isCleaningUp = true;
+      if (this.tempFolder && fs.existsSync(this.tempFolder)) {
+        await fse.remove(this.tempFolder);
+        console.log('Cleaned up temporary files after cancellation');
+      }
+      this.isCleaningUp = false;
+
+    } catch (error) {
+      console.error('Error during download cancellation:', error);
+      throw error;
+    }
   }
 
   static extractModAndFileId(downloadLink) {
@@ -27,81 +63,222 @@ class GameBananaDownloader {
   }
 
   async downloadMod(downloadLink) {
-    const tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
+    this.tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
+    
     try {
+      // Reset cancellation flag
+      this.isCancelled = false;
+
+      this.loadingCallbacks.onStart('Starting download...');
+
       const [modId, fileId] = GameBananaDownloader.extractModAndFileId(downloadLink);
+      this.loadingCallbacks.onProgress('Getting mod information...');
+      
       const filename = await this.getFilenameFromApi(modId, fileId);
+      const modName = await this.getModNameFromApi(modId); // Fetch the mod name from GameBanana
+      this.loadingCallbacks.onProgress('Downloading mod files...');
+
       const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
       
       // Create a temporary folder for extraction
-      fs.mkdirSync(tempFolder, { recursive: true });
+      fs.mkdirSync(this.tempFolder, { recursive: true });
       
       // Download to temp folder
-      const tempArchivePath = path.join(tempFolder, filename);
-      await this.downloadFile(downloadUrl, tempArchivePath);
+      const tempArchivePath = path.join(this.tempFolder, filename);
+      await this.downloadFileWithProgress(downloadUrl, tempArchivePath);
   
+      this.loadingCallbacks.onProgress('Extracting files...');
       // Extract to temp folder
-      await this.extractFile(tempArchivePath, tempFolder);
+      await this.extractFile(tempArchivePath, this.tempFolder);
   
+      // Clean up archive files right after extraction
+      const archiveFiles = fs.readdirSync(this.tempFolder)
+        .filter(f => {
+          const ext = path.extname(f).toLowerCase();
+          return ['.7z', '.rar', '.zip'].includes(ext);
+        });
+        this.loadingCallbacks.onProgress('Cleaning temporary files...');
+      // Remove all archive files
+      for (const file of archiveFiles) {
+        fs.unlinkSync(path.join(this.tempFolder, file));
+        console.log(`Removed archive file: ${file}`);
+      }
+
       // Find the extracted content
-      const extractedContents = fs.readdirSync(tempFolder)
-        .filter(f => f !== filename && fs.statSync(path.join(tempFolder, f)).isDirectory());
+      let extractedContents = fs.readdirSync(this.tempFolder)
+        .filter(f => f !== filename && fs.statSync(path.join(this.tempFolder, f)).isDirectory());
+  
+      console.log('Extracted folders:', extractedContents);
   
       if (extractedContents.length === 0) {
         console.error('Extraction error: No folder found after extraction. Try to install it manually.');
-        console.error('Contents of temp folder:', fs.readdirSync(tempFolder));
+        console.error('Contents of temp folder:', fs.readdirSync(this.tempFolder));
         throw new Error('No folder found after extraction');
       }
   
-      const extractedPath = path.join(tempFolder, extractedContents[0]);
-      const finalPath = path.join(this.modsPath, extractedContents[0]);
-  
-      // Move to final location
-      if (fs.existsSync(finalPath)) {
-        fs.rmSync(finalPath, { recursive: true });
+      // Check if required folders and files are in the root
+      const requiredFolders = [
+        "append", "assist", "boss", "camera", "campaign", "common", "effect", "enemy", 
+        "fighter", "finalsmash", "item", "miihat", "param", "pokemon", "prebuilt;", 
+        "render", "snapshot", "sound", "spirits", "stage", "standard", "stream;", "ui"
+      ];
+      const requiredFiles = [
+        "preview.webp",
+        "config.json",
+        "info.toml",
+        "victory.toml",
+        "Preview.webp"
+      ];
+      const missingFolders = requiredFolders.filter(folder => !extractedContents.includes(folder));
+      const existingFiles = fs.readdirSync(this.tempFolder).filter(f => !fs.statSync(path.join(this.tempFolder, f)).isDirectory());
+      const missingFiles = requiredFiles.filter(file => !existingFiles.includes(file));
+      
+      if (missingFolders.length > 0 || missingFiles.length > 0) {
+        console.log('Missing folders in root:', missingFolders);
+        console.log('Missing files in root:', missingFiles);
+        
+        // Recursively scan subfolders
+        const findAndMoveItems = (currentPath) => {
+          const items = fs.readdirSync(currentPath);
+          
+          for (const item of items) {
+            const fullPath = path.join(currentPath, item);
+            const isDirectory = fs.statSync(fullPath).isDirectory();
+            
+            if (isDirectory) {
+              // Handle folders
+              if (missingFolders.includes(item)) {
+                const destinationPath = path.join(this.tempFolder, item);
+                if (!fs.existsSync(destinationPath)) {
+                  fs.renameSync(fullPath, destinationPath);
+                  extractedContents.push(item);
+                  console.log(`Moved folder ${item} to root`);
+                }
+              } else {
+                // If not a required folder, scan its contents
+                findAndMoveItems(fullPath);
+              }
+            } else {
+              // Handle files
+              if (missingFiles.includes(item)) {
+                const destinationPath = path.join(this.tempFolder, item);
+                if (!fs.existsSync(destinationPath)) {
+                  fs.renameSync(fullPath, destinationPath);
+                  console.log(`Moved file ${item} to root`);
+                }
+              } else if (item.toLowerCase().endsWith('.nro')) {
+                // Move .nro files to temp root
+                const destinationPath = path.join(this.tempFolder, item);
+                if (!fs.existsSync(destinationPath)) {
+                  fs.renameSync(fullPath, destinationPath);
+                  console.log(`Moved .nro file ${item} to root`);
+                }
+              }
+            }
+          }
+        };
+
+        // Start recursive scan from each root folder
+        for (const folder of extractedContents) {
+          const subFolderPath = path.join(this.tempFolder, folder);
+          findAndMoveItems(subFolderPath);
+        }
       }
-      fs.renameSync(extractedPath, finalPath);
   
-      // Clean up temp folder
-      fs.rmSync(tempFolder, { recursive: true });
-  
-      // Get mod info and update toml
+      // Get mod info before any file operations
       const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
       const response = await axios.get(apiUrl);
       const modProfileUrl = response.data._sProfileUrl;
-  
-      // Update info.toml in the final location
-      const infoPath = path.join(finalPath, 'info.toml');
-      if (fs.existsSync(infoPath)) {
-        const existingContent = fs.readFileSync(infoPath, 'utf-8');
-        const updatedContent = `${existingContent}\nurl = "${modProfileUrl}"\n`;
-        fs.writeFileSync(infoPath, updatedContent);
+
+      // Handle info.toml and preview.webp while in temp folder
+      const tempInfoPath = path.join(this.tempFolder, 'info.toml');
+      const tempPreviewPath = path.join(this.tempFolder, 'preview.webp');
+
+      // Handle preview.webp download if needed
+      if (!fs.existsSync(tempPreviewPath)) {
+        await this.downloadImage(modId, this.tempFolder);
+      }
+
+      // Handle info.toml url addition
+      if (fs.existsSync(tempInfoPath)) {
+        const existingContent = fs.readFileSync(tempInfoPath, 'utf-8');
+        if (!existingContent.includes('url =')) {
+          fs.appendFileSync(tempInfoPath, `\nurl = "${modProfileUrl}"\n`);
+          console.log('Added URL to existing info.toml in temp folder');
+        }
       } else {
-        fs.writeFileSync(infoPath, `url = "${modProfileUrl}"\n`);
+        fs.writeFileSync(tempInfoPath, `url = "${modProfileUrl}"\n`);
+        console.log('Created new info.toml in temp folder');
+      }
+
+      // Create final destination folder using the mod name from GameBanana
+      const finalArchivePath = path.join(this.modsPath, modName);
+      fs.mkdirSync(finalArchivePath, { recursive: true });
+  
+      // Move all extracted folders to final destination
+      for (const folder of extractedContents) {
+        const extractedPath = path.join(this.tempFolder, folder);
+        const finalPath = path.join(finalArchivePath, folder);
+  
+        if (fs.existsSync(finalPath)) {
+          fs.rmSync(finalPath, { recursive: true });
+        }
+        fs.renameSync(extractedPath, finalPath);
+      }
+
+      // Move remaining files
+      const remainingFiles = fs.readdirSync(this.tempFolder)
+        .filter(f => !fs.statSync(path.join(this.tempFolder, f)).isDirectory());
+      
+      for (const file of remainingFiles) {
+        const sourcePath = path.join(this.tempFolder, file);
+        const destPath = path.join(finalArchivePath, file);
+        fs.renameSync(sourcePath, destPath);
+      }
+
+      // Check and remove empty folders
+      await this.removeEmptyFolders(finalArchivePath);
+      
+      // Verify the final folder isn't empty
+      const finalContents = fs.readdirSync(finalArchivePath);
+      if (finalContents.length === 0) {
+        fs.rmSync(finalArchivePath, { recursive: true });
+        throw new Error('Installation failed: Mod folder was empty after processing');
       }
   
-      // Handle preview image
-      const previewPath = path.join(finalPath, 'preview.webp');
-      if (!fs.existsSync(previewPath)) {
-        await this.downloadImage(modId, finalPath);
-      }
+      // Clean up temp folder
+      fs.rmSync(this.tempFolder, { recursive: true });
   
-      return finalPath;
+      this.loadingCallbacks.onFinish('Mod installed successfully!');
+      return finalArchivePath;
     } catch (error) {
+      if (this.isCancelled && !this.isCleaningUp) {
+        await this.cleanup();
+        return { cancelled: true };
+      }
+      this.loadingCallbacks.onError(`Download failed: ${error.message}`);
       console.error('Mod download error:', error);
       throw error;
     } finally {
-      // Ensure temp folder is deleted
-      if (fs.existsSync(tempFolder)) {
-        fs.rmSync(tempFolder, { recursive: true });
+      if (this.tempFolder) {
+        try {
+          if (fs.existsSync(this.tempFolder)) {
+            await fse.remove(this.tempFolder);
+            console.log('Cleaned up temporary folder in finally block');
+          }
+        } catch (cleanupError) {
+          console.error('Error during cleanup:', cleanupError);
+        }
       }
     }
   }
 
-  async downloadFile(url, destPath) {
-    console.log(`Downloading from: ${url}`);
-    console.log(`Saving to: ${destPath}`);
+async downloadFile(url, destPath, retries = 3, retryDelay = 500) {
+  console.log(`Downloading from: ${url}`);
+  console.log(`Saving to: ${destPath}`);
 
+  let attempt = 0;
+  while (attempt <= retries) {
     try {
       const response = await axios({
         method: 'get',
@@ -129,13 +306,69 @@ class GameBananaDownloader {
         });
 
         writer.on('error', reject);
-        response.data.on('error', reject);
       });
     } catch (error) {
-      console.error('Download failed:', error);
-      throw error;
+      attempt++;
+      console.error(`Download error (attempt ${attempt}/${retries}): ${error.message}`);
+      if (attempt <= retries) {
+        console.log(`Retrying in ${retryDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      } else {
+        throw error;
+      }
     }
   }
+}
+
+async downloadFileWithProgress(url, destPath) {
+  const response = await axios({
+    method: 'get',
+    url: url,
+    responseType: 'stream'
+  });
+
+  const totalLength = response.headers['content-length'];
+  let downloadedLength = 0;
+
+  return new Promise((resolve, reject) => {
+    // Create write stream
+    this.currentWriter = fs.createWriteStream(destPath);
+    
+    // Check if already cancelled
+    if (this.isCancelled) {
+      this.currentWriter.end();
+      reject(new Error('Download cancelled by user'));
+      return;
+    }
+
+    response.data.on('data', (chunk) => {
+      if (this.isCancelled) {
+        this.currentWriter.end();
+        reject(new Error('Download cancelled by user'));
+        return;
+      }
+      
+      downloadedLength += chunk.length;
+      const progress = (downloadedLength / totalLength) * 100;
+      this.loadingCallbacks.onProgress(
+        `Downloading: ${Math.round(progress)}%`,
+        progress
+      );
+    });
+
+    response.data.pipe(this.currentWriter);
+
+    this.currentWriter.on('finish', () => {
+      this.currentWriter = null;
+      resolve();
+    });
+
+    this.currentWriter.on('error', (error) => {
+      this.currentWriter = null;
+      reject(error);
+    });
+  });
+}
 
   async downloadImage(modId, modFolder) {
     try {
@@ -189,11 +422,22 @@ class GameBananaDownloader {
     try {
       switch (fileExt) {
         case '.zip':
-          return this.extractZip(filePath, extractTo);
+          await this.extractZip(filePath, extractTo);
+          break;
         case '.rar':
-          return this.extractRar(filePath, extractTo);
+          await this.extractRar(filePath, extractTo);
+          break;
         default:
-          return this.extractGeneric(filePath, extractTo);
+          await this.extractGeneric(filePath, extractTo);
+          break;
+      }
+
+      // Verify extraction
+      const extractedContents = fs.readdirSync(extractTo)
+        .filter(f => fs.statSync(path.join(extractTo, f)).isDirectory());
+
+      if (extractedContents.length === 0) {
+        throw new Error('Extraction error: No folder found after extraction');
       }
     } catch (error) {
       console.error(`Extraction failed for ${filePath}:`, error);
@@ -205,21 +449,12 @@ class GameBananaDownloader {
     return new Promise((resolve, reject) => {
       try {
         child_process.exec(
-          `powershell Expand-Archive -Path "${filePath}" -DestinationPath "${extractTo}" -Force`,
+          `tar -xf "${filePath}" -C "${extractTo}"`,
           (error, stdout, stderr) => {
             if (error) {
               reject(error);
             } else {
-              // Get the first folder in the extracted directory
-              const extractedFolders = fs.readdirSync(extractTo)
-                .filter(f => fs.statSync(path.join(extractTo, f)).isDirectory())
-                .sort((a, b) => fs.statSync(path.join(extractTo, b)).mtimeMs - fs.statSync(path.join(extractTo, a)).mtimeMs);
-              
-              if (extractedFolders.length > 0) {
-                resolve(extractedFolders[0]);
-              } else {
-                resolve(null);
-              }
+              resolve();
             }
           }
         );
@@ -238,16 +473,7 @@ class GameBananaDownloader {
             if (error) {
               reject(error);
             } else {
-              // Get the first folder in the extracted directory
-              const extractedFolders = fs.readdirSync(extractTo)
-                .filter(f => fs.statSync(path.join(extractTo, f)).isDirectory())
-                .sort((a, b) => fs.statSync(path.join(extractTo, b)).mtimeMs - fs.statSync(path.join(extractTo, a)).mtimeMs);
-              
-              if (extractedFolders.length > 0) {
-                resolve(extractedFolders[0]);
-              } else {
-                resolve(null);
-              }
+              resolve();
             }
           }
         );
@@ -266,15 +492,7 @@ class GameBananaDownloader {
             if (error) {
               reject(error);
             } else {
-              // Get the first folder in the extracted directory
-              const extractedFolders = fs.readdirSync(extractTo)
-                .filter(f => fs.statSync(path.join(extractTo, f)).isDirectory());
-              
-              if (extractedFolders.length > 0) {
-                resolve(extractedFolders[0]);
-              } else {
-                resolve(null);
-              }
+              resolve();
             }
           }
         );
@@ -321,37 +539,46 @@ class GameBananaDownloader {
       .trim();
   }
 
-  findMostRecentFolder(parentDir, timestamp) {
-    try {
-      const items = fs.readdirSync(parentDir);
-      let mostRecent = null;
-      let mostRecentTime = timestamp;
-  
-      console.log(`Searching for folders newer than ${new Date(timestamp)} in ${parentDir}`);
-      
-      for (const item of items) {
-        const fullPath = path.join(parentDir, item);
-        try {
-          const stats = fs.statSync(fullPath);
-          if (stats.isDirectory()) {
-            console.log(`Found directory ${item} created at ${new Date(stats.birthtimeMs)}`);
-            if (stats.birthtimeMs > timestamp && stats.birthtimeMs > mostRecentTime) {
-              mostRecent = fullPath;
-              mostRecentTime = stats.birthtimeMs;
-            }
-          }
-        } catch (err) {
-          console.error(`Error checking directory ${item}:`, err);
-        }
+  async cleanup() {
+    if (this.tempFolder && fs.existsSync(this.tempFolder)) {
+      try {
+        await fse.remove(this.tempFolder);
+        console.log('Cleaned up temporary folder');
+      } catch (error) {
+        console.error('Error cleaning up:', error);
       }
-  
-      console.log(`Most recent folder found: ${mostRecent}`);
-      return mostRecent;
-    } catch (error) {
-      console.error('Error in findMostRecentFolder:', error);
-      return null;
     }
   }
-}
+  // Add this new method to check and remove empty folders
+  async removeEmptyFolders(folderPath) {
+    const items = fs.readdirSync(folderPath);
+    
+    for (const item of items) {
+      const fullPath = path.join(folderPath, item);
+      if (fs.statSync(fullPath).isDirectory()) {
+        // Recursively check subfolders
+        await this.removeEmptyFolders(fullPath);
+        
+        // After checking subfolders, see if this folder is now empty
+        const remaining = fs.readdirSync(fullPath);
+        if (remaining.length === 0) {
+          fs.rmdirSync(fullPath);
+          console.log(`Removed empty folder: ${fullPath}`);
+        }
+      }
+    }
+  }
 
+  // Add this new method to fetch the mod name from GameBanana
+  async getModNameFromApi(modId) {
+    try {
+      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=_sName`;
+      const response = await axios.get(apiUrl);
+      return response.data._sName || `mod_${modId}`;
+    } catch (error) {
+      }
+      console.error('Mod name retrieval error:', error);
+      return `mod_${modId}`;
+    }
+  }
 module.exports = GameBananaDownloader;

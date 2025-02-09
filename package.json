@@ -1,7 +1,7 @@
 {
     "name": "fightplanner",
-    "version": "3.1.2",
-    "description": "Mod Manager for SSBU",
+    "version": "3.3.16",
+    "description": "A SSBU Mod Manager",
     "author": "Shattered Chaos",
     "main": "main.js",
     "license": "FOSS",
@@ -20,23 +20,24 @@
         "dist": "electron-builder",
         "build": "electron-builder --win --x64",
         "buildandpublish": "electron-builder --win --x64 --publish always",
-        "beta": "electron-builder --win --x64",
+        "early": "electron-builder --win --x64",
         "help": "electron-builder --help"
     },
     "dependencies": {
         "adm-zip": "^0.5.16",
         "axios": "^1.7.7",
+        "date-fns": "^4.1.0",
         "discord-rpc": "^4.0.1",
         "electron-log": "^5.2.2",
         "electron-store": "^8.1.0",
         "electron-updater": "^6.3.9",
-        "extract-zip": "^2.0.1",
+        "firebase": "^11.2.0",
         "fs-extra": "^10.1.0",
         "original-fs": "^1.2.0",
         "toml": "^3.0.0"
     },
     "devDependencies": {
-        "electron": "^24.1.2",
+        "electron": "^34.0.0",
         "electron-builder": "^24.0.0"
     },
     "build": {
@@ -109,83 +110,5 @@
         "publish": [
             "github"
         ]
-    },
-    "beta": {
-        "appId": "com.shatteredchaos.fightplanner",
-        "productName": "FightPlanner",
-        "publish": [
-            {
-                "provider": "github",
-                "owner": "FIREXDF",
-                "repo": "SSBUFightPlanner",
-                "branch": "betaelectron"
-            }
-        ],
-        "protocols": {
-            "name": "fightplanner",
-            "schemes": [
-                "fightplanner"
-            ]
-        },
-        "files": [
-            "**/*",
-            "!**/*.{ts,map}",
-            "!*.{code-workspace,log}",
-            "!LICENSE.md",
-            "!README.md",
-            "!electron-builder.yml",
-            "!src/",
-            "!e2e/",
-            "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-            "!**/node_modules/*/*.{md,markdown,txt}",
-            "!**/node_modules/*/LICENSE",
-            "!**/node_modules/*/license",
-            "preload.js",
-            "!gifs/",
-            "src/**/*"
-        ],
-        "extraResources": [
-            {
-                "from": "./build",
-                "to": "build",
-                "filter": [
-                    "**/*"
-                ]
-            }
-        ],
-        "compression": "maximum",
-        "mac": {
-            "category": "public.app-category.utilities",
-            "target": [
-                "dmg"
-            ],
-            "publish": [
-                "github"
-            ]
-        },
-        "win": {
-            "target": [
-                "nsis",
-                "portable"
-            ],
-            "icon": "build/icon.ico",
-            "publisherName": "FIREXDF",
-            "verifyUpdateCodeSignature": false,
-            "requestedExecutionLevel": "asInvoker",
-            "certificateFile": "fightplanner.pfx",
-            "certificatePassword": "F0w2Ke7?$rW#",
-            "publish": [
-                "github"
-            ]
-        },
-        "linux": {
-            "target": [
-                "snap"
-            ],
-            "category": "Utility",
-            "publish": [
-                "github"
-            ]
-        }
     }
 }
