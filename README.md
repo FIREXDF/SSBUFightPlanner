@@ -16,9 +16,14 @@
 
 ## FightPlanner is a mod manager for SSBU that make modding easier.
 
-- Disable/Enable mods.
-- Uninstall mods.
-
+- Disable/Enable mods
+- Uninstall mods
+- 1-Click Install on GameBanana
+- Manage Plugins
+- Launch emulator throught FightPlanner
+- See image/info of the mod
+- Rename mods
+- Change Character slots
 ------------------------------------------------
 
 ### Build FightPlanner.
