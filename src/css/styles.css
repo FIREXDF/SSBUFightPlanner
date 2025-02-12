@@ -2,15 +2,36 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1050;
+    display: none;
+    opacity: 0;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    visibility: hidden;
+}
+
+.loading-overlay.minimized {
     opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+}
+
+.loading-overlay.visible {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-overlay.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.minimized-loading:hover {
+    background: var(--bs-primary-dark);
 }
 
 .loading-animation-crop {
@@ -22,11 +43,34 @@
 .loading-content {
     text-align: center;
     color: white;
+    position: relative; /* Add this */
 }
 
 .loading-message {
     margin-top: 20px;
     font-size: 1.5em;
+    position: center;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.loading-close-btn {
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.loading-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .nav-tabs {
@@ -65,7 +109,7 @@
 #creditsModal .credits-section {
     background-color: rgba(73, 73, 73, 0.05) ;
     border-radius: 10px ;
-    padding: 20px ;
+    padding: 5px ;
     max-width: 600px ;
     margin: 0 auto ;
 }
@@ -245,6 +289,10 @@ body.dark-mode {
         color: #999999;
     }
 
+    .text-muted{
+        color: #999999;
+    }
+
     /* Cards */
     .card {
         background-color: #1e1e1e;
@@ -417,6 +465,75 @@ body.dark-mode {
     }
 }
 
+/* Add these styles for drag and drop functionality */
+.drag-drop-hint-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.3s ease-in-out;
+    backdrop-filter: blur(5px);
+}
+
+body.dragging .drag-drop-hint-container {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+}
+
+.drag-drop-hint {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dragging .drag-drop-hint {
+    transform: translateY(0);
+}
+
+.drag-drop-hint i {
+    font-size: 3rem;
+    color: #0d6efd;
+    margin-bottom: 1rem;
+    display: block;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.drag-drop-hint p {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+    opacity: 0.9;
+}
+
+/* Dark mode overrides */
+body.dark-mode .drag-drop-hint {
+    background-color: rgba(33, 37, 41, 0.95);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .drag-drop-hint p {
+    color: #fff;
+}
+
 .tab-pane {
     overflow: hidden;
 }
@@ -424,4 +541,123 @@ body.dark-mode {
 .card-body {
     overflow-y: auto;
     max-height: calc(100vh - 160px);
+}
+.loading-message {
+    text-align: center;
+}
+.slot-group.removed {
+    background-color: #f8d7da;
+}
+.slot-group {
+    position: relative;
+}
+.slot-group.removed .overlay {
+    display: block;
+}
+.overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.downloads-panel {
+    position: fixed;
+    bottom: 0;
+    left: 20px; /* Changed from right to left */
+    width: 300px;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1040;
+    transform: translateY(calc(100% - 40px));
+    transition: transform 0.3s ease;
+    color: inherit; /* Change from var(--bs-body-color) to inherit */
+}
+
+.downloads-panel.expanded {
+    transform: translateY(0);
+}
+
+.downloads-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--bs-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.downloads-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.download-item {
+    padding: 8px;
+    border-bottom: 1px solid var(--bs-border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: inherit; /* Add this line */
+}
+
+.download-item:last-child {
+    border-bottom: none;
+}
+
+.download-progress {
+    height: 4px;
+}
+
+.download-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+body.dark-mode .downloads-panel,
+body.dark-mode .download-item,
+body.dark-mode .download-info {
+    color: #e0e0e0;
+}
+
+.download-info {
+    color: inherit;
+}
+
+body.dark-mode .downloads-panel {
+    background: #2c2c2c;
+    border-color: #444;
+}
+.log-content {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 12px;
+    line-height: 1.4;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.log-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-content::-webkit-scrollbar-track {
+    background: #2e2e2e;
+}
+
+.log-content::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
 }

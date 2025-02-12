@@ -1,0 +1,25 @@
+<audio id="audioPlayer" src="./finish.mp3" type="audio/mpeg"></audio>
+
+<script>
+  const audioPlayer = document.getElementById('audioPlayer');
+  
+  // Set initial volume if stored
+  const volume = localStorage.getItem('volume') || 1;
+  audioPlayer.volume = volume;
+
+  function playAudio() {
+    audioPlayer.currentTime = 0; // Reset to start
+    audioPlayer.play().catch(function(error) {
+      console.error('Error playing audio:', error);
+    });
+  }
+
+  // Function to set volume (0-1)
+  function setVolume(value) {
+    const volume = value / 100;
+    audioPlayer.volume = volume;
+    localStorage.setItem('volume', volume);
+    console.log('Volume set to:', volume);
+    return true;
+  }
+</script>

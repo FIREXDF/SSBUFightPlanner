@@ -20,6 +20,9 @@ class ModConflictDetector {
                 const files = await this.getModFiles(mod.path);
                 
                 for (const file of files) {
+                    // Skip if the path has no extension (likely a directory)
+                    if (!file.includes('.')) continue;
+
                     // Normalize the file path for comparison
                     const normalizedPath = file.toLowerCase();
                     
@@ -53,16 +56,26 @@ class ModConflictDetector {
     isConflictSensitiveFile(filePath) {
         // Check for common SSBU mod file patterns
         const sensitivePatterns = [
-            /[/\\]c00/i,      // Fighter files
-            /[/\\]c01/i,      // Fighter files
-            /[/\\]c02/i,      // Fighter files
-            /[/\\]c03/i,      // Fighter files
-            /[/\\]c04/i,      // Fighter files
-            /\.nutexb$/i,     // Texture files
-            /\.bntx$/i,       // Texture files
-            /\.prc$/i,        // Parameter files
-            /\.eff$/i,        // Effect files
-            /\.lua$/i         // Script files
+            /[/\\]c00/i,      
+            /[/\\]c01/i,      
+            /[/\\]c02/i,      
+            /[/\\]c03/i,      
+            /[/\\]c05/i,      
+            /[/\\]c06/i,      
+            /[/\\]c07/i,      
+            /\.nutexb$/i,     
+            /\.nutexb$/i,     
+            /\.bntx$/i,       
+            /\.prc$/i,        
+            /\.eff$/i,
+            /\.numatb$/i,
+            /\.numshb$/i,
+            /\.nuanmb$/i,
+            /\.nus3audio$/i,
+            /\.webm$/i,
+            /\.bntx$/i,
+            /\.lua$/i,
+            /\.arc$/i
         ];
 
         return sensitivePatterns.some(pattern => pattern.test(filePath));
