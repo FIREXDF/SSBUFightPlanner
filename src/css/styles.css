@@ -109,7 +109,7 @@
 #creditsModal .credits-section {
     background-color: rgba(73, 73, 73, 0.05) ;
     border-radius: 10px ;
-    padding: 20px ;
+    padding: 5px ;
     max-width: 600px ;
     margin: 0 auto ;
 }
@@ -637,6 +637,20 @@ body.dark-mode .downloads-panel {
     background: #2c2c2c;
     border-color: #444;
 }
+
+.download-item .mod-name {
+    display: block;
+    font-size: 1.1em;
+    margin-bottom: 4px;
+    color: inherit;
+}
+
+.download-item .message {
+    font-size: 0.9em;
+    color: inherit;
+    opacity: 0.8;
+}
+
 .log-content {
     font-family: monospace;
     white-space: pre-wrap;

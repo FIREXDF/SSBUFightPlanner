@@ -31,29 +31,29 @@
     <!-- Top Navigation Tabs -->
     <ul class="nav nav-tabs position-relative animate__animated animate__fadeInDown" id="mainTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="mods-tab" data-bs-toggle="pill"
+            <button class="nav-link active" id="mods-tab" data-bs-toggle="pill" 
                     data-bs-target="#mods" type="button" role="tab">
                 <i class="bi bi-grid me-2"></i><span data-i18n="nav.mods">Mods</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="plugins-tab" data-bs-toggle="pill"
+            <button class="nav-link" id="plugins-tab" data-bs-toggle="pill" 
                     data-bs-target="#plugins" type="button" role="tab">
                 <i class="bi bi-plug me-2"></i><span data-i18n="nav.plugins">Plugins</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="settings-tab" data-bs-toggle="pill"
+            <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
                     data-bs-target="#settings" type="button" role="tab">
                 <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
             </button>
             <li class="nav-item ms-auto me-3">
-                <img
-                    src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true"
-                    alt="App Logo"
+                <img 
+                    src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" 
+                    alt="App Logo" 
                     id="appLogo"
-                    class="app-logo"
-                    data-bs-toggle="modal"
+                    class="app-logo" 
+                    data-bs-toggle="modal" 
                     data-bs-target="#creditsModal"
                     style="height: 30px; width: auto; cursor: pointer;"
                 >
@@ -72,10 +72,10 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
                                     <h5 class="mb-0 me-3" data-i18n="mods.title">Mod List</h5>
-                                    <input
-                                        type="text"
-                                        id="modSearchInput"
-                                        class="form-control form-control-sm"
+                                    <input 
+                                        type="text" 
+                                        id="modSearchInput" 
+                                        class="form-control form-control-sm" 
                                         data-i18n-placeholder="mods.search"
                                         placeholder="Search mods..."
                                         style="width: 200px;"
@@ -83,9 +83,9 @@
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <div class="form-check form-check-inline me-2">
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
                                             id="enabledFilter"
                                         >
                                         <label class="form-check-label" for="enabledFilter" data-i18n="mods.filters.enabled">
@@ -93,9 +93,9 @@
                                         </label>
                                     </div>
                                     <div class="form-check form-check-inline me-2">
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
                                             id="disabledFilter"
                                         >
                                         <label class="form-check-label" for="disabledFilter" data-i18n="mods.filters.disabled">
@@ -113,7 +113,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <!-- Mod Details and Preview (Right Side) -->
                     <div class="col-4 p-3 d-flex flex-column">
                         <!-- Mod Preview -->
@@ -199,7 +199,7 @@
                 <div class="card h-100 animate__animated animate__fadeIn">
                     <div class="card-header">
                         <h5 class="mb-0">Settings</h5>
-                    </div>
+                    </div>                     
                     <div class="card-body overflow-auto" style="max-height: calc(100vh - 160px);">
                         <!-- Settings Tabs Navigation -->
                         <ul class="nav nav-pills mb-3" id="settingsTabs" role="tablist">
@@ -210,17 +210,17 @@
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="appearance-tab" data-bs-toggle="pill" data-bs-target="#appearance-content" type="button" role="tab">
-                                    <i class="bi bi-palette me-2"></i>Appearance
+                                    <i class="bi bi-palette me-2" ></i>Appearance
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="integration-tab" data-bs-toggle="pill" data-bs-target="#integration-content" type="button" role="tab">
-                                    <i class="bi bi-plug me-2"></i>Features
+                                    <i class="bi bi-plug me-2" ></i>Features
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" id="emulator-tab" data-bs-toggle="pill" data-bs-target="#emulator-content" type="button" role="tab">
-                                    <i class="bi bi-controller me-2"></i>Emulator
+                                    <i class="bi bi-controller me-2" ></i>Emulator
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
@@ -240,7 +240,7 @@
                             <!-- Paths Tab -->
                             <div class="tab-pane fade show active" id="paths-content" role="tabpanel">
                                 <div class="mb-4">
-                                    <h6 class="mb-3">Directory Settings</h6>
+                                    <h6 class="mb-3" data-i18n="settings.paths.title">Directory Settings</h6>
                                     <label class="form-label" data-i18n="settings.paths.modsDir">Mods Directory</label>
                                     <div class="input-group mb-3">
                                         <input type="text" class="form-control" id="modsPath" readonly>
@@ -248,7 +248,7 @@
                                             <i class="bi bi-folder2-open"></i>
                                         </button>
                                     </div>
-
+                                    
                                     <label class="form-label" data-i18n="settings.paths.pluginsDir">Plugins Directory</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="pluginsPath" readonly>
@@ -262,13 +262,13 @@
                             <!-- Appearance Tab -->
                             <div class="tab-pane fade" id="appearance-content" role="tabpanel">
                                 <div class="mb-4">
-                                    <h6 class="mb-3">Theme Settings</h6>
+                                    <h6 class="mb-3" data-i18n="settings.theme.title">Theme Settings</h6>
                                     <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="darkModeToggle">
-                                        <label class="form-check-label" for="darkModeToggle">Dark Mode</label>
+                                        <label class="form-check-label" for="darkModeToggle" data-i18n="settings.theme.dark">Dark Mode</label>
                                     </div>
 
-                                    <label class="form-label">Custom CSS File</label>
+                                    <label class="form-label" data-i18n="settings.theme.css">Custom CSS File</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="customCssPath" readonly>
                                         <button class="btn btn-outline-primary" id="selectCustomCssFile">
@@ -278,7 +278,7 @@
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     </div>
-                                    <small class="textmuted">Select the custom CSS file for styling (Restart needed)</small>
+                                    <small class="textmuted" data-i18n="csstext">Select the custom CSS file for styling (Restart needed)</small>
                                 </div>
 
                                 <div class="mb-3">
@@ -336,7 +336,7 @@
                             <div class="tab-pane fade" id="emulator-content" role="tabpanel">
                                 <div class="mb-4">
                                     <h6 class="mb-3">Emulator Settings</h6>
-
+                                    
                                     <!-- Emulator Selection -->
                                     <div class="mb-3">
                                         <label class="form-label">Select Emulator</label>
@@ -389,14 +389,14 @@
                                     <a href="https://forms.gle/X2qvhxXgvxsbizAz5" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                                         <i class="bi bi-send me-2"></i>Submit Feedback
                                     </a>
-
+                                    
                                     <hr class="my-4">
-
+                                    
                                     <p>FightPlanner dev searching for people to test Early Access ! Go check it out</p>
                                     <a href="https://forms.gle/EWdDC1ApLos4zRT49" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                                         <i class="bi bi-send me-2"></i>Apply for Early Access
                                     </a>
-
+                                    
                                     <hr class="my-4">
 
                                     <p>Want to get your UserID deleted from the server?</p>
@@ -504,13 +504,19 @@
                         </a>
                         <h1 class="credits-title">FightPlanner</h1>
                         <p class="lead credits-subtitle">Mod Manager for SSBU</p>
-                        <p class="lead credits-subtitle">3.3.16</p>
-
+                        <p class="lead credits-subtitle">3.3.17</p>
+                        
                         <div class="credits-section mt-4">
-                            <h3 class="credits-section-title">Development Team :</h3>
-                            <p class="credits-section-description">FloweyGaming : Logo</p>
+                            <h3 class="credits-section-title">Credits :</h3>
                             <p class="credits-section-description">FIREXDF : Code</p>
+                            <p class="credits-section-description">FloweyGaming : Logo</p>
                             <p class="credits-section-description">Mario45 : Helping for real hardware</p>
+                            <p class="credits-section-description">Chichiboo : Tester</p>
+                            <p class="credits-section-description">Jpgmafia : Tester</p>
+                            <p class="credits-section-description">ElDusst : Tester</p>
+                            <p class="credits-section-description">Squiori : Tester</p>
+                            <p class="credits-section-description">Oliver Tzeng : Tester</p>
+                            <p class="credits-section-description">Masne : Tester</p>
                             <div class="mt-4">
                                 <h4 class="credits-technologies-title">Made with</h4>
                                 <div class="d-flex justify-content-center">

@@ -254,7 +254,7 @@ if (!gotTheLock) {
             showErrorModal(`An unexpected error occurred in launch: ${error.message}\nThe error has been logged and sent to FightPlanner Server. If your config is not gone you can still use FightPlanner, but please make a suggestion with the link in the settings and put your user id in the suggestion and the error .`);
         }, 1000);
     });
-    
+
     process.on('unhandledRejection', (reason) => {
         console.error('Unhandled Rejection:', reason);
         logErrorToServer('Unhandled Rejection', reason);
@@ -416,9 +416,8 @@ async function createWindow() {
     });
 
     const isAprilFools = new Date().getMonth() === 3 && new Date().getDate() === 1;
-    const aprilFoolsEnabled = store.get('aprilFoolsEnabled', false);
     
-    if (isAprilFools && aprilFoolsEnabled) {
+    if (isAprilFools) {
         mainWindow.setTitle('FeetPlanner');
     }
 }
@@ -469,6 +468,8 @@ autoUpdater.on('update-downloaded', async () => {
         }
     });
 });
+
+console.log(app.getPath('userData'));
 
 autoUpdater.on('error', (err) => {
   log.error('Error in auto-updater:', err);
@@ -1057,33 +1058,37 @@ const activeDownloads = new Map();
 let downloadIdCounter = 0;
 
 ipcMain.handle('download-mod', async (event, downloadLink) => {
+    let downloadId;
     try {
-        const downloadId = (downloadIdCounter++).toString();
+        downloadId = (downloadIdCounter++).toString();
         const modsPath = store.get('modsPath');
         if (!modsPath) throw new Error('Mods path not set');
 
         const GameBananaDownloader = require('./src/js/gameBananaDownloader');
         const downloader = new GameBananaDownloader(modsPath, {
-            onStart: (message) => {
+            onStart: (message, modName) => {
                 event.sender.send('download-status', { 
                     id: downloadId,
                     type: 'start', 
-                    message 
+                    message,
+                    modName
                 });
             },
-            onProgress: (message, progress) => {
+            onProgress: (message, progress, modName) => {
                 event.sender.send('download-status', { 
                     id: downloadId,
                     type: 'progress', 
                     message,
-                    progress: progress || 0
+                    progress: progress || 0,
+                    modName
                 });
             },
-            onFinish: (message) => {
+            onFinish: (message, modName) => {
                 event.sender.send('download-status', { 
                     id: downloadId,
                     type: 'finish', 
-                    message 
+                    message,
+                    modName
                 });
                 activeDownloads.delete(downloadId);
                 hiddenWindow.webContents.executeJavaScript('playAudio()');
@@ -1669,8 +1674,16 @@ ipcMain.handle('get-mod-files', async (event, modPath) => {
     try {
         // Special case for config.json - return file content instead of directory listing
         if (modPath.endsWith('config.json')) {
-            const configContent = await fs.readFile(modPath, 'utf8');
-            return configContent;
+            try {
+                const configContent = await fs.readFile(modPath, 'utf8');
+                return configContent;
+            } catch (error) {
+                if (error.code === 'ENOENT') {
+                    console.warn('Config file not found:', modPath);
+                    return null; // Return null if file doesn't exist
+                }
+                throw error;
+            }
         }
 
         // For directories, continue with existing directory scanning logic
@@ -1693,9 +1706,6 @@ ipcMain.handle('get-mod-files', async (event, modPath) => {
         return files.map(file => path.relative(realPath, file));
     } catch (error) {
         console.error('Error getting mod files:', error);
-        if (error.code === 'ENOENT') {
-            return null; // Return null if file doesn't exist
-        }
         throw new Error(`Failed to get mod files: ${error.message}`);
     }
 });
@@ -2005,7 +2015,17 @@ ipcMain.handle('rename-mod-file', async (event, { modPath, oldPath, newPath }) =
         await fs.mkdir(path.dirname(fullNewPath), { recursive: true });
         
         // Perform the rename
-        await fs.rename(fullOldPath, fullNewPath);
+        try {
+            await fs.rename(fullOldPath, fullNewPath);
+        } catch (error) {
+            if (error.code === 'EPERM') {
+                // If rename fails due to EPERM, try copying and deleting
+                await fse.copy(fullOldPath, fullNewPath);
+                await fse.remove(fullOldPath);
+            } else {
+                throw error;
+            }
+        }
         return true;
     } catch (error) {
         console.error('Error renaming mod file:', error);

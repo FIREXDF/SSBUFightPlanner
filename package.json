@@ -1,6 +1,6 @@
 {
     "name": "fightplanner",
-    "version": "3.3.16",
+    "version": "3.3.17",
     "description": "A SSBU Mod Manager",
     "author": "Shattered Chaos",
     "main": "main.js",
@@ -37,9 +37,8 @@
         "toml": "^3.0.0"
     },
     "devDependencies": {
-        "electron": "^34.1.1",
-        "electron-builder": "^24.13.3",
-        "electron-packager": "^17.1.2"
+        "electron": "^34.2.0",
+        "electron-builder": "^24.0.0"
     },
     "build": {
         "appId": "com.shatteredchaos.fightplanner",

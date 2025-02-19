@@ -69,13 +69,14 @@ class GameBananaDownloader {
       // Reset cancellation flag
       this.isCancelled = false;
 
-      this.loadingCallbacks.onStart('Starting download...');
-
       const [modId, fileId] = GameBananaDownloader.extractModAndFileId(downloadLink);
+      const modName = await this.getModNameFromApi(modId);
+      
+      this.loadingCallbacks.onStart('Starting download...', modName);
+
       this.loadingCallbacks.onProgress('Getting mod information...');
       
       const filename = await this.getFilenameFromApi(modId, fileId);
-      const modName = await this.getModNameFromApi(modId); // Fetch the mod name from GameBanana
       this.loadingCallbacks.onProgress('Downloading mod files...');
 
       const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
@@ -249,7 +250,7 @@ class GameBananaDownloader {
       // Clean up temp folder
       fs.rmSync(this.tempFolder, { recursive: true });
   
-      this.loadingCallbacks.onFinish('Mod installed successfully!');
+      this.loadingCallbacks.onFinish('Mod installed successfully!', modName);
       return finalArchivePath;
     } catch (error) {
       if (this.isCancelled && !this.isCleaningUp) {

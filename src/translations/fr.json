@@ -44,26 +44,22 @@
     "settings": {
         "discordRpc": "Activer Discord Rich Presence",
         "paths": {
-            "title": "Paramètres",
+            "title": "Paramètre des dossiers",
             "modsDir": "Dossier des mods",
             "pluginsDir": "Dossier des plugin",
             "selectFolder": "Sélectionner le dossier"
         },
-        "customize": {
-            "title": "Personnalisation",
-            "darkMode": "Mode sombre",
-            "customCss": "Fichier CSS personnalisé"
-        },
-        "general": {
-            "title": "Paramètres généraux",
-            "language": "Langue",
-            "conflictCheck": "Activer la vérification des entre les fichier conflits"
+        "theme": {
+            "title": "Personalisation",
+            "dark": "Mode sombre",
+            "css": "Personalisation du CSS",
+            "csstext": "Selectionner votre propre fichier CSS pour personaliser. (Redémarrage nécessaire)"
         }
     },
     "modals": {
         "credits": {
             "title": "Crédits",
-            "version": "Version 3.1.3",
+            "version": "Version 3.3.17",
             "team": "Équipe de développement"
         },
         "restart": {

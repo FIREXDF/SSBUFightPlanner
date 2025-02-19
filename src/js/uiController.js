@@ -2457,41 +2457,40 @@ async updateModPreview(modId) {
 
         // Handle download status updates
         window.electron.onDownloadStatus((status) => {
-            const { id, type, message, progress } = status;
+            const { id, type, message, modName, progress } = status;
             
-            if (type === 'start') {
-                activeDownloads++;
-                downloadCount.textContent = `${activeDownloads} active`;
-                this.addDownloadItem(id, message);
-                panel.classList.add('expanded');
-            } else if (type === 'progress') {
-                this.updateDownloadProgress(id, message, progress);
-            } else if (type === 'finish' || type === 'error' || type === 'cancelled') {
-                activeDownloads--;
-                downloadCount.textContent = activeDownloads > 0 ? `${activeDownloads} active` : '';
-                this.completeDownload(id, type, message);
-                
-                // Auto-minimize panel if no active downloads
-                if (activeDownloads === 0) {
-                    setTimeout(() => {
-                        if (activeDownloads === 0) {
-                            panel.classList.remove('expanded');
-                        }
-                    }, 3000);
-                }
+            switch (type) {
+                case 'start':
+                    this.addDownloadItem(id, message, modName);
+                    activeDownloads++;
+                    downloadCount.textContent = activeDownloads;
+                    break;
+                case 'progress':
+                    this.updateDownloadProgress(id, message, progress, modName);
+                    break;
+                case 'finish':
+                case 'error':
+                case 'cancelled':
+                    this.completeDownload(id, type, message, modName);
+                    activeDownloads--;
+                    downloadCount.textContent = activeDownloads || '';
+                    break;
             }
         });
     }
 
-    addDownloadItem(id, message) {
+    addDownloadItem(id, message, modName = 'Unknown Mod') {
         const downloadsList = document.getElementById('downloadsList');
         const item = document.createElement('div');
         item.className = 'download-item';
         item.id = `download-${id}`;
         item.innerHTML = `
-            <div class="download-info">${message}</div>
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+            <div class="download-info">
+                <strong class="mod-name">${this.escapeHtml(modName)}</strong>
+                <div class="message">${message}</div>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
             </div>
             <div class="download-actions">
                 <button class="btn btn-sm btn-danger" onclick="window.uiController.cancelDownload('${id}')">
@@ -2503,32 +2502,38 @@ async updateModPreview(modId) {
         document.getElementById('downloadsPanel').classList.add('expanded');
     }
 
-    updateDownloadProgress(id, message, progress) {
+    updateDownloadProgress(id, message, progress, modName) {
         const item = document.getElementById(`download-${id}`);
         if (item) {
-            item.querySelector('.download-info').textContent = message;
+            const modNameEl = item.querySelector('.mod-name');
+            if (modNameEl && modName) modNameEl.textContent = this.escapeHtml(modName);
+            item.querySelector('.message').textContent = message;
             item.querySelector('.progress-bar').style.width = `${progress}%`;
         }
     }
 
-    completeDownload(id, type, message) {
+    completeDownload(id, type, message, modName) {
         const item = document.getElementById(`download-${id}`);
         if (item) {
-            item.querySelector('.download-info').textContent = message;
+            const modNameEl = item.querySelector('.mod-name');
+            if (modNameEl && modName) modNameEl.textContent = this.escapeHtml(modName);
+            item.querySelector('.message').textContent = message;
             item.querySelector('.progress-bar').style.width = '100%';
             item.querySelector('.progress-bar').className = 
                 `progress-bar ${type === 'error' ? 'bg-danger' : 
                               type === 'cancelled' ? 'bg-warning' : 
                               'bg-success'}`;
             
-            // Remove download item after delay
             setTimeout(() => {
                 item.remove();
-                // Hide panel if no more downloads
-                if (!document.querySelector('.download-item')) {
+                
+                // Check if this was the last download
+                const downloadsList = document.getElementById('downloadsList');
+                if (downloadsList.children.length === 0) {
+                    // No more downloads, collapse the panel
                     document.getElementById('downloadsPanel').classList.remove('expanded');
                 }
-            }, 3000);
+            }, 5000);
         }
     }
 
@@ -2577,34 +2582,12 @@ async updateModPreview(modId) {
     }
 
     initializeAprilFoolsToggle() {
-        const aprilFoolsToggle = document.getElementById('aprilFoolsToggle');
-        if (!aprilFoolsToggle) return;
-        
-        // Load saved setting
-        window.api.settings.getAprilFoolsEnabled().then(enabled => {
-            aprilFoolsToggle.checked = enabled;
-            
-            // Check if it's April 1st and setting is enabled
-            const today = new Date();
-            if ((today.getMonth() === 3 && today.getDate() === 1) || enabled) {  // Month is 0-based, so 3 = April
-                this.applyAprilFoolsMode();
-            }
-        });
+        const today = new Date();
+        const isAprilFools = today.getMonth() === 3 && today.getDate() === 1;
 
-        // Add change event listener
-        aprilFoolsToggle.addEventListener('change', async (e) => {
-            const enabled = e.target.checked;
-            await window.api.settings.setAprilFoolsEnabled(enabled);
-            
-            // Apply changes immediately
-            if (enabled) {
-                this.applyAprilFoolsMode();
-            } else {
-                // Reload the page to reset to normal mode
-                window.location.reload();
-            }
-            this.showRestartNeededPopup();
-        });
+        if (isAprilFools) {
+            this.applyAprilFoolsMode();
+        }
     }
 
     async applyAprilFoolsMode() {
@@ -2673,6 +2656,39 @@ async updateModPreview(modId) {
             }
         });
     }
+
+    static updateDownloadStatus(status) {
+        const downloadsList = document.getElementById('downloadsList');
+        let downloadItem = document.getElementById(`download-${status.id}`);
+
+        if (!downloadItem) {
+            downloadItem = document.createElement('div');
+            downloadItem.id = `download-${status.id}`;
+            downloadItem.className = 'download-item';
+            downloadsList.appendChild(downloadItem);
+        }
+
+        downloadItem.innerHTML = `
+            <div class="download-info">
+                <strong class="download-title">${status.modName || 'Downloading...'}</strong>
+                <p class="download-message">${status.message}</p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: ${status.progress || 0}%" 
+                         aria-valuenow="${status.progress || 0}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (status.type === 'finish' || status.type === 'error' || status.type === 'cancelled') {
+            setTimeout(() => {
+                downloadItem.remove();
+            }, 5000);
+        }
+    }
 }
 // Add drag and drop handling
 document.body.addEventListener('dragenter', (e) => {
@@ -2701,7 +2717,6 @@ document.body.addEventListener('dragover', (e) => {
 document.body.addEventListener('drop', (e) => {
     e.preventDefault();
     document.body.classList.remove('dragging');
-    // Your existing drop handling code
 });
 
 // Add a dragend event listener as a fallback
@@ -2712,7 +2727,6 @@ document.body.addEventListener('dragend', (e) => {
 
 // Export the handler function for the HTML
 window.uiController = {
-    // ...existing exports...
     
     handleFileDrop: async (event) => {
         event.preventDefault();

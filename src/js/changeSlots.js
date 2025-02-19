@@ -52,6 +52,28 @@ export class ChangeSlots {
         }
     }
 
+    static async processSlots(modPath, slotChanges, slotsToRemove, files) {
+        let deletedFilesCount = 0;
+        let changedFilesCount = 0;
+
+        // First, handle slot removal if requested
+        if (slotsToRemove && slotsToRemove.length > 0) {
+            for (const slot of slotsToRemove) {
+                deletedFilesCount += await this.removeSlot(modPath, slot, files);
+            }
+        }
+
+        // Then handle slot changes if requested
+        if (slotChanges && Object.keys(slotChanges).length > 0) {
+            changedFilesCount = await this.changeSlots(modPath, slotChanges, files);
+        }
+
+        return {
+            deletedFilesCount,
+            changedFilesCount
+        };
+    }
+
     static async changeSlots(modPath, slotChanges, files) {
         const changedFiles = [];
         
@@ -104,7 +126,7 @@ export class ChangeSlots {
     static async removeSlot(modPath, slot, files) {
         let deletedFiles = 0;
         for (const file of files) {
-            if (file.includes(slot)) {
+            if (file.includes(slot) || (file.endsWith('.bntx') && file.includes(slot.replace('c', '')))) {
                 await window.api.modOperations.deleteModFile(modPath, file);
                 deletedFiles++;
             }

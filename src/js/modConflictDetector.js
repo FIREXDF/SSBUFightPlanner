@@ -73,7 +73,6 @@ class ModConflictDetector {
             /\.nuanmb$/i,
             /\.nus3audio$/i,
             /\.webm$/i,
-            /\.prc$/i,
             /\.bntx$/i,
             /\.lua$/i,
             /\.arc$/i
