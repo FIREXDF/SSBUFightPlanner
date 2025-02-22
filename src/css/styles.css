@@ -623,6 +623,37 @@ body.dark-mode .drag-drop-hint p {
     justify-content: flex-end;
 }
 
+.download-actions .btn {
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.25rem;
+}
+
+.download-actions .pause-download {
+    min-width: 32px;
+}
+
+.download-item.paused .progress-bar {
+    background-image: linear-gradient(45deg,
+        rgba(255,255,255,.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255,255,255,.15) 50%,
+        rgba(255,255,255,.15) 75%,
+        transparent 75%,
+        transparent);
+    background-size: 1rem 1rem;
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+.download-item.paused {
+    opacity: 0.8;
+}
+
+@keyframes progress-bar-stripes {
+    from { background-position: 1rem 0; }
+    to { background-position: 0 0; }
+}
+
 body.dark-mode .downloads-panel,
 body.dark-mode .download-item,
 body.dark-mode .download-info {
@@ -651,6 +682,11 @@ body.dark-mode .downloads-panel {
     opacity: 0.8;
 }
 
+.nodownloadsmessage {
+    font-size: 0.9em;
+    color: #6d6d6d !important;
+}
+
 .log-content {
     font-family: monospace;
     white-space: pre-wrap;
@@ -674,4 +710,15 @@ body.dark-mode .downloads-panel {
 .log-content::-webkit-scrollbar-thumb {
     background: #666;
     border-radius: 4px;
+}
+
+#modImage {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    min-height: 200px;
+}
+
+#modImage:not([src]) {
+    display: none;
 }

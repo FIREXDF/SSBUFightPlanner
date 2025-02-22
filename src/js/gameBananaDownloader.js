@@ -20,6 +20,9 @@ class GameBananaDownloader {
     this.tempFolder = null;
     this.currentWriter = null;
     this.isCleaningUp = false;
+    this.isPaused = false;
+    this.lastDownloadedBytes = 0;
+    this.downloadedChunks = new Map(); // Store downloaded chunks
   }
 
   async cancel() {
@@ -63,16 +66,22 @@ class GameBananaDownloader {
   }
 
   async downloadMod(downloadLink) {
+    let modName; // Declare modName at the top so it's available in catch block
     this.tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
     
     try {
-      // Reset cancellation flag
       this.isCancelled = false;
 
       const [modId, fileId] = GameBananaDownloader.extractModAndFileId(downloadLink);
-      const modName = await this.getModNameFromApi(modId);
+      modName = await this.getModNameFromApi(modId); // Assign to outer variable
       
       this.loadingCallbacks.onStart('Starting download...', modName);
+
+      // If cancelled early, handle it
+      if (this.isCancelled) {
+        this.loadingCallbacks.onFinish('Download cancelled', modName);
+        return { cancelled: true, modName };
+      }
 
       this.loadingCallbacks.onProgress('Getting mod information...');
       
@@ -212,7 +221,14 @@ class GameBananaDownloader {
         console.log('Created new info.toml in temp folder');
       }
 
-      // Create final destination folder using the mod name from GameBanana
+      // Check for cancellation before finalizing
+      if (this.isCancelled) {
+        await this.cleanup();
+        this.loadingCallbacks.onFinish('Download cancelled', modName);
+        return { cancelled: true, modName };
+      }
+
+      // Success case - move files to final destination
       const finalArchivePath = path.join(this.modsPath, modName);
       fs.mkdirSync(finalArchivePath, { recursive: true });
   
@@ -250,12 +266,14 @@ class GameBananaDownloader {
       // Clean up temp folder
       fs.rmSync(this.tempFolder, { recursive: true });
   
-      this.loadingCallbacks.onFinish('Mod installed successfully!', modName);
-      return finalArchivePath;
+      // Just return success without showing message
+      return { success: true, path: finalArchivePath, modName };
     } catch (error) {
       if (this.isCancelled && !this.isCleaningUp) {
         await this.cleanup();
-        return { cancelled: true };
+        // Now modName is available here
+        this.loadingCallbacks.onFinish('Download cancelled', modName || 'Unknown Mod');
+        return { cancelled: true, modName: modName || 'Unknown Mod' };
       }
       this.loadingCallbacks.onError(`Download failed: ${error.message}`);
       console.error('Mod download error:', error);
@@ -325,49 +343,45 @@ async downloadFileWithProgress(url, destPath) {
   const response = await axios({
     method: 'get',
     url: url,
-    responseType: 'stream'
+    responseType: 'stream',
+    headers: this.downloadedChunks.size > 0 ? {
+      Range: `bytes=${this.lastDownloadedBytes}-`
+    } : {}
   });
 
   const totalLength = response.headers['content-length'];
-  let downloadedLength = 0;
+  let downloadedLength = this.lastDownloadedBytes;
 
   return new Promise((resolve, reject) => {
-    // Create write stream
-    this.currentWriter = fs.createWriteStream(destPath);
-    
-    // Check if already cancelled
-    if (this.isCancelled) {
-      this.currentWriter.end();
-      reject(new Error('Download cancelled by user'));
-      return;
-    }
+    const writer = fs.createWriteStream(destPath, {
+      flags: this.downloadedChunks.size > 0 ? 'a' : 'w'
+    });
+    this.currentWriter = writer;
 
     response.data.on('data', (chunk) => {
       if (this.isCancelled) {
-        this.currentWriter.end();
-        reject(new Error('Download cancelled by user'));
+        response.data.destroy();
+        writer.end();
+        reject(new Error('Download cancelled'));
         return;
       }
-      
+
+      if (this.isPaused) {
+        response.data.pause();
+        this.lastDownloadedBytes = downloadedLength;
+        this.downloadedChunks.set(downloadedLength, chunk);
+        return;
+      }
+
       downloadedLength += chunk.length;
-      const progress = (downloadedLength / totalLength) * 100;
-      this.loadingCallbacks.onProgress(
-        `Downloading: ${Math.round(progress)}%`,
-        progress
-      );
+      const progress = Math.round((downloadedLength / totalLength) * 100);
+      this.loadingCallbacks.onProgress('Downloading...', progress);
     });
 
-    response.data.pipe(this.currentWriter);
+    response.data.pipe(writer);
 
-    this.currentWriter.on('finish', () => {
-      this.currentWriter = null;
-      resolve();
-    });
-
-    this.currentWriter.on('error', (error) => {
-      this.currentWriter = null;
-      reject(error);
-    });
+    writer.on('finish', resolve);
+    writer.on('error', reject);
   });
 }
 
@@ -581,5 +595,23 @@ async downloadFileWithProgress(url, destPath) {
       console.error('Mod name retrieval error:', error);
       return `mod_${modId}`;
     }
+    
+  async pause() {
+    this.isPaused = true;
+    if (this.currentWriter) {
+      this.currentWriter.cork();
+    }
   }
+  async resume() {
+    this.isPaused = false;
+    if (this.currentWriter) {
+      this.currentWriter.uncork();
+      // Resume from last downloaded chunk
+      for (const [offset, chunk] of this.downloadedChunks) {
+        this.currentWriter.write(chunk);
+      }
+      this.downloadedChunks.clear();
+    }
+  }
+}
 module.exports = GameBananaDownloader;

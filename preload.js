@@ -42,7 +42,9 @@ contextBridge.exposeInMainWorld('electron', {
             console.error('Cancel download error:', error);
             throw error;
         }
-    }
+    },
+    togglePauseDownload: (id) => ipcRenderer.invoke('toggle-pause-download', id),
+    getActiveDownload: (id) => ipcRenderer.invoke('get-active-download', id)
 });
 
 contextBridge.exposeInMainWorld('api', {

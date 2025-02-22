@@ -57,26 +57,36 @@ class UIController {
 
             // Add download status listener
             window.electron.onDownloadStatus((status) => {
-                switch (status.type) {
-                    case 'start':
-                        this.hideLoading();
-                        break;
-                    case 'progress':
-                        this.updateLoadingMessage(`${status.message}`);
-                        break;
-                    case 'finish':
-                        this.hideLoading();
-                        this.showToast(status.message, 'success');
-                        this.loadMods(); // Refresh mod list
-                        break;
-                    case 'cancelled':
-                        this.hideLoading();
-                        this.showToast(status.message, 'info');
-                        break;
-                    case 'error':
-                        this.hideLoading();
-                        this.showError(status.message);
-                        break;
+                try {
+                    const { id, type, message, modName, progress } = status;
+                    
+                    const downloadsList = document.getElementById('downloadsList');
+                    if (!downloadsList) {
+                        console.error('Downloads list element not found');
+                        return;
+                    }
+
+                    // Remove "no downloads" message when adding first download
+                    const noDownloadsMsg = downloadsList.querySelector('.nodownloadsmessage');
+                    if (noDownloadsMsg && type === 'start') {
+                        noDownloadsMsg.remove();
+                    }
+
+                    switch (type) {
+                        case 'start':
+                            this.addDownloadItem(id, message, modName);
+                            break;
+                        case 'progress':
+                            this.updateDownloadProgress(id, message, progress, modName);
+                            break;
+                        case 'finish':
+                        case 'error':
+                        case 'cancelled':
+                            this.completeDownload(id, type, message, modName);
+                            break;
+                    }
+                } catch (error) {
+                    console.error('Error handling download status:', error);
                 }
             });
         } catch (error) {
@@ -1498,6 +1508,19 @@ async updateModPreview(modId) {
         return;
     }
 
+    // Add error handler to show broken image placeholder
+    modImage.onerror = () => {
+        modImage.src = 'data:image/svg+xml,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+                <rect width="200" height="200" fill="#f5f5f5"/>
+                <text x="50%" y="50%" fill="#999" font-family="Arial" font-size="16" text-anchor="middle">
+                    No Image Available
+                </text>
+                <path d="M60,40 L140,160 M140,40 L60,160" stroke="#999" stroke-width="4"/>
+            </svg>
+        `);
+    };
+
     // Clear preview if no mod selected
     if (!modId) {
         metadataContent.innerHTML = `<p class="textmuted">${await languageService.translate('mods.details.selectToView')}</p>`;
@@ -1553,7 +1576,7 @@ async updateModPreview(modId) {
                     <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
                     <a href="#" onclick="window.api.openExternal('${this.escapeHtml(modInfo.url)}'); return false;">
                         ${this.escapeHtml(modInfo.url)}
-                    </a></p>` : ''
+                    </a></p>` : 'No mod description found'
                 }
             `;
             
@@ -2446,101 +2469,193 @@ async updateModPreview(modId) {
     }
 
     initializeDownloadsPanel() {
+        // ...existing code...
         const panel = document.getElementById('downloadsPanel');
         const header = panel.querySelector('.downloads-header');
+        const downloadsList = document.getElementById('downloadsList');
         const downloadCount = document.getElementById('downloadCount');
-        let activeDownloads = 0;
-        
+    
+        // Start with the "no downloads" message
+        downloadsList.innerHTML = `<div class="text-center p-3 text-muted nodownloadsmessage">
+            No downloads ongoing
+        </div>`;
+    
         header.addEventListener('click', () => {
             panel.classList.toggle('expanded');
         });
-
-        // Handle download status updates
+    
         window.electron.onDownloadStatus((status) => {
-            const { id, type, message, modName, progress } = status;
-            
-            switch (type) {
-                case 'start':
-                    this.addDownloadItem(id, message, modName);
-                    activeDownloads++;
-                    downloadCount.textContent = activeDownloads;
-                    break;
-                case 'progress':
-                    this.updateDownloadProgress(id, message, progress, modName);
-                    break;
-                case 'finish':
-                case 'error':
-                case 'cancelled':
-                    this.completeDownload(id, type, message, modName);
-                    activeDownloads--;
-                    downloadCount.textContent = activeDownloads || '';
-                    break;
+            // For a start event, remove the nodownloads message if present
+            if (status.type === 'start') {
+                const msg = downloadsList.querySelector('.nodownloadsmessage');
+                if (msg) {
+                    msg.remove();
+                }
+                this.addDownloadItem(status.id, status.message, status.modName);
+            } else if (status.type === 'progress') {
+                this.updateDownloadProgress(status.id, status.message, status.progress, status.modName);
+            } else if (['finish', 'error', 'cancelled'].includes(status.type)) {
+                this.completeDownload(status.id, status.type, status.message, status.modName);
+            }
+    
+            // Update download count
+            const activeCount = downloadsList.querySelectorAll('.download-item').length;
+            downloadCount.textContent = activeCount;
+    
+            // If there are no active downloads, restore the message (only once)
+            if (activeCount === 0 && !downloadsList.querySelector('.nodownloadsmessage')) {
+                downloadsList.innerHTML = `<div class="text-center p-3 text-muted nodownloadsmessage">
+                    No downloads ongoing
+                </div>`;
             }
         });
+        // ...existing code...
     }
 
     addDownloadItem(id, message, modName = 'Unknown Mod') {
-        const downloadsList = document.getElementById('downloadsList');
-        const item = document.createElement('div');
-        item.className = 'download-item';
-        item.id = `download-${id}`;
-        item.innerHTML = `
-            <div class="download-info">
-                <strong class="mod-name">${this.escapeHtml(modName)}</strong>
-                <div class="message">${message}</div>
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+        try {
+            const downloadsList = document.getElementById('downloadsList');
+            if (!downloadsList) return;
+    
+            // Check if an entry for this mod already exists
+            const existing = downloadsList.querySelector(`.download-item[data-mod-name="${modName}"]`);
+            if (existing) {
+                // Optionally update its message instead of creating a duplicate
+                const msgEl = existing.querySelector('.message');
+                if (msgEl) msgEl.textContent = message;
+                return;
+            }
+    
+            const item = document.createElement('div');
+            item.className = 'download-item';
+            item.id = `download-${id}`;
+            // Set data-mod-name so we can check duplicates
+            item.setAttribute('data-mod-name', modName);
+            item.innerHTML = `
+                <div class="download-info">
+                    <strong class="mod-name">${this.escapeHtml(modName)}</strong>
+                    <div class="message">${message}</div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="download-actions">
-                <button class="btn btn-sm btn-danger" onclick="window.uiController.cancelDownload('${id}')">
-                    Cancel
-                </button>
-            </div>
-        `;
-        downloadsList.appendChild(item);
-        document.getElementById('downloadsPanel').classList.add('expanded');
+                <div class="download-actions">
+                    <button class="btn btn-sm btn-primary pause-download" onclick="window.uiController.pauseDownload('${id}')">
+                        <i class="bi bi-pause-fill"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="window.uiController.cancelDownload('${id}')">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+            downloadsList.appendChild(item);
+            document.getElementById('downloadsPanel').classList.add('expanded');
+        } catch (error) {
+            console.error('Error adding download item:', error);
+        }
+    }
+
+    async pauseDownload(id) {
+        try {
+            const item = document.getElementById(`download-${id}`);
+            if (!item) return;
+
+            const pauseBtn = item.querySelector('.pause-download');
+            const messageEl = item.querySelector('.message');
+            const downloader = window.electron.getActiveDownload(id);
+
+            if (!downloader) {
+                console.error('No active downloader found for ID:', id);
+                return;
+            }
+
+            const isPaused = await window.electron.togglePauseDownload(id);
+            
+            // Update UI based on pause state
+            if (isPaused) {
+                pauseBtn.innerHTML = '<i class="bi bi-play-fill"></i>';
+                messageEl.textContent = 'Paused';
+                item.classList.add('paused');
+            } else {
+                pauseBtn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+                messageEl.textContent = 'Downloading...';
+                item.classList.remove('paused');
+            }
+        } catch (error) {
+            console.error('Failed to pause/resume download:', error);
+            this.showError('Failed to pause/resume download: ' + error.message);
+        }
     }
 
     updateDownloadProgress(id, message, progress, modName) {
-        const item = document.getElementById(`download-${id}`);
-        if (item) {
+        try {
+            const item = document.getElementById(`download-${id}`);
+            if (!item) return;
+
+            const messageEl = item.querySelector('.message');
+            const progressBar = item.querySelector('.progress-bar');
+            if (messageEl) messageEl.textContent = message;
+            if (progressBar) progressBar.style.width = `${progress}%`;
+            
             const modNameEl = item.querySelector('.mod-name');
-            if (modNameEl && modName) modNameEl.textContent = this.escapeHtml(modName);
-            item.querySelector('.message').textContent = message;
-            item.querySelector('.progress-bar').style.width = `${progress}%`;
+            if (modNameEl && modName) modNameEl.textContent = modName;
+        } catch (error) {
+            console.error('Error updating download progress:', error);
         }
     }
 
     completeDownload(id, type, message, modName) {
-        const item = document.getElementById(`download-${id}`);
-        if (item) {
+        try {
+            const item = document.getElementById(`download-${id}`);
+            if (!item) return;
+
+            const messageEl = item.querySelector('.message');
+            const progressBar = item.querySelector('.progress-bar');
             const modNameEl = item.querySelector('.mod-name');
-            if (modNameEl && modName) modNameEl.textContent = this.escapeHtml(modName);
-            item.querySelector('.message').textContent = message;
-            item.querySelector('.progress-bar').style.width = '100%';
-            item.querySelector('.progress-bar').className = 
-                `progress-bar ${type === 'error' ? 'bg-danger' : 
-                              type === 'cancelled' ? 'bg-warning' : 
-                              'bg-success'}`;
-            
+            const downloadCount = document.getElementById('downloadCount');
+
+            if (messageEl) messageEl.textContent = message;
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.className = `progress-bar ${
+                    type === 'error' ? 'bg-danger' :
+                    type === 'cancelled' ? 'bg-warning' :
+                    'bg-success'
+                }`;
+            }
+            if (modNameEl && modName) modNameEl.textContent = modName;
+
+            // Don't show any toasts here - they will be handled by the specific handlers
+
             setTimeout(() => {
-                item.remove();
-                
-                // Check if this was the last download
-                const downloadsList = document.getElementById('downloadsList');
-                if (downloadsList.children.length === 0) {
-                    // No more downloads, collapse the panel
-                    document.getElementById('downloadsPanel').classList.remove('expanded');
+                if (item && item.parentNode) {
+                    item.remove();
+                    
+                    const activeCount = document.querySelectorAll('.download-item').length;
+                    if (downloadCount) downloadCount.textContent = activeCount;
+                    
+                    if (activeCount === 0) {
+                        const downloadsList = document.getElementById('downloadsList');
+                        if (downloadsList) {
+                            downloadsList.innerHTML = `
+                                <div class="text-center p-3 text-muted nodownloadsmessage">
+                                    No downloads ongoing
+                                </div>
+                            `;
+                        }
+                    }
                 }
             }, 5000);
+        } catch (error) {
+            console.error('Error completing download:', error);
         }
     }
 
     async cancelDownload(id) {
         try {
-            // Show cancellation in progress
             const item = document.getElementById(`download-${id}`);
+            const downloadCount = document.getElementById('downloadCount');
+            
             if (item) {
                 const progressBar = item.querySelector('.progress-bar');
                 if (progressBar) {
@@ -2552,11 +2667,9 @@ async updateModPreview(modId) {
                 }
             }
 
-            // Actually cancel the download
             await window.electron.cancelDownload(id);
             this.hideLoading();
             
-            // Update UI to show cancelled state
             if (item) {
                 const info = item.querySelector('.download-info');
                 if (info) {
@@ -2567,10 +2680,27 @@ async updateModPreview(modId) {
                     progressBar.className = 'progress-bar bg-warning';
                     progressBar.style.width = '100%';
                 }
+
+                // Show cancellation toast only here
+                this.showToast('Download cancelled', 'warning');
+                
                 setTimeout(() => {
                     item.remove();
+                    
+                    // Update download count after removing item
+                    const activeCount = document.querySelectorAll('.download-item').length;
+                    if (downloadCount) downloadCount.textContent = activeCount;
+                    
                     // Check if there are any remaining downloads
                     if (!document.querySelector('.download-item')) {
+                        const downloadsList = document.getElementById('downloadsList');
+                        if (downloadsList) {
+                            downloadsList.innerHTML = `
+                                <div class="text-center p-3 text-muted nodownloadsmessage">
+                                    No downloads ongoing
+                                </div>
+                            `;
+                        }
                         document.getElementById('downloadsPanel').classList.remove('expanded');
                     }
                 }, 2000);

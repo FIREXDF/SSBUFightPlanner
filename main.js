@@ -420,6 +420,22 @@ async function createWindow() {
     if (isAprilFools) {
         mainWindow.setTitle('FeetPlanner');
     }
+
+    mainWindow.on('close', (event) => {
+        if (activeDownloads.size > 0) {
+            const response = dialog.showMessageBoxSync(mainWindow, {
+                type: 'warning',
+                buttons: ['Cancel', 'Quit'],
+                defaultId: 0,
+                cancelId: 0,
+                title: 'Active Downloads',
+                message: 'There are active downloads. Quitting now will cancel them. Do you want to quit?'
+            });
+            if (response === 0) { // User selected Cancel
+                event.preventDefault();
+            }
+        }
+    });
 }
 
 async function checkAndMoveOldDisabledFolder(folderPath, newDisabledFolderPath) {
@@ -2091,4 +2107,29 @@ ipcMain.handle('get-april-fools-enabled', () => {
 ipcMain.handle('set-april-fools-enabled', (event, enabled) => {
     store.set('aprilFoolsEnabled', enabled);
     return true;
+});
+
+// Add these new IPC handlers
+ipcMain.handle('toggle-pause-download', async (event, id) => {
+    try {
+        const downloader = activeDownloads.get(id);
+        if (!downloader) {
+            throw new Error('No active download found');
+        }
+
+        if (downloader.isPaused) {
+            await downloader.resume();
+            return false; // Not paused anymore
+        } else {
+            await downloader.pause();
+            return true; // Now paused
+        }
+    } catch (error) {
+        console.error('Error toggling pause state:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('get-active-download', (event, id) => {
+    return activeDownloads.has(id);
 });
