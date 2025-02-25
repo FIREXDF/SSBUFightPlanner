@@ -26,9 +26,9 @@
 - Change Character slots
 ------------------------------------------------
 
-### Build FightPlanner.
+# Build FightPlanner.
 
-### Clone the repository
+Clone the repository
 
 And do this command
 `npm run build`
