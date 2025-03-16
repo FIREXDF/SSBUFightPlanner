@@ -48,6 +48,7 @@ contextBridge.exposeInMainWorld('electron', {
 });
 
 contextBridge.exposeInMainWorld('api', {
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     tutorial: {
         finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
         initializeConfigurations: () => ipcRenderer.invoke('initialize-configurations')
@@ -119,6 +120,7 @@ contextBridge.exposeInMainWorld('api', {
         getAprilFoolsEnabled: () => ipcRenderer.invoke('get-april-fools-enabled'),
         setAprilFoolsEnabled: (enabled) => ipcRenderer.invoke('set-april-fools-enabled', enabled)
     },
+    enableAprilFoolsMode: () => ipcRenderer.invoke('enable-april-fools-mode'),
     discordRpc: {
         connect: () => ipcRenderer.invoke('connect-discord-rpc'),
         disconnect: () => ipcRenderer.invoke('disconnect-discord-rpc'),
@@ -130,7 +132,7 @@ contextBridge.exposeInMainWorld('api', {
         showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options)
     },
     openExternal: (url) => ipcRenderer.send('open-external', url),
-    getUserId: () => ipcRenderer.invoke('get-user-id'),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     emulator: {
         setEmulatorPath: (path) => ipcRenderer.invoke('set-emulator-path', path),
         getEmulatorPath: () => ipcRenderer.invoke('get-emulator-path'),
@@ -147,6 +149,10 @@ contextBridge.exposeInMainWorld('api', {
         openLogsFolder: () => ipcRenderer.invoke('open-logs-folder'),
         openCurrentLog: () => ipcRenderer.invoke('open-current-log'),
         clearLogs: () => ipcRenderer.invoke('clear-logs')
+    },
+    fppOperations: {
+        createFpp: (options) => ipcRenderer.invoke('create-fpp', options),
+        importFpp: (filePath) => ipcRenderer.invoke('import-fpp', filePath),
     }
 });
 

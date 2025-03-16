@@ -195,10 +195,13 @@ class GameBananaDownloader {
         }
       }
   
-      // Get mod info before any file operations
+      // Get mod info, author, category and version before any file operations
       const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
       const response = await axios.get(apiUrl);
       const modProfileUrl = response.data._sProfileUrl;
+      const modAuthor = await this.getModAuthorFromApi(modId);
+      const modCategory = await this.getModCategoryFromApi(modId);
+      const modVersion = await this.getModVersionFromApi(modId);
 
       // Handle info.toml and preview.webp while in temp folder
       const tempInfoPath = path.join(this.tempFolder, 'info.toml');
@@ -209,16 +212,27 @@ class GameBananaDownloader {
         await this.downloadImage(modId, this.tempFolder);
       }
 
-      // Handle info.toml url addition
+      // Handle info.toml url, author, category and version addition
       if (fs.existsSync(tempInfoPath)) {
-        const existingContent = fs.readFileSync(tempInfoPath, 'utf-8');
+        let existingContent = fs.readFileSync(tempInfoPath, 'utf-8');
         if (!existingContent.includes('url =')) {
-          fs.appendFileSync(tempInfoPath, `\nurl = "${modProfileUrl}"\n`);
-          console.log('Added URL to existing info.toml in temp folder');
+          existingContent += `\nurl = "${modProfileUrl}"\n`;
         }
+        if (!existingContent.includes('authors =')) {
+          existingContent += `authors = "${modAuthor}"\n`;
+        }
+        if (!existingContent.includes('category =')) {
+          existingContent += `category = "${modCategory}"\n`;
+        }
+        if (!existingContent.includes('version =')) {
+          existingContent += `version = "${modVersion}"\n`;
+        }
+        fs.writeFileSync(tempInfoPath, existingContent);
+        console.log('Updated existing info.toml with URL, author, category and version');
       } else {
-        fs.writeFileSync(tempInfoPath, `url = "${modProfileUrl}"\n`);
-        console.log('Created new info.toml in temp folder');
+        const content = `url = "${modProfileUrl}"\nauthors = "${modAuthor}"\ncategory = "${modCategory}"\nversion = "${modVersion}"\n`;
+        fs.writeFileSync(tempInfoPath, content);
+        console.log('Created new info.toml with URL, author, category and version');
       }
 
       // Check for cancellation before finalizing
@@ -263,10 +277,19 @@ class GameBananaDownloader {
         throw new Error('Installation failed: Mod folder was empty after processing');
       }
   
-      // Clean up temp folder
-      fs.rmSync(this.tempFolder, { recursive: true });
-  
-      // Just return success without showing message
+      // Clean up temp folder - Add timeout and proper status updates
+      this.loadingCallbacks.onProgress('Cleaning temporary files...', 95);
+      await new Promise((resolve) => {
+          setTimeout(async () => {
+              await fse.remove(this.tempFolder);
+              this.loadingCallbacks.onProgress('Finalizing...', 100);
+              resolve();
+          }, 500);
+      });
+
+      // Notify completion properly
+      this.loadingCallbacks.onFinish('Download completed successfully', modName);
+      
       return { success: true, path: finalArchivePath, modName };
     } catch (error) {
       if (this.isCancelled && !this.isCleaningUp) {
@@ -596,6 +619,52 @@ async downloadFileWithProgress(url, destPath) {
       return `mod_${modId}`;
     }
     
+  // Add this new method to fetch the mod author from GameBanana
+  async getModAuthorFromApi(modId) {
+    try {
+      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const response = await axios.get(apiUrl);
+      return response.data._aSubmitter?._sName || 'Unknown Author';
+    } catch (error) {
+      console.error('Author retrieval error:', error);
+      return 'Unknown Author';
+    }
+  }
+
+  // Add this new method to fetch the mod category from GameBanana
+  async getModCategoryFromApi(modId) {
+    try {
+      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const response = await axios.get(apiUrl);
+      const category = response.data._aSuperCategory?._sName || 'Unknown Category';
+      
+      // Convert "Skins" to "Fighter"
+      return category === 'Skins' ? 'Fighter' : category;
+    } catch (error) {
+      console.error('Category retrieval error:', error);
+      return 'Unknown Category';
+    }
+  }
+
+  // Add this new method to fetch the mod version from GameBanana
+  async getModVersionFromApi(modId) {
+    try {
+      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const response = await axios.get(apiUrl);
+      const version = response.data._aAdditionalInfo?._sVersion || '';
+      
+      // Si la version est vide ou ne contient pas de chiffres, retourner "1.0"
+      if (!version || !/\d/.test(version)) {
+        return "1.0";
+      }
+      
+      return version;
+    } catch (error) {
+      console.error('Version retrieval error:', error);
+      return "1.0";
+    }
+  }
+
   async pause() {
     this.isPaused = true;
     if (this.currentWriter) {

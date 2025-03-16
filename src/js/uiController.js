@@ -1,15 +1,14 @@
 console.log('UIController loading...');
 import { ModManager } from './modManager.js';
-import { Tutorial } from './tutorial.js';
 import ModConflictDetector from './modConflictDetector.js';
 import { languageService } from './services/languageService.js';
 import { ChangeSlots } from './changeSlots.js';
+import { CharacterScanner } from './scanallfoldercharacter.js';
 
 class UIController {
     constructor() {
         try {
             this.modManager = new ModManager();
-            this.tutorial = new Tutorial();
             this.selectedMod = null;
             this.initializeEventListeners();
             this.loadSettings();
@@ -38,13 +37,18 @@ class UIController {
             this.conflictDetector = new ModConflictDetector();
             this.initializeDiscordRpcToggle();
             this.downloadModal = null; // Define downloadModal as a class property
-            this.initializeSendVersionToggle();
             this.handleClearLogs = this.handleClearLogs.bind(this);
             this.handleRefreshLogs = this.handleRefreshLogs.bind(this);
             this.handleChangeSlots = this.handleChangeSlots.bind(this);
             this.showChangeSlotsDialog = this.showChangeSlotsDialog.bind(this);
             this.activeDownloads = new Map();
             this.initializeDownloadsPanel();
+            this.characterScanner = new CharacterScanner();
+            this.initializeCharactersTab();
+            this.initializeModSelection();
+            this.initializeFppHandlers();
+            this.selectedCategories = new Set();
+            this.initializeCategoryFilters();
 
             // Add event listener for update downloaded
             window.electron.onUpdateDownloaded((changelog) => {
@@ -356,48 +360,29 @@ async handleGameBananaDownload() {
         console.log('Search bar initialization complete');
     }
     
-    performSearch() {
-        console.log('Performing search');
-    
-        // Get search input and filter elements
-        const searchInput = document.getElementById('modSearchInput');
-        const enabledFilter = document.getElementById('enabledFilter');
-        const disabledFilter = document.getElementById('disabledFilter');
-    
-        // Validate elements
-        if (!searchInput || !enabledFilter || !disabledFilter) {
-            console.error('Search elements not found');
-            return;
-        }
-    
-        // Get search parameters
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        const showEnabled = enabledFilter.checked;
-        const showDisabled = disabledFilter.checked;
-    
-        console.log('Search parameters:', {
-            searchTerm,
-            showEnabled,
-            showDisabled,
-            totalMods: this.mods.length
-        });
-    
-        // Filter mods based on search and filter criteria
+    async performSearch() {
+        const searchTerm = document.getElementById('modSearchInput')?.value.toLowerCase() || '';
+        const showEnabled = document.getElementById('enabledFilter')?.checked || false;
+        const showDisabled = document.getElementById('disabledFilter')?.checked || false;
+
+        // Filter mods based on search criteria
         const filteredMods = this.mods.filter(mod => {
-            const matchesSearch = searchTerm === '' || 
-                mod.name.toLowerCase().includes(searchTerm);
-            
+            // Name filter
+            const matchesSearch = mod.name.toLowerCase().includes(searchTerm);
+
+            // Enabled/Disabled filter
             const matchesEnabledFilter = 
                 (showEnabled && mod.enabled) || 
                 (showDisabled && !mod.enabled) || 
                 (!showEnabled && !showDisabled);
-    
-            return matchesSearch && matchesEnabledFilter;
+
+            // Category filter - check if any selected category matches the mod's category
+            const matchesCategory = this.selectedCategories.size === 0 || 
+                (mod.category && this.selectedCategories.has(mod.category));
+
+            return matchesSearch && matchesEnabledFilter && matchesCategory;
         });
-    
-        console.log('Filtered mods:', filteredMods.length);
-    
-        // Re-render the filtered list
+
         this.renderModList(filteredMods);
     }
 
@@ -996,6 +981,15 @@ window.electron.onProtocolUrl(async (data) => {
         pluginDropZone.addEventListener('dragover', (e) => e.preventDefault());
         pluginDropZone.addEventListener('drop', (e) => this.handlePluginDrop(e));
     }
+
+    // Add FPP creation button handler
+    const createFppBtn = document.getElementById('createFpp');
+    if (createFppBtn) {
+        createFppBtn.addEventListener('click', () => this.showCreateFppDialog());
+    }
+
+    // Add FPP confirm button handler
+    document.getElementById('createFppBtn')?.addEventListener('click', () => this.createFpp());
 }
 
 // Provide detailed feedback about installations
@@ -1022,44 +1016,38 @@ provideInstallationFeedback(results) {
                 filters: [
                     { 
                         name: 'Mod Files', 
-                        extensions: ['zip', '7z', 'rar'] 
+                        extensions: ['zip', '7z', 'rar', 'fpp'] 
                     }
                 ],
                 properties: ['openFile']
             });
     
             if (!result.canceled) {
-                // Verify the API method exists
-                if (typeof window.api.modOperations.installMod !== 'function') {
-                    throw new Error('Install mod method is not available');
-                }
-    
                 await this.showLoading('Installing mod...');
+                const filePath = result.filePaths[0];
                 
-                // Log the file path for debugging
-                console.log('Installing mod from path:', result.filePaths[0]);
-                
-                const installResult = await this.modManager.installMod(result.filePaths[0]);
-                
-                await this.loadMods();
-                this.showSuccess('Mod installed successfully');
-                
-                // Update Discord RPC
-                window.api.discordRpc.updateModInstallation();
-                
-                return installResult;
+                // Vérifier si c'est un fichier FPP
+                if (filePath.toLowerCase().endsWith('.fpp')) {
+                    const importResult = await window.api.fppOperations.importFpp(filePath);
+                    if (importResult.success) {
+                        this.showToast('FPP package imported successfully', 'success');
+                        await this.loadMods();
+                        await this.loadPlugins();
+                    } else {
+                        this.showError('Failed to import FPP: ' + importResult.error);
+                    }
+                } else {
+                    // Installation normale de mod
+                    const installedMod = await window.api.modOperations.installMod(filePath);
+                    if (installedMod) {
+                        this.showToast('Mod installed successfully', 'success');
+                        await this.loadMods();
+                    }
+                }
             }
         } catch (error) {
             console.error('Full installation error:', error);
-            
-            // More detailed error logging
-            if (error.message) {
-                this.showError(`Installation failed: ${error.message}`);
-            } else {
-                this.showError('Failed to install mod, Cause ' +  ': ' + error.message);
-            }
-            
-            throw error;
+            this.showError('Failed to install: ' + error.message);
         } finally {
             this.hideLoading();
         }
@@ -1254,8 +1242,17 @@ provideInstallationFeedback(results) {
     
 async promptDialog(title, message, defaultValue) {
     return new Promise((resolve) => {
+        const modalId = 'renameModal';
+        
+        // Remove existing modal if it exists
+        let existingModal = document.getElementById(modalId);
+        if (existingModal) {
+            existingModal.remove();
+        }
+
         const modal = document.createElement('div');
         modal.className = 'modal fade';
+        modal.id = modalId;
         modal.tabIndex = -1;
         modal.innerHTML = `
             <div class="modal-dialog">
@@ -1266,11 +1263,11 @@ async promptDialog(title, message, defaultValue) {
                     </div>
                     <div class="modal-body">
                         <p>${message}</p>
-                        <input type="text" class="form-control" value="${defaultValue}">
+                        <input type="text" class="form-control" value="${defaultValue || ''}">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary">OK</button>
+                        <button type="button" class="btn btn-primary" id="confirmRename">OK</button>
                     </div>
                 </div>
             </div>
@@ -1278,17 +1275,31 @@ async promptDialog(title, message, defaultValue) {
 
         document.body.appendChild(modal);
         const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
 
-        modal.querySelector('.btn-primary').addEventListener('click', () => {
-            const inputValue = modal.querySelector('input').value;
-            resolve(inputValue);
+        // Handle confirm button click
+        modal.querySelector('#confirmRename').addEventListener('click', () => {
+            const input = modal.querySelector('input');
+            const value = input?.value;
+            resolve(value);
             bsModal.hide();
         });
 
-        modal.addEventListener('hidden.bs.modal', () => {
-            document.body.removeChild(modal);
+        // Handle Enter key press
+        modal.querySelector('input').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                const value = e.target.value;
+                bsModal.hide();
+                resolve(value);
+            }
         });
+
+        // Handle modal close/dismiss
+        modal.addEventListener('hidden.bs.modal', () => {
+            resolve(null); // Return null on cancel/dismiss
+            modal.remove(); // Remove modal from DOM
+        });
+
+        bsModal.show();
     });
 }
 
@@ -2456,18 +2467,6 @@ async updateModPreview(modId) {
         });
     }
 
-    initializeSendVersionToggle() {
-        const sendVersionToggle = document.getElementById('sendVersionToggle');
-        window.api.settings.getSendVersionEnabled().then(enabled => {
-            sendVersionToggle.checked = enabled;
-        });
-
-        sendVersionToggle.addEventListener('change', (e) => {
-            const enabled = e.target.checked;
-            window.api.settings.setSendVersionEnabled(enabled);
-        });
-    }
-
     initializeDownloadsPanel() {
         // ...existing code...
         const panel = document.getElementById('downloadsPanel');
@@ -2819,6 +2818,304 @@ async updateModPreview(modId) {
             }, 5000);
         }
     }
+
+    initializeCharactersTab() {
+        // Initialize refresh button
+        const refreshBtn = document.getElementById('refreshCharacters');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                if (this.characterScanner) {
+                    this.characterScanner.refresh();
+                }
+            });
+        }
+
+        // Only scan when tab is first shown
+        document.getElementById('characters-tab').addEventListener('shown.bs.tab', () => {
+            if (this.characterScanner) {
+                this.characterScanner.scanMods();
+            }
+        });
+    }
+
+    initializeModSelection() {
+        // Listen for the custom event
+        window.addEventListener('select-mod-from-character', async (event) => {
+            const modName = event.detail.modName;
+            
+            // Switch to mods tab
+            document.getElementById('mods-tab').click();
+            
+            // Wait a brief moment for tab switch animation
+            setTimeout(() => {
+                // Find and select the mod
+                const modItem = document.querySelector(`[data-mod-id="${modName}"]`);
+                if (modItem) {
+                    modItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    this.selectMod(modName);
+                }
+            }, 150);
+        });
+    }
+
+    async showCreateFppDialog() {
+        try {
+            // Load mods and plugins
+            const mods = await window.api.modOperations.loadMods();
+            const plugins = await window.api.pluginOperations.loadPlugins();
+            
+            const renderModsList = (filteredMods) => {
+                const modsListHtml = filteredMods.map(mod => `
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2 fpp-mod" type="checkbox" value="${mod.id}">
+                        ${this.escapeHtml(mod.name)}
+                    </label>
+                `).join('');
+                document.getElementById('fppModsList').innerHTML = modsListHtml;
+            };
+
+            const renderPluginsList = (filteredPlugins) => {
+                const pluginsListHtml = filteredPlugins.map(plugin => `
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2 fpp-plugin" type="checkbox" value="${plugin.id}">
+                        ${this.escapeHtml(plugin.name)}
+                    </label>
+                `).join('');
+                document.getElementById('fppPluginsList').innerHTML = pluginsListHtml;
+            };
+            
+            // Initial render
+            renderModsList(mods);
+            renderPluginsList(plugins);
+            
+            // Add search functionality
+            document.getElementById('fppModSearch')?.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredMods = mods.filter(mod => 
+                    mod.name.toLowerCase().includes(searchTerm)
+                );
+                renderModsList(filteredMods);
+            });
+
+            document.getElementById('fppPluginSearch')?.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredPlugins = plugins.filter(plugin => 
+                    plugin.name.toLowerCase().includes(searchTerm)
+                );
+                renderPluginsList(filteredPlugins);
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('createFppModal'));
+            modal.show();
+        } catch (error) {
+            this.showError('Failed to load mods/plugins: ' + error.message);
+        }
+    }
+
+    async createFpp() {
+        try {
+            const name = document.getElementById('fppName').value.trim();
+            if (!name) {
+                this.showError('Please enter a package name');
+                return;
+            }
+
+            // Ouvrir la boîte de dialogue pour choisir l'emplacement de sauvegarde
+            const saveResult = await window.api.dialog.showOpenDialog({
+                title: 'Choose where to save the FPP package',
+                properties: ['openDirectory'],
+                buttonLabel: 'Save Here'
+            });
+
+            if (saveResult.canceled) {
+                return;
+            }
+
+            await this.showLoading('Creating FPP package...');
+
+            const selectedMods = Array.from(document.querySelectorAll('.fpp-mod:checked')).map(cb => cb.value);
+            const selectedPlugins = Array.from(document.querySelectorAll('.fpp-plugin:checked')).map(cb => cb.value);
+
+            // Passer le répertoire choisi au créateur de FPP
+            const result = await window.api.fppOperations.createFpp({
+                name,
+                mods: selectedMods,
+                plugins: selectedPlugins,
+                outputDir: saveResult.filePaths[0]
+            });
+
+            if (result.success) {
+                this.showSuccess(`Package created successfully at: ${result.path}`);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createFppModal'));
+                modal.hide();
+            } else {
+                this.showError('Failed to create package: ' + result.error);
+            }
+        } catch (error) {
+            this.showError('Failed to create package: ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+    
+    // Ajouter un gestionnaire pour l'import FPP
+    async handleImportFpp(filePath) {
+        try {
+            await this.showLoading('Importing FPP package...');
+            const result = await window.api.fppOperations.importFpp(filePath);
+            
+            if (result.success) {
+                this.showSuccess('Package imported successfully');
+                await this.loadMods();
+                await this.loadPlugins();
+            } else {
+                this.showError('Failed to import package: ' + result.error);
+            }
+        } catch (error) {
+            this.showError('Failed to import package: ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    initializeFppHandlers() {
+
+        // Handler pour le drag & drop de FPP
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        document.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const files = Array.from(e.dataTransfer.files);
+            const fppFiles = files.filter(file => file.name.toLowerCase().endsWith('.fpp'));
+
+            if (fppFiles.length > 0) {
+                await this.handleFppFiles(fppFiles);
+            }
+        });
+
+        // Add select all handlers
+        document.getElementById('selectAllMods')?.addEventListener('change', (e) => {
+            const modCheckboxes = document.querySelectorAll('.fpp-mod');
+            modCheckboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        document.getElementById('selectAllPlugins')?.addEventListener('change', (e) => {
+            const pluginCheckboxes = document.querySelectorAll('.fpp-plugin');
+            pluginCheckboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        // Update "Select All" checkboxes when individual items are clicked
+        document.getElementById('fppModsList')?.addEventListener('change', () => {
+            const modCheckboxes = document.querySelectorAll('.fpp-mod');
+            const selectAllMods = document.getElementById('selectAllMods');
+            if (selectAllMods) {
+                selectAllMods.checked = Array.from(modCheckboxes).every(cb => cb.checked);
+                selectAllMods.indeterminate = !selectAllMods.checked && Array.from(modCheckboxes).some(cb => cb.checked);
+            }
+        });
+
+        document.getElementById('fppPluginsList')?.addEventListener('change', () => {
+            const pluginCheckboxes = document.querySelectorAll('.fpp-plugin');
+            const selectAllPlugins = document.getElementById('selectAllPlugins');
+            if (selectAllPlugins) {
+                selectAllPlugins.checked = Array.from(pluginCheckboxes).every(cb => cb.checked);
+                selectAllPlugins.indeterminate = !selectAllPlugins.checked && Array.from(pluginCheckboxes).some(cb => cb.checked);
+            }
+        });
+
+        // Rest of your existing FPP handlers...
+        // ...existing code...
+    }
+
+    async handleImportFppClick() {
+        try {
+            const result = await window.api.dialog.showOpenDialog({
+                properties: ['openFile'],
+                filters: [
+                    { name: 'FightPlanner Packages', extensions: ['fpp'] }
+                ]
+            });
+
+            if (!result.canceled && result.filePaths.length > 0) {
+                await this.handleFppFiles([{ path: result.filePaths[0] }]);
+            }
+        } catch (error) {
+            this.showError('Failed to import FPP: ' + error.message);
+        }
+    }
+
+    async handleFppFiles(files) {
+        try {
+            await this.showLoading('Importing FPP package...');
+
+            for (const file of files) {
+                const result = await window.api.fppOperations.importFpp(file.path);
+                
+                if (result.success) {
+                    this.showToast('Package imported successfully', 'success');
+                    await this.loadMods(); // Recharger la liste des mods
+                    await this.loadPlugins(); // Recharger la liste des plugins
+                } else {
+                    this.showError('Failed to import package: ' + result.error);
+                }
+            }
+        } catch (error) {
+            this.showError('Import error: ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    initializeCategoryFilters() {
+        const categoryItems = document.querySelectorAll('#categoryFilters .dropdown-item[data-category]');
+        categoryItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const category = item.dataset.category;
+                
+                // Toggle active state
+                item.classList.toggle('active');
+                
+                // Update selected categories
+                if (item.classList.contains('active')) {
+                    this.selectedCategories.add(category);
+                } else {
+                    this.selectedCategories.delete(category);
+                }
+                
+                // Update button appearance
+                const toggleButton = document.getElementById('toggleCategories');
+                if (this.selectedCategories.size > 0) {
+                    toggleButton.classList.add('btn-primary');
+                    toggleButton.classList.remove('btn-outline-secondary');
+                } else {
+                    toggleButton.classList.remove('btn-primary');
+                    toggleButton.classList.add('btn-outline-secondary');
+                }
+                
+                this.performSearch();
+            });
+        });
+
+        // Clear filters handler
+        document.getElementById('clearCategoryFilters')?.addEventListener('click', () => {
+            this.selectedCategories.clear();
+            categoryItems.forEach(item => item.classList.remove('active'));
+            const toggleButton = document.getElementById('toggleCategories');
+            toggleButton.classList.remove('btn-primary');
+            toggleButton.classList.add('btn-outline-secondary');
+            this.performSearch();
+        });
+    }
 }
 // Add drag and drop handling
 document.body.addEventListener('dragenter', (e) => {
@@ -2905,6 +3202,23 @@ async function initializeUI() {
         await languageService.loadTranslations(e.target.value);
     });
 }
+
+// Add this to your DOMContentLoaded event listener or initialization code
+async function updateAppVersion() {
+    try {
+        const version = await window.api.getAppVersion();
+        const versionBadge = document.getElementById('appVersionBadge');
+        if (versionBadge) {
+            versionBadge.textContent = `Version ${version}`;
+        }
+    } catch (error) {
+        console.error('Failed to get app version:', error);
+    }
+}
+
+// Call this when the credits modal is shown
+document.getElementById('creditsModal').addEventListener('show.bs.modal', updateAppVersion);
+
 // Initialize the UI when the document is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const ui = new UIController();

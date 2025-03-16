@@ -29,6 +29,7 @@
         </div>
     </div>
     <!-- Top Navigation Tabs -->
+    
     <ul class="nav nav-tabs position-relative animate__animated animate__fadeInDown" id="mainTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="mods-tab" data-bs-toggle="pill" 
@@ -43,21 +44,28 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="characters-tab" data-bs-toggle="pill" 
+                data-bs-target="#characters" type="button" role="tab">
+                <i class="bi bi-people me-2"></i><span data-i18n="nav.characters">Characters</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
                     data-bs-target="#settings" type="button" role="tab">
                 <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
             </button>
-            <li class="nav-item ms-auto me-3">
-                <img 
-                    src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" 
-                    alt="App Logo" 
-                    id="appLogo"
-                    class="app-logo" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#creditsModal"
-                    style="height: 30px; width: auto; cursor: pointer;"
-                >
-            </li>
+        </li>
+        <li class="nav-item ms-auto me-3">
+            <img 
+                src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" 
+                alt="App Logo" 
+                id="appLogo"
+                class="app-logo" 
+                data-bs-toggle="modal" 
+                data-bs-target="#creditsModal"
+                style="height: 30px; width: auto; cursor: pointer;"
+            >
+        </li>
     </ul>
 
     <!-- Tab Contents -->
@@ -81,30 +89,33 @@
                                         style="width: 200px;"
                                     >
                                 </div>
-                                <div class="d-flex align-items-center">
-                                    <div class="form-check form-check-inline me-2">
-                                        <input 
-                                            class="form-check-input" 
-                                            type="checkbox" 
-                                            id="enabledFilter"
-                                        >
-                                        <label class="form-check-label" for="enabledFilter" data-i18n="mods.filters.enabled">
-                                            Enabled
-                                        </label>
-                                    </div>
-                                    <div class="form-check form-check-inline me-2">
-                                        <input 
-                                            class="form-check-input" 
-                                            type="checkbox" 
-                                            id="disabledFilter"
-                                        >
-                                        <label class="form-check-label" for="disabledFilter" data-i18n="mods.filters.disabled">
-                                            Disabled
-                                        </label>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-secondary" id="reloadList">
+                                <div class="d-flex align-items-center mb-3">
+                                    <button class="btn btn-outline-secondary me-2" id="reloadList">
                                         <i class="bi bi-arrow-clockwise"></i>
+                                        Reload List
                                     </button>
+                                    
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="toggleCategories" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-funnel"></i>
+                                            Categories
+                                        </button>
+                                        <div class="dropdown-menu p-2" id="categoryFilters">
+                                            <h6 class="dropdown-header">Filter by category</h6>
+                                            <div class="dropdown-divider"></div>
+                                            <button class="dropdown-item" data-category="Fighter">Fighter</button>
+                                            <button class="dropdown-item" data-category="Stage">Stage</button>
+                                            <button class="dropdown-item" data-category="Effects">Effects</button>
+                                            <button class="dropdown-item" data-category="UI">UI</button>
+                                            <button class="dropdown-item" data-category="Param">Param</button>
+                                            <button class="dropdown-item" data-category="Audio">Audio</button>
+                                            <button class="dropdown-item" data-category="Misc">Misc</button>
+                                            <div class="dropdown-divider"></div>
+                                            <button class="dropdown-item text-danger" id="clearCategoryFilters">
+                                                <i class="bi bi-x-circle"></i> Clear Filters
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -149,6 +160,9 @@
                         </button>
                         <button id="launchGame" class="btn btn-info rounded-end" title="Launch Game" style="margin-left: 0;">
                             <i class="bi bi-play-fill"></i>
+                        </button>
+                        <button class="btn btn-secondary" id="createFpp" title="Create FPP Package">
+                            <i class="bi bi-file-earmark-zip"></i>
                         </button>
                     </div>
                 </div>
@@ -278,7 +292,7 @@
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     </div>
-                                    <small class="textmuted" data-i18n="csstext">Select the custom CSS file for styling (Restart needed)</small>
+                                    <small class="textmuted" data-i18n="settings.theme.csstext">Select the custom CSS file for styling (Restart needed)</small>
                                 </div>
 
                                 <div class="mb-3">
@@ -309,19 +323,10 @@
                                         <input class="form-check-input" type="checkbox" id="discordRpcToggle">
                                         <label class="form-check-label" for="discordRpcToggle">Enable Discord RPC</label>
                                     </div>
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="sendVersionToggle">
-                                        <label class="form-check-label" for="sendVersionToggle">Send Version of FightPlanner to Server</label>
-                                        <small class="form-text textmuted d-block">Your data and identity are hidden with a random userId</small>
-                                    </div>
                                     <div class="mb-3">
                                         <label for="volumeControl" class="form-label">Finish Sound Volume</label>
                                         <input type="range" class="form-range" id="volumeControl" min="0" max="100" step="1">
                                         <small class="textmuted">Adjust the volume for finish download sound</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">User ID:</label>
-                                        <p id="userId" class="textmuted"></p>
                                     </div>
                                     <div class="mb-3">
                                         <button class="btn btn-danger" id="clearTempFiles">
@@ -393,15 +398,8 @@
                                     <hr class="my-4">
                                     
                                     <p>FightPlanner dev searching for people to test Early Access ! Go check it out</p>
-                                    <a href="https://forms.gle/EWdDC1ApLos4zRT49" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                    <a href="https://forms.gle/TRkqw8g5hDaPXoc59" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                                         <i class="bi bi-send me-2"></i>Apply for Early Access
-                                    </a>
-                                    
-                                    <hr class="my-4">
-
-                                    <p>Want to get your UserID deleted from the server?</p>
-                                    <a href="https://forms.gle/Ahb7xsmVbY2sR2bn9" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger">
-                                        <i class="bi bi-trash me-2"></i>Request Data Deletion
                                     </a>
                                 </div>
                             </div>
@@ -441,6 +439,28 @@
                 </div>
             </div>
         </div>
+        <!-- Replace the characters tab content -->
+        <div class="tab-pane fade" id="characters" role="tabpanel">
+            <div class="container-fluid p-3">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card animate__animated animate__fadeIn">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Character Usage</h5>
+                                <button class="btn btn-sm btn-outline-primary" id="refreshCharacters">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="characterSlotsList" class="character-slots-list">
+                                    <!-- Content will be populated by CharacterScanner -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Context Menu -->
@@ -469,9 +489,7 @@
     <script src="../js/uiController.js" type="module"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const userIdElement = document.getElementById('userId');
-            const userId = await window.api.getUserId();
-            userIdElement.textContent = userId;
+
 
             const dontShowAgain = localStorage.getItem('dontShowEarlyAccessModal');
             if (!dontShowAgain) {
@@ -488,50 +506,177 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Vérifier si c'est le 1er avril
+            const today = new Date();
+            const isAprilFools = today.getMonth() === 3 && today.getDate() === 1;
+            
+            if (isAprilFools) {
+                // Change logo in navbar
+                const appLogo = document.querySelector('#appLogo');
+                if (appLogo) {
+                    appLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
+                }
+                
+                // Change logo and text in credits
+                const creditsLogo = document.querySelector('.credits-logo');
+                const creditsTitle = document.querySelector('#creditsModal .display-4');
+                const creditsSubtitle = document.querySelector('#creditsModal .lead');
+                
+                if (creditsLogo) {
+                    creditsLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
+                }
+                
+                if (creditsTitle) {
+                    creditsTitle.textContent = 'FeetPlanner';
+                }
+                
+                if (creditsSubtitle) {
+                    creditsSubtitle.textContent = 'Feet Manager for SSBU';
+                }
+            }
+
+            // Konami code existant
+            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+            let konamiIndex = 0;
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === konamiCode[konamiIndex]) {
+                    konamiIndex++;
+                    
+                    if (konamiIndex === konamiCode.length) {
+                        konamiIndex = 0;
+                        
+                        // Change logo in navbar
+                        const appLogo = document.querySelector('#appLogo');
+                        if (appLogo) {
+                            appLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
+                        }
+                        
+                        // Change logo and text in credits
+                        const creditsLogo = document.querySelector('.credits-logo');
+                        const creditsTitle = document.querySelector('#creditsModal .display-4');
+                        const creditsSubtitle = document.querySelector('#creditsModal .lead');
+                        
+                        if (creditsLogo) {
+                            creditsLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
+                        }
+                        
+                        if (creditsTitle) {
+                            creditsTitle.textContent = 'FeetPlanner';
+                        }
+                        
+                        if (creditsSubtitle) {
+                            creditsSubtitle.textContent = 'Feet Manager for SSBU';
+                        }
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+            });
+        });
+    </script>
 
     <!-- Credits Modal -->
-    <div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-fullscreen">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="creditsModalLabel">Credits</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="color: white;"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="container-fluid text-center credits-container">
-                        <a href="https://gamebanana.com/tools/17950" target="_blank">
-                            <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" alt="App Logo" id="appLogo" class="img-fluid mb-4" style="max-height: 200px;">
-                        </a>
-                        <h1 class="credits-title">FightPlanner</h1>
-                        <p class="lead credits-subtitle">Mod Manager for SSBU</p>
-                        <p class="lead credits-subtitle">3.3.17</p>
-                        
-                        <div class="credits-section mt-4">
-                            <h3 class="credits-section-title">Credits :</h3>
-                            <p class="credits-section-description">FIREXDF : Code</p>
-                            <p class="credits-section-description">FloweyGaming : Logo</p>
-                            <p class="credits-section-description">Mario45 : Helping for real hardware</p>
-                            <p class="credits-section-description">Chichiboo : Tester</p>
-                            <p class="credits-section-description">Jpgmafia : Tester</p>
-                            <p class="credits-section-description">ElDusst : Tester</p>
-                            <p class="credits-section-description">Squiori : Tester</p>
-                            <p class="credits-section-description">Oliver Tzeng : Tester</p>
-                            <p class="credits-section-description">Masne : Tester</p>
-                            <div class="mt-4">
-                                <h4 class="credits-technologies-title">Made with</h4>
-                                <div class="d-flex justify-content-center">
-                                    <span class="badge bg-primary me-2">Electron</span>
-                                    <span class="badge bg-success me-2">Node.js</span>
-                                    <span class="badge bg-info me-2">JavaScript</span>
+<div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content credits-dark">
+            <div class="modal-body d-flex align-items-center position-relative">
+                <button type="button" class="credits-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <!-- App Info Section -->
+                            <div class="text-center mb-5">
+                                <a href="https://gamebanana.com/tools/17950" target="_blank" rel="noopener noreferrer">
+                                    <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" 
+                                         alt="App Logo" 
+                                         class="credits-logo mb-4 animate__animated animate__fadeIn"
+                                         style="max-height: 150px;">
+                                </a>
+                                <h1 class="display-4 text-white mb-2 animate__animated animate__fadeInUp">FightPlanner</h1>
+                                <p class="lead text-white-50 animate__animated animate__fadeInUp">Mod Manager for SSBU</p>
+                                <div class="version-badge animate__animated animate__fadeInUp" id="appVersionBadge">Loading version...</div>
+                            </div>
+
+                            <!-- Core Team Section -->
+                            <div class="team-section mb-5 animate__animated animate__fadeInUp">
+                                <h3 class="text-white text-center mb-4">Core Team</h3>
+                                <div class="credits-grid">
+                                    <div class="credits-member">
+                                        <div class="member-role">Developer</div>
+                                        <div class="member-name">FIREXDF</div>
+                                    </div>
+                                    <div class="credits-member">
+                                        <div class="member-role">Designer of the logo</div>
+                                        <div class="member-name">FloweyGaming</div>
+                                    </div>
+                                    <div class="credits-member">
+                                        <div class="member-role">Real Hardware Helper</div>
+                                        <div class="member-name">Mario45</div>
+                                    </div>
+                                    <div class="credits-member">
+                                        <div class="member-role">Real Hardware Helper</div>
+                                        <div class="member-name">Toni</div>
+                                    </div>
+                                    <div class="credits-member">
+                                        <div class="member-role">Real Hardware Helper</div>
+                                        <div class="member-name">BenBroInPython</div>
+                                    </div>
+                                    <div class="credits-member">
+                                        <div class="member-role">Real Hardware Helper</div>
+                                        <div class="member-name">Sam</div>
+                                    </div>
                                 </div>
+                            </div>
+
+                            <!-- Testing Team Section -->
+                            <div class="testing-section mb-5 animate__animated animate__fadeInUp">
+                                <h3 class="text-white text-center mb-4">Testing Team</h3>
+                                <div class="tester-tags">
+                                    <span class="tester-tag">Chichiboo</span>
+                                    <span class="tester-tag">Jpgmafia</span>
+                                    <span class="tester-tag">ElDusst</span>
+                                    <span class="tester-tag">Squiori</span>
+                                    <span class="tester-tag">Oliver Tzeng</span>
+                                    <span class="tester-tag">Masne</span>
+                                    <span class="tester-tag">Sam</span>
+                                    <span class="tester-tag">MrMiri</span>
+                                    <span class="tester-tag">Toni</span>
+                                    <span class="tester-tag">Gamma</span>
+                                    <span class="tester-tag">Moxort</span>
+                                    <span class="tester-tag">I Am The Alien From Guam</span>
+                                    <span class="tester-tag">RestGhost</span>
+                                    <span class="tester-tag">BenBroInPython</span>
+                                    <span class="tester-tag">Izayuh</span>
+                                </div>
+                            </div>
+
+                            <!-- Technologies Section -->
+                            <div class="tech-section mb-5 animate__animated animate__fadeInUp">
+                                <h3 class="text-white text-center mb-4">Built With</h3>
+                                <div class="tech-stack">
+                                    <div class="tech-item">
+                                        <i class="bi bi-code-square"></i>
+                                        <span>Electron</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Copyright Notice -->
+                            <div class="text-center mt-5">
+                                <small class="text-white-50">All rights to the logo of SSBU are owned by Nintendo™. We don't own it.</small>
                             </div>
                         </div>
                     </div>
-                    <p class="textmuted" style="text-align: center;">All rights to the logo of SSBU are owned by Nintendo(TM) we don't own it.</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Restart Needed Modal -->
     <div class="modal fade" id="restartNeededModal" tabindex="-1" aria-labelledby="restartNeededModalLabel" aria-hidden="true">
@@ -551,25 +696,6 @@
         </div>
     </div>
 
-    <!-- Send Version Modal -->
-    <div class="modal fade" id="sendVersionModal" tabindex="-1" aria-labelledby="sendVersionModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="sendVersionModalLabel">Enable Version Reporting</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Would you like to enable the feature to send the version of FightPlanner to the server? Your data will not be sent and your identity will be hidden with a random userId sent to the server.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-                    <button type="button" class="btn btn-primary" id="enableSendVersionBtn">Yes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Early Access Modal -->
     <div class="modal fade" id="earlyAccessModal" tabindex="-1" aria-labelledby="earlyAccessModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -580,7 +706,7 @@
                 </div>
                 <div class="modal-body">
                     <p>We are searching for people to test the early access version of FightPlanner. These versions should help make the release version more stable and with fewer errors.</p>
-                    <a href="https://forms.gle/EWdDC1ApLos4zRT49" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                    <a href="https://forms.gle/TRkqw8g5hDaPXoc59" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                         <i class="bi bi-send me-2"></i>Apply for Early Access
                     </a>
                     <div class="form-check mt-3">
@@ -656,6 +782,65 @@
     </div>
 </div>
 
+<!-- FPP Creation Modal -->
+<div class="modal fade" id="createFppModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create FightPlanner Package</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Package Name</label>
+                    <input type="text" class="form-control" id="fppName" placeholder="MyPackage">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Select Content to Include:</label>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="selectAllMods">
+                        <label class="form-check-label" for="selectAllMods">
+                            Select All Mods (can be slow and buggy if you got more of 50 mods.)
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="selectAllPlugins">
+                        <label class="form-check-label" for="selectAllPlugins">
+                            Select All Plugins
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Mods</h6>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" id="fppModSearch" placeholder="Search mods...">
+                        </div>
+                        <div class="list-group" id="fppModsList" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Mods will be dynamically added here -->
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Plugins</h6>
+                        <div class="mb-2">
+                            <input type="text" class="form-control form-control-sm" id="fppPluginSearch" placeholder="Search plugins...">
+                        </div>
+                        <div class="list-group" id="fppPluginsList" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Plugins will be dynamically added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="createFppBtn">Create Package</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .slot-group {
         position: relative;
@@ -693,6 +878,25 @@
             <i class="bi bi-x-circle me-2"></i>Cancel Download
         </button>
     </div>
+</div>
+
+<!-- Add this before the closing body tag -->
+<div class="modal fade" id="characterImageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="characterImageModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="characterImageLarge" src="" alt="" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modPreviewTooltip" class="mod-preview-tooltip">
+    <img src="" alt="Mod Preview">
 </div>
 </body>
 </html>

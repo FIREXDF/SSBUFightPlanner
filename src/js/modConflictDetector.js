@@ -75,7 +75,8 @@ class ModConflictDetector {
             /\.webm$/i,
             /\.bntx$/i,
             /\.lua$/i,
-            /\.arc$/i
+            /\.arc$/i,
+            /\.bfotf$/i
         ];
 
         return sensitivePatterns.some(pattern => pattern.test(filePath));

@@ -1,25 +1,37 @@
-<audio id="audioPlayer" src="./finish.mp3" type="audio/mpeg"></audio>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Player</title>
+</head>
+<body>
+    <audio id="successSound" src="../windows/finish.mp3"></audio>
+    <audio id="errorSound" src="../windows/error.mp3"></audio>
+    
+    <script>
+        let volume = 100;
 
-<script>
-  const audioPlayer = document.getElementById('audioPlayer');
-  
-  // Set initial volume if stored
-  const volume = localStorage.getItem('volume') || 1;
-  audioPlayer.volume = volume;
+        function setVolume(newVolume) {
+            volume = newVolume;
+            document.querySelectorAll('audio').forEach(audio => {
+                audio.volume = volume / 100;
+            });
+        }
 
-  function playAudio() {
-    audioPlayer.currentTime = 0; // Reset to start
-    audioPlayer.play().catch(function(error) {
-      console.error('Error playing audio:', error);
-    });
-  }
+        function playSound(type) {
+            const audio = document.getElementById(type + 'Sound');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(err => console.error('Audio playback error:', err));
+            }
+        }
 
-  // Function to set volume (0-1)
-  function setVolume(value) {
-    const volume = value / 100;
-    audioPlayer.volume = volume;
-    localStorage.setItem('volume', volume);
-    console.log('Volume set to:', volume);
-    return true;
-  }
-</script>
+        // Listen for messages from main process
+        window.electron.onPlaySound((type) => {
+            playSound(type);
+        });
+
+        // Initialize volume
+        window.electron.getVolume().then(vol => setVolume(vol));
+    </script>
+</body>
+</html>

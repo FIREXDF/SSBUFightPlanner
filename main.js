@@ -13,6 +13,8 @@ const axios = require('axios');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const { format } = require('date-fns');
+const { createFPP } = require('./src/js/createFPP');
+const { extractFPP } = require('./src/js/extractFPP');
 
 log.transports.file.level = 'info';
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
@@ -133,20 +135,33 @@ if (!gotTheLock) {
             handleProtocolUrl(initialProtocolUrl);
             initialProtocolUrl = null;
         }
+ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+});
+        
     });
 
+
+    
     app.on('activate', function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
 
     app.on('window-all-closed', function () {
-        if (process.platform !== 'darwin') app.quit();
+        if (hiddenWindow && !hiddenWindow.isDestroyed()) {
+            hiddenWindow.destroy();
+        }
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
     });
 
     app.on('open-url', async (event, url) => {
         event.preventDefault();
         handleProtocolUrl(url);
     });
+
+    
 
     app.on('second-instance', async (event, argv) => {
         if (process.platform === 'win32') {
@@ -156,31 +171,6 @@ if (!gotTheLock) {
             }
         }
     });
-      
-      function generateRandomUserId() {
-        return crypto.randomUUID(); // Generates a random UUID
-    }
-    
-    // Retrieve or generate the user ID
-    function getUserId() {
-        let userId = store.get('user_id');
-        if (!userId) {
-            userId = generateRandomUserId();
-            store.set('user_id', userId); // Save it persistently
-        }
-        return userId;
-    }
-    
-    function logErrorToServer(errorType, error) {
-        const userId = getUserId();
-        axios.post('http://34.56.163.233:3010/log-error', {
-            user_id: userId,
-            type: errorType,
-            message: error.message || 'Unknown error',
-            stack: error.stack || '',
-            timestamp: new Date().toISOString(),
-        }).catch((err) => console.error('Error sending log to server:', err));
-    }
     
     function showErrorModal(message) {
         if (!mainWindow || !mainWindow.webContents) return;
@@ -249,40 +239,13 @@ if (!gotTheLock) {
     
     process.on('uncaughtException', (error) => {
         console.error('Uncaught Exception:', error);
-        logErrorToServer('Uncaught Exception', error);
         setTimeout(() => {
-            showErrorModal(`An unexpected error occurred in launch: ${error.message}\nThe error has been logged and sent to FightPlanner Server. If your config is not gone you can still use FightPlanner, but please make a suggestion with the link in the settings and put your user id in the suggestion and the error .`);
+            showErrorModal(`An unexpected error occurred in launch: ${error.message}. If your config is not gone you can still use FightPlanner, but please make a suggestion with the link in the settings and put your user id in the suggestion and the error .`);
         }, 1000);
     });
 
     process.on('unhandledRejection', (reason) => {
         console.error('Unhandled Rejection:', reason);
-        logErrorToServer('Unhandled Rejection', reason);
-    });
-
-    async function sendVersionToServer() {
-        const sendVersionEnabled = store.get('sendVersionEnabled', true);
-        if (!sendVersionEnabled) {
-            console.log('Sending version to server is disabled.');
-            return;
-        }
-    
-        const userId = getUserId(); // Get the unique random user ID
-        const version = app.getVersion(); // Automatically fetch the version from package.json
-    
-        try {
-            const response = await axios.post('http://34.56.163.233:3009/submit-version', {
-                user_id: userId,
-                version: version,
-            });
-            console.log('Server response:', response.data);
-        } catch (error) {
-            console.error('Error sending data to server:', error);
-        }
-    }
-
-    app.on('ready', () => {
-        sendVersionToServer();
     });
 }
 
@@ -307,6 +270,9 @@ async function createWindow() {
     discordRPC.connect();
 
     app.on('before-quit', () => {
+        if (hiddenWindow && !hiddenWindow.isDestroyed()) {
+            hiddenWindow.destroy();
+        }
         discordRPC.disconnect();
     });
 
@@ -318,6 +284,9 @@ async function createWindow() {
     });
 
     mainWindow.on('closed', () => {
+        if (hiddenWindow && !hiddenWindow.isDestroyed()) {
+            hiddenWindow.destroy();
+        }
         app.quit();
       });
 
@@ -661,6 +630,22 @@ ipcMain.handle('load-mods', async () => {
     try {
         const mods = [];
         
+        // Helper function to read mod info and category
+        async function getModInfo(modPath) {
+            try {
+                const infoPath = path.join(modPath, 'info.toml');
+                const exists = await fse.pathExists(infoPath);
+                if (exists) {
+                    const content = await fs.readFile(infoPath, 'utf8');
+                    const info = toml.parse(content);
+                    return info.category || 'Misc';
+                }
+            } catch (error) {
+                console.warn(`Error reading info.toml for mod at ${modPath}:`, error);
+            }
+            return 'Misc';
+        }
+
         // Read main mods folder
         const files = await fs.readdir(modsPath);
         for (const file of files) {
@@ -670,11 +655,13 @@ ipcMain.handle('load-mods', async () => {
             try {
                 const stats = await fs.stat(filePath);
                 if (stats.isDirectory()) {
+                    const category = await getModInfo(filePath);
                     mods.push({
                         id: file,
                         name: file,
                         enabled: true,
-                        path: filePath
+                        path: filePath,
+                        category
                     });
                 }
             } catch (statError) {
@@ -693,11 +680,13 @@ ipcMain.handle('load-mods', async () => {
                 try {
                     const stats = await fs.stat(filePath);
                     if (stats.isDirectory()) {
+                        const category = await getModInfo(filePath);
                         mods.push({
                             id: file,
                             name: file,
                             enabled: false,
-                            path: filePath
+                            path: filePath,
+                            category
                         });
                     }
                 } catch (statError) {
@@ -776,58 +765,20 @@ function extractZipFile(source, destination) {
             reject(error);
         }
     });
-}
+};
 
 // Mod toggle handler
-ipcMain.handle('toggle-mod', async (event, modId) => {
-    const modsPath = store.get('modsPath');
-    if (!modsPath) {
-        throw new Error('Mods directory not set');
+ipcMain.handle('toggle-mod', async (event, modName) => {
+    const workspacePath = store.get('workspacePath');
+    if (!workspacePath) {
+        throw new Error('Workspace directory not set');
     }
 
-    const ultimatePath = path.dirname(modsPath);
-    const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
-
-    try {
-        const modPath = path.join(modsPath, modId);
-        const disabledModPath = path.join(disabledModsPath, modId);
-
-        // Ensure disabled_mod folder exists
-        await fs.mkdir(disabledModsPath, { recursive: true });
-
-        if (await fse.pathExists(modPath)) {
-            // Move to disabled folder
-            try {
-                await fse.move(modPath, disabledModPath, { overwrite: true });
-            } catch (error) {
-                if (error.code === 'EPERM') {
-                    await fse.copy(modPath, disabledModPath, { overwrite: true });
-                    await fse.remove(modPath);
-                } else {
-                    throw error;
-                }
-            }
-            return false; // Disabled
-        } else if (await fse.pathExists(disabledModPath)) {
-            // Move back to main folder
-            try {
-                await fse.move(disabledModPath, modPath, { overwrite: true });
-            } catch (error) {
-                if (error.code === 'EPERM') {
-                    await fse.copy(disabledModPath, modPath, { overwrite: true });
-                    await fse.remove(disabledModPath);
-                } else {
-                    throw error;
-                }
-            }
-            return true; // Enabled
-        } else {
-            throw new Error('Mod not found');
-        }
-    } catch (error) {
-        console.error('Mod toggle error:', error);
-        throw error;
-    }
+    const PresetManager = require('./src/js/presetManager');
+    const presetManager = new PresetManager(workspacePath);
+    await presetManager.init();
+    
+    return await presetManager.toggleMod(modName);
 });
 
 // Enable all mods handler
@@ -1686,43 +1637,39 @@ async function getAllFiles(dirPath, arrayOfFiles = []) {
     return arrayOfFiles;
 }
 
+// Add this helper function
+function isPathInModsDirectory(targetPath, modsPath) {
+    const normTargetPath = path.normalize(targetPath).toLowerCase();
+    const normModsPath = path.normalize(modsPath).toLowerCase();
+    return normTargetPath.startsWith(normModsPath) || normTargetPath.includes('disabled_mod');
+}
+
+// Update the get-mod-files handler
 ipcMain.handle('get-mod-files', async (event, modPath) => {
     try {
-        // Special case for config.json - return file content instead of directory listing
-        if (modPath.endsWith('config.json')) {
-            try {
-                const configContent = await fs.readFile(modPath, 'utf8');
-                return configContent;
-            } catch (error) {
-                if (error.code === 'ENOENT') {
-                    console.warn('Config file not found:', modPath);
-                    return null; // Return null if file doesn't exist
-                }
-                throw error;
-            }
+        const modsPath = store.get('modsPath');
+        if (!modsPath) {
+            throw new Error('Mods directory not set');
         }
 
-        // For directories, continue with existing directory scanning logic
-        const realPath = path.resolve(modPath);
-        const modsPath = store.get('modsPath');
-        
-        if (!realPath.startsWith(modsPath)) {
+        const normalizedModPath = path.normalize(modPath);
+        const normalizedModsPath = path.normalize(modsPath);
+
+        // Allow paths in both mods directory and disabled mods directory
+        const ultimatePath = path.dirname(modsPath);
+        const disabledModsPath = path.join(ultimatePath, '{disabled_mod}');
+
+        if (!normalizedModPath.startsWith(normalizedModsPath) && 
+            !normalizedModPath.startsWith(path.normalize(disabledModsPath))) {
             throw new Error('Access denied: Path is outside mods directory');
         }
 
-        const stat = await fs.stat(realPath);
-        if (!stat.isDirectory()) {
-            throw new Error('Not a directory');
-        }
-
-        // Get all files and folders recursively
-        const files = await getAllFiles(realPath);
-        
-        // Convert absolute paths to relative paths from the mod directory
-        return files.map(file => path.relative(realPath, file));
+        // Get all files recursively
+        const files = await getAllFiles(modPath);
+        return files.map(file => path.relative(modPath, file));
     } catch (error) {
-        console.error('Error getting mod files:', error);
-        throw new Error(`Failed to get mod files: ${error.message}`);
+        console.error('Failed to get mod files:', error);
+        throw error;
     }
 });
 
@@ -1785,10 +1732,6 @@ ipcMain.handle('update-discord-rpc-mod-installation', async () => {
         console.error('Failed to update Discord RPC mod installation:', error);
         throw error;
     }
-});
-
-ipcMain.handle('get-user-id', () => {
-    return getUserId();
 });
 
 ipcMain.handle('get-app-version', () => {
@@ -2132,4 +2075,75 @@ ipcMain.handle('toggle-pause-download', async (event, id) => {
 
 ipcMain.handle('get-active-download', (event, id) => {
     return activeDownloads.has(id);
+});
+
+// Add FPP creation handler
+ipcMain.handle('create-fpp', async (event, options) => {
+    try {
+        const modsPath = store.get('modsPath');
+        const pluginsPath = store.get('pluginsPath');
+        
+        // Utiliser le répertoire spécifié ou téléchargements par défaut
+        const outputDir = options.outputDir || app.getPath('downloads');
+        
+        const result = await createFPP({
+            ...options,
+            modsPath,
+            pluginsPath,
+            outputDir: outputDir
+        });
+
+        return { success: true, path: result.outputPath };
+    } catch (error) {
+        console.error('Error creating FPP:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Add FPP handlers
+ipcMain.handle('import-fpp', async (event, filePath) => {
+    try {
+        const modsPath = store.get('modsPath');
+        const pluginsPath = store.get('pluginsPath');
+
+        await extractFPP(filePath, {
+            modsPath,
+            pluginsPath
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error importing FPP:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Add after other settings handlers
+ipcMain.handle('get-workspace-path', () => {
+    return store.get('workspacePath', '');
+});
+
+ipcMain.handle('set-workspace-path', (event, newPath) => {
+    store.set('workspacePath', newPath);
+    return true;
+});
+
+// Add this handler near the other mod operation handlers
+ipcMain.handle('get-disabled-mods', async () => {
+    const workspacePath = store.get('workspacePath');
+    if (!workspacePath) {
+        return [];
+    }
+
+    const PresetManager = require('./src/js/presetManager');
+    const presetManager = new PresetManager(workspacePath);
+    await presetManager.init();
+    
+    return await presetManager.getDisabledMods();
+});
+
+// Add this handler for getting mod hash
+ipcMain.handle('get-mod-hash', async (event, modName) => {
+    const { getHash } = require('./src/js/hash');
+    return getHash(modName);
 });

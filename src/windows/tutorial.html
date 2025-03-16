@@ -7,76 +7,141 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body {
-            background-color: #f4f4f4;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
         .tutorial-container {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 20px;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
             background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transform: translateY(0);
+            transition: transform 0.3s ease-in-out;
+        }
+        .tutorial-container:hover {
+            transform: translateY(-5px);
+        }
+        .progress-bar-container {
+            margin-bottom: 2rem;
+        }
+        .progress {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: #0d6efd;
+            transition: width 0.6s ease;
         }
         .tutorial-step {
             display: none;
+            opacity: 0;
+            transform: translateY(20px);
         }
         .tutorial-step.active {
             display: block;
-            animation: fadeIn 0.5s ease-in-out;
+            animation: slideIn 0.6s ease-out forwards;
         }
         .tutorial-gif {
-            max-width: 100%;
+            width: 100%;
             height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+        .tutorial-gif:hover {
+            transform: scale(1.02);
+        }
+        .tutorial-gif video {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;  /* Container width */
-            height: 300px; /* Fixed height */
-            overflow: hidden; /* Hide overflow */
-            position: relative;
-        }
-        .tutorial-gif2 {
-            max-width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            background-color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .tutorial-gif img {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        min-width: 100%;
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: cover; /* Maintain aspect ratio */
-    }
-        .gif-placeholder {
-            color: #888;
-            text-align: center;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
         .navigation-buttons {
             display: flex;
             justify-content: space-between;
-            margin-top: 20px;
+            margin-top: 2rem;
+            gap: 1rem;
         }
-        .rounded-video {
-            border-radius: 15px;
-            overflow: hidden;
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0d6efd, #0099ff);
+            border: none;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            border: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #198754, #20c997);
+            border: none;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #dee2e6;
+            transition: all 0.3s ease;
+        }
+        .step-dot.active {
+            background-color: #0d6efd;
+            transform: scale(1.2);
+        }
+        h2, h3 {
+            color: #2b2d42;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .feature-list li i {
+            color: #0d6efd;
         }
     </style>
 </head>
@@ -90,7 +155,7 @@
             <!-- Step 1: Welcome -->
             <div class="tutorial-step active" data-step="1">
                 <h2 class="text-center mb-4">Welcome to the new FightPlanner</h2>
-                <div class="tutorial-gif2">
+                <div class="">
                     <video  src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo.webm?raw=true" autoplay loop class="img-fluid rounded-video"></video>
                 </div>
                 <p class="text-center">The new FightPlanner is here for manage your mods on SSBU !</p>
@@ -113,12 +178,12 @@
                     <video src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/2.webm?raw=true" autoplay loop class="img-fluid rounded-video"></video>
                 </div>
                 <p>You can install mods by:</p>
-                <ul>
-                    <li>Dragging and dropping mod files</li>
-                    <li>Clicking<button class="btn btn-primary" id="installMod" title="This button does nothing here">
+                <ul class="feature-list">
+                    <li><i class="bi bi-check-circle"></i>Dragging and dropping mod files</li>
+                    <li><i class="bi bi-check-circle"></i>Clicking<button class="btn btn-primary" id="installMod" title="This button does nothing here">
                         <i class="bi bi-plus-circle"></i>
                     </button> button</li>
-                    <li>Clicking<button id="gameBananaDownloadBtn" class="btn btn-success" title="This button does nothing here">
+                    <li><i class="bi bi-check-circle"></i>Clicking<button id="gameBananaDownloadBtn" class="btn btn-success" title="This button does nothing here">
                         <i class="bi bi-download"></i>
                     </button> button</li>
                 </ul>
@@ -131,36 +196,40 @@
                     <video src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/3.webm?raw=true" autoplay loop class="img-fluid rounded-video"></video>
                 </div>
                 <p>Right-click on a mod to access options like:</p>
-                <ul>
-                    <li>Rename</li>
-                    <li>Toggle Enable/Disable</li>
-                    <li>Open Folder</li>
+                <ul class="feature-list">
+                    <li><i class="bi bi-check-circle"></i>Rename</li>
+                    <li><i class="bi bi-check-circle"></i>Toggle Enable/Disable</li>
+                    <li><i class="bi bi-check-circle"></i>Open Folder</li>
                 </ul>
             </div>
 
             <!-- Step 5: Link Warning -->
             <div class="tutorial-step" data-step="5">
                 <h3>⚠️ Link Warning ⚠️</h3>
-                <p>When you are downloading a mod using the download button for GameBanana, it can have an error.</p>
-                <p>So verify that the link is like this screenshot :</p>
-                <img id="media5" src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link.png?raw=true" alt="Link" class="img-fluid">
-                <p>Or (if you gameBanana is different)</p>
-                <img id="media6" src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link2.png?raw=true" alt="Link" class="img-fluid">
+                <div class="warning-box">
+                    <p>When you are downloading a mod using the download button for GameBanana, it can have an error.</p>
+                    <p>So verify that the link is like this screenshot :</p>
+                    <img id="media5" src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link.png?raw=true" alt="Link" class="img-fluid">
+                    <p>Or (if you gameBanana is different)</p>
+                    <img id="media6" src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link2.png?raw=true" alt="Link" class="img-fluid">
+                </div>
             </div>
 
             <!-- Step 6: Warning -->
             <div class="tutorial-step" data-step="6">
                 <h3>⚠️ Warning ⚠️</h3>
-                <p>When the the tutorial finish please reload the list of mods for viewing you mods.</p>
-                <p>What you can still change after the tutorial:</p>
-                <ul>
-                    <li>The mods directory</li>
-                    <li>Change the theme to light & dark.</li>
-                </ul>
-                <p>Known issues:</p>
-                <ul>
-                    <li>Search Bar don't work (Fixes : Refresh the mods list or change of window on you pc and come back on FightPlanner)</li>
-                </ul>
+                <div class="warning-box">
+                    <p>When the the tutorial finish please reload the list of mods for viewing you mods.</p>
+                    <p>What you can still change after the tutorial:</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-check-circle"></i>The mods directory</li>
+                        <li><i class="bi bi-check-circle"></i>Change the theme to light & dark.</li>
+                    </ul>
+                    <p>Known issues:</p>
+                    <ul class="feature-list">
+                        <li><i class="bi bi-exclamation-circle"></i>Search Bar don't work (Fixes : Refresh the mods list or change of window on you pc and come back on FightPlanner)</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Navigation Buttons -->

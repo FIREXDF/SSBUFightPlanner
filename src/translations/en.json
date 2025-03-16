@@ -2,7 +2,8 @@
     "nav": {
         "mods": "Mods",
         "plugins": "Plugins",
-        "settings": "Settings"
+        "settings": "Settings",
+        "characters": "Characters"
     },
     "mods": {
         "title": "Mod List",
@@ -49,10 +50,11 @@
             "pluginsDir": "Plugins Directory",
             "selectFolder": "Select folder"
         },
-        "customize": {
-            "title": "Customize",
-            "darkMode": "Dark Mode",
-            "customCss": "Custom CSS File"
+        "theme": {
+            "title": "Appearance",
+            "dark": "Dark mode",
+            "css": "Personalize of the CSS",
+            "csstext": "Select your own css file for customize FightPlanner (Restart needed !)" 
         },
         "general": {
             "title": "General Settings",
@@ -96,6 +98,7 @@
             "unknown": "Unknown author",
             "multiple": "Multiple authors"
         },
+        "unknown": "Did not find any information",
         "description": {
             "title": "Description"
         },
@@ -105,6 +108,7 @@
             "latest": "Latest version",
             "outdated": "Outdated"
         },
+
         "category": {
             "label": "Category",
             "unknown": "Uncategorized",
@@ -113,7 +117,8 @@
             "ui": "UI",
             "audio": "Audio",
             "misc": "Miscellaneous",
-            "fighter": "Fighter"
+            "fighter": "Fighter",
+            "skins": "Skins"
         }
     }
 }
