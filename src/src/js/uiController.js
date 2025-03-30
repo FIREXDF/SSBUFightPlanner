@@ -364,45 +364,26 @@ async handleGameBananaDownload() {
         const searchTerm = document.getElementById('modSearchInput')?.value.toLowerCase() || '';
         const showEnabled = document.getElementById('enabledFilter')?.checked || false;
         const showDisabled = document.getElementById('disabledFilter')?.checked || false;
-    
+
         // Filter mods based on search criteria
-        const filteredMods = await Promise.all(this.mods.map(async mod => {
-            try {
-                // Name filter
-                const matchesSearch = mod.name.toLowerCase().includes(searchTerm);
-    
-                // Enabled/Disabled filter
-                const matchesEnabledFilter = 
-                    (showEnabled && mod.enabled) || 
-                    (showDisabled && !mod.enabled) || 
-                    (!showEnabled && !showDisabled);
-    
-                // Get mod info from info.toml
-                const modInfo = await window.api.modDetails.getInfo(mod.path);
-                
-                // Category filter - check if category from info.toml matches
-                const matchesCategory = this.selectedCategories.size === 0 || 
-                    (modInfo?.category && this.selectedCategories.has(modInfo.category));
-    
-                // For debugging
-                if (this.selectedCategories.size > 0) {
-                    console.log('Mod:', mod.name, 
-                        'Category from info.toml:', modInfo?.category,
-                        'Selected categories:', Array.from(this.selectedCategories),
-                        'Matches:', matchesCategory);
-                }
-    
-                // Only include mod if it matches all filters
-                return matchesSearch && matchesEnabledFilter && matchesCategory ? mod : null;
-    
-            } catch (error) {
-                console.error(`Error processing mod ${mod.name}:`, error);
-                return matchesSearch && matchesEnabledFilter ? mod : null;
-            }
-        }));
-    
-        // Filter out null values and render the list
-        this.renderModList(filteredMods.filter(mod => mod !== null));
+        const filteredMods = this.mods.filter(mod => {
+            // Name filter
+            const matchesSearch = mod.name.toLowerCase().includes(searchTerm);
+
+            // Enabled/Disabled filter
+            const matchesEnabledFilter = 
+                (showEnabled && mod.enabled) || 
+                (showDisabled && !mod.enabled) || 
+                (!showEnabled && !showDisabled);
+
+            // Category filter - check if any selected category matches the mod's category
+            const matchesCategory = this.selectedCategories.size === 0 || 
+                (mod.category && this.selectedCategories.has(mod.category));
+
+            return matchesSearch && matchesEnabledFilter && matchesCategory;
+        });
+
+        this.renderModList(filteredMods);
     }
 
     // Method to update mods list
@@ -778,9 +759,6 @@ renderModList(mods) {
             e.preventDefault();
             const modItem = e.target.closest('.mod-item');
             if (modItem) {
-                // Hide any existing context menu first
-                document.getElementById('contextMenu').style.display = 'none';
-                // Show new context menu
                 this.showContextMenu(e, modItem.dataset.modId);
             }
         });
@@ -799,18 +777,12 @@ renderModList(mods) {
 
         // Hide context menu when clicking outside
         document.addEventListener('click', (e) => {
-            const contextMenu = document.getElementById('contextMenu');
             const modItem = e.target.closest('.mod-item');
-            const isContextMenuClick = e.target.closest('#contextMenu');
-            
-            // Only keep menu open if clicking inside it
-            if (!isContextMenuClick) {
-                contextMenu.style.display = 'none';
-            }
-            
-            // Handle mod selection
             if (modItem) {
+                console.log('Mod item clicked:', modItem.dataset.modId); // Debug log
                 this.selectMod(modItem.dataset.modId);
+            } else {
+                this.hideContextMenu();
             }
         });
     const dropZone = document.body; // Or a specific container
@@ -1018,71 +990,6 @@ window.electron.onProtocolUrl(async (data) => {
 
     // Add FPP confirm button handler
     document.getElementById('createFppBtn')?.addEventListener('click', () => this.createFpp());
-
-    // Add keyboard shortcuts
-    document.addEventListener('keydown', async (e) => {
-        // Only handle keystrokes if we're not in an input field
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            return;
-        }
-
-        // Delete key for uninstalling selected mod
-        if (e.key === 'Delete' && this.selectedMod) {
-            this.handleUninstallMod();
-        }
-    });
-
-    // Add enter key handler for confirmation modals
-    const confirmationModal = document.getElementById('confirmationModal');
-    if (confirmationModal) {
-        confirmationModal.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const confirmButton = confirmationModal.querySelector('#confirmUninstallBtn');
-                if (confirmButton) {
-                    confirmButton.click();
-                }
-            }
-        });
-    }
-
-    // Add vertical resize handler
-    this.initializeVerticalResizer();
-}
-
-initializeVerticalResizer() {
-    const resizer = document.querySelector('.resizer-horizontal');
-    if (!resizer) return;
-
-    const modPreview = document.querySelector('.mod-preview');
-    const modMetadata = document.querySelector('.mod-metadata');
-
-    let startY = 0;
-    let startHeightPreview = 0;
-    let startHeightMetadata = 0;
-
-    const startResize = (e) => {
-        startY = e.clientY;
-        startHeightPreview = modPreview.offsetHeight;
-        startHeightMetadata = modMetadata.offsetHeight;
-        document.documentElement.style.cursor = 'row-resize';
-
-        document.addEventListener('mousemove', resize);
-        document.addEventListener('mouseup', stopResize);
-    };
-
-    const resize = (e) => {
-        const diffY = e.clientY - startY;
-        modPreview.style.height = `${startHeightPreview + diffY}px`;
-        modMetadata.style.height = `${startHeightMetadata - diffY}px`;
-    };
-
-    const stopResize = () => {
-        document.documentElement.style.cursor = '';
-        document.removeEventListener('mousemove', resize);
-        document.removeEventListener('mouseup', stopResize);
-    };
-
-    resizer.addEventListener('mousedown', startResize);
 }
 
 // Provide detailed feedback about installations
@@ -1412,22 +1319,8 @@ async promptDialog(title, message, defaultValue) {
     showContextMenu(event, modId) {
         const contextMenu = document.getElementById('contextMenu');
         contextMenu.style.display = 'block';
-        
-        // Get menu dimensions and screen size
-        const menuHeight = contextMenu.offsetHeight;
-        const screenHeight = window.innerHeight;
-        const clickY = event.pageY;
-        
-        // Check if menu would go off screen
-        if (clickY + menuHeight > screenHeight) {
-            // Position menu above click
-            contextMenu.style.top = `${clickY - menuHeight}px`;
-        } else {
-            // Position menu below click
-            contextMenu.style.top = `${clickY}px`;
-        }
-        
         contextMenu.style.left = `${event.pageX}px`;
+        contextMenu.style.top = `${event.pageY}px`;
         this.selectedMod = modId;
     }
 
