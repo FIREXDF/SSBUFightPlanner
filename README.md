@@ -30,6 +30,6 @@
 
 Clone the repository
 
-And do those command
+And run those command
 `npm install`
 `npm run build`

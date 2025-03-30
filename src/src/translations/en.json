@@ -113,13 +113,12 @@
             "label": "Category",
             "unknown": "Uncategorized",
             "character": "Character",
-            "stages": "Stages",
+            "stage": "Stage",
             "ui": "UI",
             "audio": "Audio",
             "misc": "Miscellaneous",
             "fighter": "Fighter",
-            "skins": "Skins",
-            "movesets": "Movesets"
+            "skins": "Skins"
         }
     }
 }

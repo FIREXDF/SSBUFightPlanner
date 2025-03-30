@@ -1,0 +1,18 @@
+{
+    "productName": "FightPlanner Canary",
+    "appId": "com.fightplanner.canary",
+    "directories": {
+      "output": "dist-canary"
+    },
+    "files": [
+      "!dist/**"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "FIREXDF",
+        "repo": "FightPlannerEarly"
+      }
+    ]
+  }
+  
