@@ -267,8 +267,9 @@ body {
 /* Dark mode specific styles */
 body.dark-mode {
     /* Global dark mode background */
-    background-color: #121212 ;
-
+    background-color: #121212;
+    --bs-body-bg: #2c2c2c; /* Match the background color of .form-control:focus.dark-mode */
+    --bs-body-color: #ffffff; /* Match the text color of .form-control:focus.dark-mode */
 
     /* Tab navigation */
     .nav-tabs {
@@ -321,6 +322,31 @@ body.dark-mode {
     }
 
     /* Form controls */
+    select {
+        background-color: #2c2c2c; /* Match .form-control.dark-mode */
+        border-color: #444; /* Match .form-control.dark-mode */
+        color: #ffffff; /* Match .form-control.dark-mode */
+        transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    select:focus {
+        background-color: #2c2c2c; /* Match .form-control:focus.dark-mode */
+        border-color: #666; /* Match .form-control:focus.dark-mode */
+        color: #ffffff; /* Match .form-control:focus.dark-mode */
+        outline: none; /* Remove default outline */
+    }
+    
+    .form-check-input {
+        background-color: #2c2c2c; /* Match dark mode background */
+        border-color: #444; /* Match dark mode border */
+        transition: border-color 0.3s ease, background-color 0.3s ease;
+    }
+    
+    .form-check-input:checked {
+        background-color: #666; /* Match focused border color */
+        border-color: #666;
+    }
+    
     .form-control {
         background-color: #2c2c2c;
         border-color: #444;
@@ -373,6 +399,7 @@ body.dark-mode {
     ::-webkit-scrollbar-thumb:hover {
         background-color: #666;
     }
+
     .search-container {
         position: relative;
         margin-bottom: 15px;
