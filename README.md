@@ -26,6 +26,8 @@
 - Change Character slots
 ------------------------------------------------
 
+[Official FightPlanner Discord server](https://discord.gg/2zT5Rg46bG)
+
 # Build FightPlanner.
 
 Clone the repository
