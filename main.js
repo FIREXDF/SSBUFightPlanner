@@ -336,7 +336,7 @@ async function createWindow() {
                 await fse.pathExists(modsPath) &&
                 await fse.pathExists(pluginsPath)) {
                 
-                const disabledModsPath = path.join(ultimatePath, '{disabled_mod}');
+                const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
                 const disabledPluginsPath = path.join(skylinePath, DISABLED_PLUGINS_FOLDER_NAME);
 
                 // Create directories with proper error handling
@@ -626,6 +626,8 @@ ipcMain.handle('load-mods', async () => {
 
     const ultimatePath = path.dirname(modsPath);
     const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
+    const legacyDiscovery = store.get('legacyModDiscovery', false);
+    const removeDot = store.get('removeDot', false);
 
     try {
         const mods = [];
@@ -633,51 +635,68 @@ ipcMain.handle('load-mods', async () => {
         // Read main mods folder
         const files = await fs.readdir(modsPath);
         for (const file of files) {
-            if (file === DISABLED_MODS_FOLDER_NAME) continue;
             const filePath = path.join(modsPath, file);
+            const stats = await fs.stat(filePath);
             
-            try {
-                const stats = await fs.stat(filePath);
-                if (stats.isDirectory()) {
-                    mods.push({
-                        id: file,
-                        name: file,
-                        enabled: true,
-                        path: filePath
-                    });
+            if (stats.isDirectory()) {
+                // Skip the disabled mods folder if it happens to be inside the mods folder
+                if (file === DISABLED_MODS_FOLDER_NAME) {
+                    continue;
                 }
-            } catch (statError) {
-                console.error(`Error reading mod ${file}:`, statError);
+                
+                // Any mod with a dot prefix is considered disabled, regardless of legacy mode
+                const isDotPrefixed = file.startsWith('.');
+                const isEnabled = !isDotPrefixed;
+                
+                // For display purposes, remove the dot from the name only
+                const displayName = isDotPrefixed && removeDot ? file.substring(1) : file;
+                
+                mods.push({
+                    id: file,
+                    name: displayName,
+                    enabled: isEnabled,
+                    path: filePath,
+                    sortName: isDotPrefixed ? file.substring(1) : file // Name without dot for sorting
+                });
             }
         }
 
-        // Read disabled mods folder
-        try {
-            await fs.access(disabledModsPath);
-            const disabledFiles = await fs.readdir(disabledModsPath);
-            
-            for (const file of disabledFiles) {
-                const filePath = path.join(disabledModsPath, file);
-                
-                try {
+        // Always check the disabled mods folder regardless of mode
+        if (await fse.pathExists(disabledModsPath)) {
+            try {
+                const disabledFiles = await fs.readdir(disabledModsPath);
+                for (const file of disabledFiles) {
+                    const filePath = path.join(disabledModsPath, file);
                     const stats = await fs.stat(filePath);
+                    
                     if (stats.isDirectory()) {
                         mods.push({
                             id: file,
                             name: file,
                             enabled: false,
-                            path: filePath
+                            path: filePath,
+                            sortName: file // Already without dot prefix
                         });
                     }
-                } catch (statError) {
-                    console.error(`Error reading disabled mod ${file}:`, statError);
                 }
+            } catch (error) {
+                console.error('Error reading disabled mods folder:', error);
             }
-        } catch {
-            // Disabled mod folder doesn't exist, that's fine
         }
         
-        return mods;
+        // Sort mods: enabled first, then alphabetically within each group
+        mods.sort((a, b) => {
+            // First sort by enabled status
+            if (a.enabled !== b.enabled) {
+                return a.enabled ? -1 : 1; // Enabled mods first
+            }
+            
+            // Then sort alphabetically by name, ignoring the dot prefix
+            return a.sortName.localeCompare(b.sortName);
+        });
+        
+        // Remove temporary sortName property before returning
+        return mods.map(({ sortName, ...mod }) => mod);
     } catch (error) {
         console.error('Error loading mods:', error);
         return [];
@@ -754,45 +773,75 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
         throw new Error('Mods directory not set');
     }
 
+    const legacyDiscovery = store.get('legacyModDiscovery', false);
     const ultimatePath = path.dirname(modsPath);
     const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
 
     try {
-        const modPath = path.join(modsPath, modId);
-        const disabledModPath = path.join(disabledModsPath, modId);
-
-        // Ensure disabled_mod folder exists
-        await fs.mkdir(disabledModsPath, { recursive: true });
-
-        if (await fse.pathExists(modPath)) {
-            // Move to disabled folder
-            try {
-                await fse.move(modPath, disabledModPath, { overwrite: true });
-            } catch (error) {
-                if (error.code === 'EPERM') {
-                    await fse.copy(modPath, disabledModPath, { overwrite: true });
-                    await fse.remove(modPath);
-                } else {
-                    throw error;
-                }
+        // Check if this is a dot-prefixed mod (disabled in legacy mode)
+        if (modId.startsWith('.')) {
+            // Enable: Remove the dot
+            const enabledModId = modId.substring(1);
+            const currentPath = path.join(modsPath, modId);
+            const newPath = path.join(modsPath, enabledModId);
+            
+            // Check if paths exist before attempting rename
+            if (await fse.pathExists(currentPath)) {
+                await fse.rename(currentPath, newPath);
+                return true; // Now enabled
             }
-            return false; // Disabled
-        } else if (await fse.pathExists(disabledModPath)) {
-            // Move back to main folder
-            try {
-                await fse.move(disabledModPath, modPath, { overwrite: true });
-            } catch (error) {
-                if (error.code === 'EPERM') {
-                    await fse.copy(disabledModPath, modPath, { overwrite: true });
-                    await fse.remove(disabledModPath);
-                } else {
-                    throw error;
-                }
+        } else if (legacyDiscovery) {
+            // Legacy mode - check regular mod path first
+            const modPath = path.join(modsPath, modId);
+            
+            if (await fse.pathExists(modPath)) {
+                // Regular mod in mods folder - disable it by adding a dot
+                const disabledModId = `.${modId}`;
+                const newPath = path.join(modsPath, disabledModId);
+                
+                await fse.rename(modPath, newPath);
+                return false; // Now disabled
+            } 
+            
+            // Check if the mod is in the disabled folder (from non-legacy mode)
+            const disabledModPath = path.join(disabledModsPath, modId);
+            if (await fse.pathExists(disabledModPath)) {
+                // Mod was disabled in non-legacy mode, move to main folder WITHOUT adding dot
+                // (this is the key fix - we're enabling it in legacy mode)
+                await fse.move(disabledModPath, path.join(modsPath, modId));
+                return true; // Now enabled
             }
-            return true; // Enabled
         } else {
-            throw new Error('Mod not found');
+            // Non-legacy mode
+            const modPath = path.join(modsPath, modId);
+            const disabledModPath = path.join(disabledModsPath, modId);
+            
+            // Check if mod is in main folder
+            if (await fse.pathExists(modPath)) {
+                // Disable the mod by moving to disabled folder
+                await fse.ensureDir(disabledModsPath);
+                await fse.move(modPath, disabledModPath, { overwrite: true });
+                return false; // Now disabled
+            } 
+            
+            // Check if mod is in disabled folder
+            if (await fse.pathExists(disabledModPath)) {
+                // Enable the mod
+                await fse.move(disabledModPath, modPath, { overwrite: true });
+                return true; // Now enabled
+            }
+            
+            // Check if mod is in legacy format (has dot prefix)
+            const legacyDisabledModPath = path.join(modsPath, `.${modId}`);
+            if (await fse.pathExists(legacyDisabledModPath)) {
+                // Move from legacy format to disabled folder
+                await fse.ensureDir(disabledModsPath);
+                await fse.move(legacyDisabledModPath, disabledModPath);
+                return false; // Keep it disabled, but in non-legacy format
+            }
         }
+
+        throw new Error('Mod not found');
     } catch (error) {
         console.error('Mod toggle error:', error);
         throw error;
@@ -1009,6 +1058,16 @@ ipcMain.handle('set-conflict-check-enabled', (event, enabled) => {
     return true;
 });
 
+// Legacy mod discovery handler
+ipcMain.handle('get-legacy-mod-discovery', () => {
+    return store.get('legacyModDiscovery', false);
+});
+
+ipcMain.handle('set-legacy-mod-discovery', (event, enabled) => {
+    store.set('legacyModDiscovery', enabled);
+    return true;
+});
+
 // Dark mode handler
 ipcMain.handle('set-dark-mode', (event, enabled) => {
     store.set('darkMode', enabled);
@@ -1205,7 +1264,7 @@ ipcMain.handle('rename-mod', async (event, { oldName, newName }) => {
             }
     
             // Create necessary directories
-            const disabledModsPath = path.join(modsPath, '{disabled_mod}');
+            const disabledModsPath = path.join(modsPath, DISABLED_MODS_FOLDER_NAME);
             await fs.mkdir(disabledModsPath, { recursive: true });
     
             // Set default settings
@@ -1253,7 +1312,7 @@ ipcMain.handle('rename-mod', async (event, { oldName, newName }) => {
     
             for (const file of files) {
                 // Skip specific folders
-                if (file === '{disabled_mod}') continue;
+                if (file === DISABLED_MODS_FOLDER_NAME) continue;
     
                 const fullPath = path.join(modsPath, file);
                 const stats = await fs.stat(fullPath);
@@ -1268,7 +1327,7 @@ ipcMain.handle('rename-mod', async (event, { oldName, newName }) => {
             }
     
             // Check disabled mods
-            const disabledPath = path.join(modsPath, '{disabled_mod}');
+            const disabledPath = path.join(modsPath, DISABLED_MODS_FOLDER_NAME);
             try {
                 const disabledFiles = await fs.readdir(disabledPath);
                 for (const file of disabledFiles) {
@@ -1675,7 +1734,7 @@ ipcMain.handle('get-mod-files', async (event, modPath) => {
 
         // Allow paths in both mods directory and disabled mods directory
         const ultimatePath = path.dirname(modsPath);
-        const disabledModsPath = path.join(ultimatePath, '{disabled_mod}');
+        const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
 
         if (!normalizedModPath.startsWith(normalizedModsPath) && 
             !normalizedModPath.startsWith(path.normalize(disabledModsPath))) {

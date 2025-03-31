@@ -2033,6 +2033,7 @@ async updateModPreview(modId) {
         this.initializeConflictCheckToggle();
         this.initializeDiscordRpcToggle();
         this.initializeEmulatorSettings();
+        this.initializeLegacyModDiscoveryToggle();
         // Add log viewer functionality
         document.getElementById('openCurrentLog').addEventListener('click', this.handleOpenCurrentLog.bind(this));
         document.getElementById('openLogsFolder').addEventListener('click', this.handleOpenLogsFolder.bind(this));
@@ -3222,6 +3223,34 @@ async updateModPreview(modId) {
             toggleButton.classList.add('btn-outline-secondary');
             this.performSearch();
         });
+    }
+
+    // Legacy mod discovery toggle
+    initializeLegacyModDiscoveryToggle() {
+        const legacyModDiscoveryToggle = document.getElementById('legacyModDiscoveryToggle');
+        if (legacyModDiscoveryToggle) {
+            // Load current setting without showing notification
+            window.api.settings.getLegacyModDiscovery().then(enabled => {
+                // Set the checkbox without triggering the change event
+                legacyModDiscoveryToggle.checked = enabled;
+            }).catch(error => {
+                console.error('Failed to get legacy mod discovery setting:', error);
+            });
+
+            // Add change event listener
+            legacyModDiscoveryToggle.addEventListener('change', async (e) => {
+                try {
+                    const enabled = e.target.checked;
+                    await window.api.settings.setLegacyModDiscovery(enabled);
+                    console.log('Legacy mod discovery set to:', enabled);
+                } catch (error) {
+                    console.error('Failed to set legacy mod discovery:', error);
+                    this.showError('Failed to update legacy mod discovery setting: ' + error.message);
+                }
+            });
+        } else {
+            console.error('Legacy mod discovery toggle element not found');
+        }
     }
 }
 // Add drag and drop handling
