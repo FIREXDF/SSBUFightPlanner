@@ -118,7 +118,13 @@ contextBridge.exposeInMainWorld('api', {
         getVolume: () => ipcRenderer.invoke('get-volume'),
         setVolume: (volume) => ipcRenderer.invoke('set-volume', volume),
         getAprilFoolsEnabled: () => ipcRenderer.invoke('get-april-fools-enabled'),
-        setAprilFoolsEnabled: (enabled) => ipcRenderer.invoke('set-april-fools-enabled', enabled)
+        setAprilFoolsEnabled: (enabled) => ipcRenderer.invoke('set-april-fools-enabled', enabled),
+        getLegacyModDiscovery: async () => {
+            return await ipcRenderer.invoke('get-legacy-mod-discovery');
+        },
+        setLegacyModDiscovery: async (enabled) => {
+            return await ipcRenderer.invoke('set-legacy-mod-discovery', enabled);
+        }
     },
     enableAprilFoolsMode: () => ipcRenderer.invoke('enable-april-fools-mode'),
     discordRpc: {
