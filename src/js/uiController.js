@@ -1724,6 +1724,12 @@ async updateModPreview(modId) {
                 </div>
             `;
         }
+
+        // Show edit button when a mod is selected
+        const editButton = document.getElementById('editModInfo');
+        editButton.style.display = 'block';
+        editButton.onclick = () => this.showModInfoEditor(mod.path);
+
     } catch (error) {
         console.error('Error in updateModPreview:', error);
         metadataContent.innerHTML = `
@@ -1732,6 +1738,79 @@ async updateModPreview(modId) {
                 <small>${this.escapeHtml(error.message)}</small>
             </div>
         `;
+    }
+}
+
+async showModInfoEditor(modPath) {
+    try {
+        const modInfo = await window.api.getModInfo(modPath);
+        const currentModId = this.selectedMod;
+        
+        const form = document.getElementById('modInfoForm');
+        const modal = new bootstrap.Modal(document.getElementById('editModInfoModal'));
+        
+        // Clear all form fields first
+        form.reset();
+        
+        // Populate form with current values
+        if (modInfo) {
+            for (const [key, value] of Object.entries(modInfo)) {
+                const input = form.elements[key];
+                if (input) {
+                    input.value = value || '';
+                }
+            }
+        }
+
+        // Remove old event listener if exists
+        const saveButton = document.getElementById('saveModInfo');
+        const newSaveButton = saveButton.cloneNode(true);
+        saveButton.parentNode.replaceChild(newSaveButton, saveButton);
+
+        // Add new event listener
+        newSaveButton.onclick = async () => {
+            // Reset validation
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+            // Check required fields except version and description
+            const required = ['display_name', 'authors', 'category'];
+            let isValid = true;
+
+            required.forEach(field => {
+                const input = form.elements[field];
+                if (!input.value.trim()) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                return;
+            }
+
+            const formData = new FormData(form);
+            const updatedInfo = Object.fromEntries(formData.entries());
+            
+            try {
+                await window.api.saveModInfo(modPath, updatedInfo);
+                this.showToast('Mod info saved successfully', 'success');
+                modal.hide();
+                await this.loadMods();
+                
+                // Reselect the mod after saving
+                if (currentModId) {
+                    this.selectMod(currentModId);
+                    await this.updateModPreview(currentModId);
+                }
+            } catch (error) {
+                this.showError('Failed to save mod info: ' + error.message);
+            }
+        };
+
+        modal.show();
+    } catch (error) {
+        console.error('Error loading mod info:', error);
+        this.showError('Failed to load mod info: ' + error.message);
     }
 }
 

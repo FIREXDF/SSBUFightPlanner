@@ -133,7 +133,12 @@
                         <!-- Mod Preview -->
                         <div class="card flex-grow-1 mb-3">
                             <div class="card-header">
-                                <h5 class="mb-0">Mod Details</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Mod Details</h5>
+                                    <button class="btn btn-sm btn-outline-primary" id="editModInfo" style="display: none;">
+                                        <i class="bi bi-pencil-square"></i> Edit Info
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="mod-preview mb-3">
@@ -639,10 +644,6 @@
                                     </div>
                                     <div class="credits-member">
                                         <div class="member-role">Real Hardware Helper</div>
-                                        <div class="member-name">BenBroInPython</div>
-                                    </div>
-                                    <div class="credits-member">
-                                        <div class="member-role">Real Hardware Helper</div>
                                         <div class="member-name">Sam</div>
                                     </div>
                                 </div>
@@ -916,6 +917,61 @@
 
 <div id="modPreviewTooltip" class="mod-preview-tooltip">
     <img src="" alt="Mod Preview">
+</div>
+
+<!-- Add this modal before the closing body tag -->
+<div class="modal fade" id="editModInfoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Mod Info</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="modInfoForm">
+                    <div class="mb-3">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" class="form-control" name="display_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Authors</label>
+                        <input type="text" class="form-control" name="authors" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Version</label>
+                        <input type="text" class="form-control" name="version" pattern="^\d+\.\d+\.\d+$|^$">
+                        <small class="form-text text-muted">Format: x.y.z (e.g., 1.0.0) - Optional</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category" required>
+                            <option value="Fighter">Fighter</option>
+                            <option value="Movesets">Movesets</option>
+                            <option value="Stages">Stages</option>
+                            <option value="Effects">Effects</option>
+                            <option value="Final Smash">Final Smash</option>
+                            <option value="UI">UI</option>
+                            <option value="Param">Param</option>
+                            <option value="Audio">Audio</option>
+                            <option value="Other/Misc">Other/Misc</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">GameBanana URL</label>
+                        <input type="url" class="form-control" name="url">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveModInfo">Save Changes</button>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>

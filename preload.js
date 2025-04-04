@@ -159,7 +159,9 @@ contextBridge.exposeInMainWorld('api', {
     fppOperations: {
         createFpp: (options) => ipcRenderer.invoke('create-fpp', options),
         importFpp: (filePath) => ipcRenderer.invoke('import-fpp', filePath),
-    }
+    },
+    getModInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath),
+    saveModInfo: (modPath, info) => ipcRenderer.invoke('save-mod-info', modPath, info)
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {

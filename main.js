@@ -961,6 +961,31 @@ ipcMain.handle('get-mod-info', async (event, modPath) => {
     }
 });
 
+ipcMain.handle('save-mod-info', async (event, modPath, info) => {
+    try {
+        const infoPath = path.join(modPath, 'info.toml');
+        
+        // Convert the info object to TOML format
+        let tomlContent = '';
+        for (const [key, value] of Object.entries(info)) {
+            // Skip empty values
+            if (!value && key !== 'version') continue;
+            
+            if (key === 'description') {
+                tomlContent += `${key} = """\n${value}\n"""\n`;
+            } else {
+                tomlContent += `${key} = "${value}"\n`;
+            }
+        }
+        
+        await fs.writeFile(infoPath, tomlContent, 'utf8');
+        return true;
+    } catch (error) {
+        console.error('Failed to save mod info:', error);
+        throw error;
+    }
+});
+
 // Open mods folder handler
 ipcMain.handle('open-mods-folder', async () => {
     const modsPath = store.get('modsPath');
