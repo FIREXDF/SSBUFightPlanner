@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=fightplanner
+Comment=SSBU Mod Manager
+Comment[zh-TW]=SSBU Mod 管理員
+Exec=/usr/lib/fightplanner/fightplanner %f
+Icon=fightplanner
