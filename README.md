@@ -2,7 +2,7 @@
 
 <div style="text-align: center;">  
 
-<video src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo.webm?raw=true" autoplay loop ></video>
+<img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/FIGHTPLANNER%20(3).png?raw=true"></img>
 
 </div>
 
