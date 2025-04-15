@@ -1516,6 +1516,11 @@ body.dark-mode .mod-item.selected {
     opacity: 0.8;
 }
 
+input.form-control.form-control-sm::placeholder  {
+    color: #999999;
+    opacity: 1;
+}
+
 #modInfoForm .form-control.is-invalid,
 #modInfoForm .form-select.is-invalid {
     border-color: var(--bs-danger);
@@ -1536,4 +1541,33 @@ body.dark-mode #modInfoForm .form-select {
     background-color: var(#2c2c2c);
     color: var(--bs-light);
     border-color: var(--bs-secondary);
+}
+
+/* Add these styles for category dropdown dark mode */
+body.dark-mode .dropdown-menu {
+    background-color: #2b2b2b;
+    border-color: #404040;
+}
+
+body.dark-mode .dropdown-header {
+    color: #adb5bd;
+}
+
+body.dark-mode .dropdown-divider {
+    border-top-color: #404040;
+}
+
+body.dark-mode .dropdown-item {
+    color: #e9ecef;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+    background-color: #404040;
+    color: #fff;
+}
+
+body.dark-mode .dropdown-item.active {
+    background-color: #0d6efd;
+    color: #fff;
 }

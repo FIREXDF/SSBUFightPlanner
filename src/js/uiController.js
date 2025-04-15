@@ -1662,6 +1662,18 @@ async updateModPreview(modId) {
 
             modImage.src = previewPath || '';
 
+            // If no info.toml exists or it's empty, show the "no description" message
+            if (!modInfo) {
+                metadataContent.innerHTML = `
+                    <div class="alert alert-warning">
+                        <p>${await languageService.translate('mods.details.title')}:</p>
+                        <h5>${this.escapeHtml(mod.name)}</h5>
+                        <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
+                    </div>
+                `;
+                return;
+            }
+
             // Build metadata HTML with translations
             const metadataHtml = `
                 <h5>${this.escapeHtml(modInfo?.display_name || modInfo?.mod_name || mod.name)}</h5>
@@ -1671,7 +1683,7 @@ async updateModPreview(modId) {
                 }
                 ${modInfo?.authors ? `
                     <p><strong>${await languageService.translate('metadata.author.name')}:</strong> 
-                    ${this.escapeHtml(modInfo.authors)}</p>` : ``
+                    ${this.escapeHtml(modInfo.authors)}</p>` : ''
                 }
                 ${modInfo?.category ? `
                     <p><strong>${await languageService.translate('metadata.category.label')}:</strong> 
@@ -1685,16 +1697,15 @@ async updateModPreview(modId) {
                     <div class="description-section">
                         <strong>${await languageService.translate('metadata.description.title')}:</strong>
                         <p class="description-text">
-                            ${this.escapeHtml(modInfo.description)
-                            }
+                            ${this.escapeHtml(modInfo.description)}
                         </p>
-                    </div>` : ``
+                    </div>` : ''
                 }
                 ${modInfo?.url ? `
                     <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
                     <a href="#" onclick="window.api.openExternal('${this.escapeHtml(modInfo.url)}'); return false;">
                         ${this.escapeHtml(modInfo.url)}
-                    </a></p>` : 'No mod description found'
+                    </a></p>` : ''
                 }
             `;
             
@@ -1720,7 +1731,7 @@ async updateModPreview(modId) {
                 <div class="alert alert-warning">
                     <p>${await languageService.translate('mods.details.title')}:</p>
                     <h5>${this.escapeHtml(mod.name)}</h5>
-                    <p class="textmuted">${await languageService.translate('metadata.description.empty')}</p>
+                    <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
                 </div>
             `;
         }
@@ -3264,15 +3275,22 @@ async showModInfoEditor(modPath) {
     }
 
     initializeCategoryFilters() {
+        const categoryDropdown = document.getElementById('categoryFilters');
+        const dropdownToggle = document.getElementById('toggleCategories');
+        
+        // Initialize the Bootstrap dropdown with options
+        const dropdown = new bootstrap.Dropdown(dropdownToggle, {
+            autoClose: true // Enable auto-closing when clicking outside
+        });
+
         const categoryItems = document.querySelectorAll('#categoryFilters .dropdown-item[data-category]');
         categoryItems.forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent the dropdown from closing when clicking items
                 const category = item.dataset.category;
                 
-                // Toggle active state
                 item.classList.toggle('active');
                 
-                // Update selected categories
                 if (item.classList.contains('active')) {
                     this.selectedCategories.add(category);
                 } else {
@@ -3280,13 +3298,12 @@ async showModInfoEditor(modPath) {
                 }
                 
                 // Update button appearance
-                const toggleButton = document.getElementById('toggleCategories');
                 if (this.selectedCategories.size > 0) {
-                    toggleButton.classList.add('btn-primary');
-                    toggleButton.classList.remove('btn-outline-secondary');
+                    dropdownToggle.classList.add('btn-primary');
+                    dropdownToggle.classList.remove('btn-outline-secondary');
                 } else {
-                    toggleButton.classList.remove('btn-primary');
-                    toggleButton.classList.add('btn-outline-secondary');
+                    dropdownToggle.classList.remove('btn-primary');
+                    dropdownToggle.classList.add('btn-outline-secondary');
                 }
                 
                 this.performSearch();
@@ -3294,14 +3311,18 @@ async showModInfoEditor(modPath) {
         });
 
         // Clear filters handler
-        document.getElementById('clearCategoryFilters')?.addEventListener('click', () => {
-            this.selectedCategories.clear();
-            categoryItems.forEach(item => item.classList.remove('active'));
-            const toggleButton = document.getElementById('toggleCategories');
-            toggleButton.classList.remove('btn-primary');
-            toggleButton.classList.add('btn-outline-secondary');
-            this.performSearch();
-        });
+        const clearButton = document.getElementById('clearCategoryFilters');
+        if (clearButton) {
+            clearButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectedCategories.clear();
+                categoryItems.forEach(item => item.classList.remove('active'));
+                dropdownToggle.classList.remove('btn-primary');
+                dropdownToggle.classList.add('btn-outline-secondary');
+                this.performSearch();
+                dropdown.hide(); // Explicitly hide the dropdown after clearing
+            });
+        }
     }
 
     // Legacy mod discovery toggle

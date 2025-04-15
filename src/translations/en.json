@@ -100,7 +100,8 @@
         },
         "unknown": "Did not find any information",
         "description": {
-            "title": "Description"
+            "title": "Description",
+            "empty": "No details available"
         },
         "version": {
             "label": "Version",

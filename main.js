@@ -110,7 +110,9 @@ if (!gotTheLock) {
         show: false,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false,
+            width: 1300,
+            height: 800,
+            contextIsolation: true,
         },
     });
     
@@ -788,6 +790,7 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
             // Check if paths exist before attempting rename
             if (await fse.pathExists(currentPath)) {
                 await fse.rename(currentPath, newPath);
+                hiddenWindow.webContents.executeJavaScript('playOn()');
                 return true; // Now enabled
             }
         } else if (legacyDiscovery) {
@@ -800,6 +803,7 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
                 const newPath = path.join(modsPath, disabledModId);
                 
                 await fse.rename(modPath, newPath);
+                hiddenWindow.webContents.executeJavaScript('playOff()');
                 return false; // Now disabled
             } 
             
@@ -808,7 +812,8 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
             if (await fse.pathExists(disabledModPath)) {
                 // Mod was disabled in non-legacy mode, move to main folder WITHOUT adding dot
                 // (this is the key fix - we're enabling it in legacy mode)
-                await fse.move(disabledModPath, path.join(modsPath, modId));
+                await fse.move(disabledModPath, path.join(modsPath, modId))
+                hiddenWindow.webContents.executeJavaScript('playOn()');
                 return true; // Now enabled
             }
         } else {
@@ -821,6 +826,7 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
                 // Disable the mod by moving to disabled folder
                 await fse.ensureDir(disabledModsPath);
                 await fse.move(modPath, disabledModPath, { overwrite: true });
+                hiddenWindow.webContents.executeJavaScript('playOff()');
                 return false; // Now disabled
             } 
             
@@ -828,6 +834,7 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
             if (await fse.pathExists(disabledModPath)) {
                 // Enable the mod
                 await fse.move(disabledModPath, modPath, { overwrite: true });
+                hiddenWindow.webContents.executeJavaScript('playOn()');
                 return true; // Now enabled
             }
             
@@ -844,6 +851,7 @@ ipcMain.handle('toggle-mod', async (event, modId) => {
         throw new Error('Mod not found');
     } catch (error) {
         console.error('Mod toggle error:', error);
+        hiddenWindow.webContents.executeJavaScript('playError()');
         throw error;
     }
 });
@@ -929,6 +937,7 @@ ipcMain.handle('uninstall-mod', async (event, modId) => {
         return true;
     } catch (error) {
         console.error('Mod uninstallation error:', error);
+        hiddenWindow.webContents.executeJavaScript('playError()');
         throw error;
     }
 });
@@ -1160,7 +1169,7 @@ ipcMain.handle('download-mod', async (event, downloadLink) => {
                     modName
                 });
                 activeDownloads.delete(downloadId);
-                hiddenWindow.webContents.executeJavaScript('playAudio()');
+                hiddenWindow.webContents.executeJavaScript('playFinish()');
             },
             onError: (message) => {
                 event.sender.send('download-status', { 
@@ -1169,6 +1178,7 @@ ipcMain.handle('download-mod', async (event, downloadLink) => {
                     message 
                 });
                 activeDownloads.delete(downloadId);
+                hiddenWindow.webContents.executeJavaScript('playError()');
             }
         });
 

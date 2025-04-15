@@ -1,37 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Audio Player</title>
-</head>
-<body>
-    <audio id="successSound" src="../windows/finish.mp3"></audio>
-    <audio id="errorSound" src="../windows/error.mp3"></audio>
-    
-    <script>
-        let volume = 100;
+<audio id="audioFinish" src="./finish.mp3" type="audio/mpeg"></audio>
+<audio id="audioError" src="./error.mp3" type="audio/mpeg"></audio>
+<audio id="audioOff" src="./off.mp3" type="audio/mpeg"></audio>
+<audio id="audioOn" src="./on.mp3" type="audio/mpeg"></audio>
+<audio id="audioLoading" src="./loading.mp3" type="audio/mpeg"></audio>
 
-        function setVolume(newVolume) {
-            volume = newVolume;
-            document.querySelectorAll('audio').forEach(audio => {
-                audio.volume = volume / 100;
-            });
-        }
+<script>
+  const audioPlayer = document.getElementById('audioPlayer');
+  
+  // Set initial volume if stored
+  const volume = localStorage.getItem('volume') || 1;
+  audioFinish.volume = volume;
+  audioError.volume = volume;
 
-        function playSound(type) {
-            const audio = document.getElementById(type + 'Sound');
-            if (audio) {
-                audio.currentTime = 0;
-                audio.play().catch(err => console.error('Audio playback error:', err));
-            }
-        }
+  function playFinish() {
+    audioFinish.currentTime = 0; // Reset to start
+    audioFinish.play().catch(function(error) {
+      console.error('Error playing audio:', error);
+    });
+  }
 
-        // Listen for messages from main process
-        window.electron.onPlaySound((type) => {
-            playSound(type);
-        });
+  function playError() {
+    audioError.currentTime = 0; // Reset to start
+    audioError.play().catch(function(error) {
+      console.error('Error playing audio:', error);
+    });
 
-        // Initialize volume
-        window.electron.getVolume().then(vol => setVolume(vol));
-    </script>
-</body>
-</html>
+  }  function playOn() {
+    audioOn.currentTime = 0; // Reset to start
+    audioOn.play().catch(function(error) {
+      console.error('Error playing audio:', error);
+    });
+
+  }  function playOff() {
+    audioOff.currentTime = 0; // Reset to start
+    audioOff.play().catch(function(error) {
+      console.error('Error playing audio:', error);
+    });
+
+  }  function playLoading() {
+    audioLoading.currentTime = 0; // Reset to start
+    audioLoading.play().catch(function(error) {
+      console.error('Error playing audio:', error);
+    });
+  }
+
+  // Function to set volume (0-1)
+  function setVolume(value) {
+    const volume = value / 100;
+    audioFinish.volume = volume;
+    audioError.volume = volume;
+    audioOff.volume = volume;
+    audioOn.volume = volume;
+    audioLoading.volume = volume;
+    localStorage.setItem('volume', volume);
+    console.log('Volume set to:', volume);
+    return true;
+  }
+</script>
