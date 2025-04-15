@@ -3488,7 +3488,7 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
             const selectedPath = result.filePaths[0];
 
             // Set the selected path to the input field
-            const echoModePathInput = document.getElementById('echoModePath');
+            const echoModePathInput = document.getElementById('echoModPath');
             if (echoModePathInput) {
                 echoModePathInput.value = selectedPath;
             }
