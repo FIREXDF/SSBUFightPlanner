@@ -3474,3 +3474,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeUI();
 });
+
+// Get Echo Fighter Path
+document.getElementById('selectEchoModFolder').addEventListener('click', async () => {
+    try {
+        // Open a folder selection dialog
+        const result = await window.api.dialog.showOpenDialog({
+            properties: ['openDirectory'], // Allow folder selection
+        });
+
+        // Check if the user selected a folder
+        if (!result.canceled && result.filePaths.length > 0) {
+            const selectedPath = result.filePaths[0];
+
+            // Set the selected path to the input field
+            const echoModePathInput = document.getElementById('echoModePath');
+            if (echoModePathInput) {
+                echoModePathInput.value = selectedPath;
+            }
+        }
+    } catch (error) {
+        console.error('Error selecting folder:', error);
+    }
+});

@@ -3,7 +3,8 @@
         "mods": "Mods",
         "plugins": "Plugins",
         "settings": "Settings",
-        "characters": "Characters"
+        "characters": "Characters",
+        "echo": "Echo Fighter"
     },
     "mods": {
         "title": "Mod List",
@@ -42,6 +43,11 @@
             "openFolder": "Open Plugins Folder"
         }
     },
+    "echo fighter" {
+        "echo": {
+            "mod select": "Select Echo Mod"
+        }
+    }
     "settings": {
         "discordRpc": "Discord Rich Presence",
         "paths": {

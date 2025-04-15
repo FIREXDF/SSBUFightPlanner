@@ -50,6 +50,12 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="echo-fighter-tab" data-bs-toggle="pill" 
+                    data-bs-target="#echoFighter" type="button" role="tab">
+                <i class="bi bi-person-add me-2"></i><span data-i18n="nav.echo">Echo Fighter</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
                     data-bs-target="#settings" type="button" role="tab">
                 <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
@@ -211,6 +217,79 @@
                         <button class="btn btn-primary" id="installPlugin" title="Install Plugin">
                             <i class="bi bi-plus-circle"></i>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Echo Fighter Tab -->
+        <div class="tab-pane fade h-100" id="echoFighter" role="tabpanel">
+            <div class="container-fluid h-100">
+                <div class="row h-100">
+                    <!-- Echo Mod Selection -->
+                    <div class="col-12 p-3 position-relative">
+                        <label class="form-label" data-i18n="echo.mod.select">Select Echo Mod</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="echoModSelect" readonly>
+                            <button class="btn btn-outline-primary" id="selectEchoMod">
+                                <i class="bi bi-folder2-open"></i>
+                            </button>                            
+                        </div> 
+                    </div>                    
+                    <div class="card flex-grow-1 mb-3">
+                        <div class="card-header flex-grow-1">
+                            <h5 class="mb-0">Mod Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mod-preview mb-3">
+                                <img id="modImage" src="" alt="No image" class="img-fluid rounded">
+                            </div>
+                            <div class="mod-metadata overflow-auto" id="modMetadata" style="max-height: 340px;">
+                                <div class="metadata-content">
+                                    Select a mod to view details
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 p-3 position-relative" id="numColorSlots" name="color-start-dropdown">
+                        <label for="echoSlotNumber">Number of Color Slots: </label>
+                        <input type="text" class="form-control relative" id="echoColorNumber" readonly>
+                    <div class="col-12 p-3 position-relative">
+                            <label class="form-label" data-i18n="echo.fighter.name">Enter New Fighter Name: </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="newEchoName" placeholder="New Fighter Name">                                                        
+                            </div> 
+                    </div>
+                    <div class="col-12 p-3 position-relative">
+                        <label class="form-label" data-i18n="echo.fighter.id">Enter New Fighter ID: </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="newEchoID" placeholder="New Fighter ID">                                                        
+                        </div> 
+                    </div>
+                    <br>
+                    <div class="color-slots selection drop-down" id="colorStartSelect">
+                        <label for="colorStart">Choose Echo Slot Start: </label>
+                        <select name="colorStart" id="echoColorStart">
+                            <option value="8">8</option>
+                            <option value="16">16</option>
+                            <option value="24">24</option>
+                            <option value="32">32</option>
+                            <option value="40">40</option>
+                            <option value="48">48</option>
+                            <option value="56">56</option>
+                            <option value="64">64</option>
+                            <option value="72">72</option>
+                            <option value="80">80</option>
+                            <option value="88">88</option>
+                            <option value="96">96</option>
+                        </select>
+                        <br><br>
+                        <div class="btn-echo" id="createEcho">
+                            <button type="submit" class="btn btn-primary" id="createEcho">Create Echo Fighter
+                                <i class="bi bi-person-add"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
