@@ -43,11 +43,11 @@
             "openFolder": "Open Plugins Folder"
         }
     },
-    "echo fighter" {
+    "echo fighter": {
         "echo": {
             "mod select": "Select Echo Mod"
         }
-    }
+    },
     "settings": {
         "discordRpc": "Discord Rich Presence",
         "paths": {
