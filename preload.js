@@ -91,6 +91,7 @@ contextBridge.exposeInMainWorld('api', {
         setDarkMode: (enabled) => ipcRenderer.invoke('set-dark-mode', enabled),
         getDarkMode: () => ipcRenderer.invoke('get-dark-mode'),
         getCustomCssPath: () => ipcRenderer.invoke('get-custom-css-path'),
+        restartApp: () => ipcRenderer.invoke('restart-app'),
         getPluginsPath: () => ipcRenderer.invoke('get-plugins-path'),
         setCustomCssPath: (path) => ipcRenderer.invoke('set-custom-css-path', path),
         setPluginsPath: (path) => ipcRenderer.invoke('set-plugins-path', path),

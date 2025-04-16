@@ -2259,3 +2259,16 @@ ipcMain.handle('get-mod-hash', async (event, modName) => {
     const { getHash } = require('./src/js/hash');
     return getHash(modName);
 });
+
+// Handle Restart Button
+
+ipcMain.handle('restart-app', () => {
+    try {
+        app.relaunch();
+        app.exit(0);
+    } catch (error) {
+        console.error('Error restarting app:', error);
+        throw error;
+    }
+});
+
