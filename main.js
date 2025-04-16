@@ -970,6 +970,34 @@ ipcMain.handle('get-mod-info', async (event, modPath) => {
     }
 });
 
+// Handle Echo Mod Info
+ipcMain.handle('get-echo-mod-preview', async (event, echoModPath) => {
+    try {
+        const previewPath = path.join(echoModPath, 'preview.webp');
+        if (await fse.pathExists(previewPath)) {
+            return previewPath;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting mod preview:', error);
+        return null;
+    }
+});
+
+ipcMain.handle('get-echo-mod-info', async (event, echoModPath) => {
+    try {
+        const infoPath = path.join(echoModPath, 'info.toml');
+        if (await fse.pathExists(infoPath)) {
+            const infoContent = await fs.readFile(infoPath, 'utf8');
+            return toml.parse(infoContent);
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting mod info:', error);
+        return null;
+    }
+});
+
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
     try {
         const infoPath = path.join(modPath, 'info.toml');

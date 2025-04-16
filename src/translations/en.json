@@ -43,8 +43,7 @@
             "openFolder": "Open Plugins Folder"
         }
     },
-    "echo fighter": {
-        "echo": {
+    "echo": {
             "mod": {
                 "select": "Select Echo Mod"
             },
@@ -52,8 +51,8 @@
                 "name": "Echo Fighter Name",
                 "ID": "Echo Fighter ID"
             }
-        }
-    },
+        },
+    
     "settings": {
         "discordRpc": "Discord Rich Presence",
         "paths": {

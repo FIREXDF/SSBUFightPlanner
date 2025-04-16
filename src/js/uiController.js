@@ -3497,3 +3497,24 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
         console.error('Error selecting folder:', error);
     }
 });
+
+// Get Echo Image and Details
+
+document.getElementById('echoModPath').addEventListener('change', async (e) => {
+    const path = e.target.value;
+    try {
+        const image = await window.api.modDetails.getEchoPreview(path);
+        document.getElementById('echoModImage').src = image;
+        } 
+    catch (error) {
+        console.error('Error fetching echo mod image:', error);
+    }
+    try { 
+        const { name, description } = await window.api.modDetails.getEchoInfo(path);
+        document.getElementById('echoModName').textContent = name;
+        document.getElementById('echoModDescription').textContent = description;
+    }
+    catch (error) {
+        console.error('Error fetching echo mod image:', error);
+    } 
+}); 

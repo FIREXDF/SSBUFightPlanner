@@ -62,6 +62,7 @@ contextBridge.exposeInMainWorld('api', {
         openModsFolder: () => ipcRenderer.invoke('open-mods-folder'),
         loadMods: () => ipcRenderer.invoke('load-mods'),
         getModFiles: (modPath) => ipcRenderer.invoke('get-mod-files', modPath),
+        getEchoModFiles: (echoModPath) => ipcRenderer.invoke('get-echo-mod-files', echoModPath),
         checkConflicts: () => ipcRenderer.invoke('check-mod-conflicts'),
         renameModFile: (modPath, oldPath, newPath) => 
             ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
@@ -83,7 +84,9 @@ contextBridge.exposeInMainWorld('api', {
     },
     modDetails: {
         getPreview: (modPath) => ipcRenderer.invoke('get-mod-preview', modPath),
-        getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath)
+        getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath),
+        getEchoPreview: (echoModPath) => ipcRenderer.invoke('get-echo-mod-preview', echoModPath),
+        getEchoInfo: (echoModPath) => ipcRenderer.invoke('get-echo-mod-info', echoModPath)
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),
