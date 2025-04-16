@@ -45,7 +45,13 @@
     },
     "echo fighter": {
         "echo": {
-            "mod select": "Select Echo Mod"
+            "mod": {
+                "select": "Select Echo Mod"
+            },
+            "fighter": {
+                "name": "Echo Fighter Name",
+                "ID": "Echo Fighter ID"
+            }
         }
     },
     "settings": {
