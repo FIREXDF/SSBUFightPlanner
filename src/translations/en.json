@@ -48,8 +48,8 @@
                 "select": "Select Echo Mod"
             },
             "fighter": {
-                "name": "Echo Fighter Name",
-                "ID": "Echo Fighter ID"
+                "name": "New Echo Fighter Name",
+                "id": "New Echo Fighter ID"
             }
         },
     

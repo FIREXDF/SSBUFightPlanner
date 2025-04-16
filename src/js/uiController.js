@@ -1645,7 +1645,7 @@ async updateModPreview(modId) {
         modImage.src = '';
         return;
     }
-
+    // Populate Mod Image and Metadata
     try {
         const mod = await this.modManager.getMod(modId);
         if (!mod) {
@@ -3499,22 +3499,86 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
 });
 
 // Get Echo Image and Details
+document.getElementById('echoModPath').addEventListener('change', async () => {
+    const echoModPath = document.getElementById('echoModPath').value;
+    const echoModImage = document.getElementById('echoModImage');
+    const metadataContent = document.getElementsByClassName('.echo-metatadata-content');
+    
+    async function updateEchoModDetails() {
+    
+        try {
+            const [previewPath, modInfo] = await Promise.all([
+                window.api.modDetails.getEchoPreview(echoModPath),
+                window.api.modDetails.getEchoInfo(echoModPath)
+            ]);
 
-document.getElementById('echoModPath').addEventListener('change', async (e) => {
-    const path = e.target.value;
-    try {
-        const image = await window.api.modDetails.getEchoPreview(path);
-        document.getElementById('echoModImage').src = image;
-        } 
-    catch (error) {
-        console.error('Error fetching echo mod image:', error);
+            echoModImage.src = previewPath || '';
+
+            // If no info.toml exists or it's empty, show the "no description" message
+            if (!modInfo) {
+                metadataContent.innerHTML = `
+                    <div class="alert alert-warning">
+                        <p>${await languageService.translate('mods.details.title')}:</p>
+                        <h5>${this.escapeHtml(mod.name)}</h5>
+                        <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build metadata HTML with translations
+            const metadataHtml = `
+                <h5>${this.escapeHtml(modInfo?.display_name || modInfo?.mod_name || mod.name)}</h5>
+                ${modInfo?.version ? `
+                    <p><strong>${await languageService.translate('metadata.version.label')}:</strong> 
+                    ${this.escapeHtml(modInfo.version)}</p>` : ''
+                }
+                ${modInfo?.authors ? `
+                    <p><strong>${await languageService.translate('metadata.author.name')}:</strong> 
+                    ${this.escapeHtml(modInfo.authors)}</p>` : ''
+                }
+                ${modInfo?.category ? `
+                    <p><strong>${await languageService.translate('metadata.category.label')}:</strong> 
+                    ${await languageService.translate(`metadata.category.${modInfo.category.toLowerCase()}`) || this.escapeHtml(modInfo.category)}</p>` : ''
+                }
+                ${typeof modInfo?.wifi_safe !== 'undefined' ? `
+                    <p><strong>${await languageService.translate('mods.details.wifiSafe')}:</strong> 
+                    ${modInfo.wifi_safe ? '✔️' : '❌'}</p>` : ''
+                }
+                ${modInfo?.description ? `
+                    <div class="description-section">
+                        <strong>${await languageService.translate('metadata.description.title')}:</strong>
+                        <p class="description-text">
+                            ${this.escapeHtml(modInfo.description)}
+                        </p>
+                    </div>` : ''
+                }
+                ${modInfo?.url ? `
+                    <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
+                    <a href="#" onclick="window.api.openExternal('${this.escapeHtml(modInfo.url)}'); return false;">
+                        ${this.escapeHtml(modInfo.url)}
+                    </a></p>` : ''
+                }
+            `;
+            
+            metadataContent.innerHTML = metadataHtml;
+
+            // Add event listener for description toggle
+            const toggleBtn = metadataContent.querySelector('.toggle-description');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', async (e) => {
+                    const descText = e.target.parentElement;
+                    const isExpanded = e.target.dataset.expanded === 'true';
+                    descText.style.maxHeight = isExpanded ? '100px' : 'none';
+                    e.target.textContent = await languageService.translate(
+                        isExpanded ? 'metadata.description.readMore' : 'metadata.description.readLess'
+                    );
+                    e.target.dataset.expanded = !isExpanded;
+                });
+            }
+        }
+        catch {
+            console.log ('Error loading mod details');
+        }
     }
-    try { 
-        const { name, description } = await window.api.modDetails.getEchoInfo(path);
-        document.getElementById('echoModName').textContent = name;
-        document.getElementById('echoModDescription').textContent = description;
-    }
-    catch (error) {
-        console.error('Error fetching echo mod image:', error);
-    } 
-}); 
+});
