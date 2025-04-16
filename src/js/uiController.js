@@ -3500,9 +3500,9 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
 
 // Get Echo Image and Details
 document.getElementById('echoModPath').addEventListener('change', async () => {
-    const echoModPath = document.getElementById('echoModPath').value;
+    const echoModPath = document.getElementById('echoModPath');
     const echoModImage = document.getElementById('echoModImage');
-    const metadataContent = document.getElementsByClassName('.echo-metatadata-content');
+    const metadataContent = document.getElementsByClassName('echo-metatadata-content');
     
     async function updateEchoModDetails() {
     
@@ -3519,7 +3519,7 @@ document.getElementById('echoModPath').addEventListener('change', async () => {
                 metadataContent.innerHTML = `
                     <div class="alert alert-warning">
                         <p>${await languageService.translate('mods.details.title')}:</p>
-                        <h5>${this.escapeHtml(mod.name)}</h5>
+                        <h5>Unknown Mod</h5>
                         <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
                     </div>
                 `;
@@ -3577,8 +3577,15 @@ document.getElementById('echoModPath').addEventListener('change', async () => {
                 });
             }
         }
-        catch {
-            console.log ('Error loading mod details');
+        catch (error) {
+            console.error('Error loading mod details:', error);
+            metadataContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <p>Error loading mod details</p>
+                    <small>${error.message}</small>
+                </div>
+            `;
         }
     }
+    await updateEchoModDetails();
 });

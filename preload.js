@@ -90,6 +90,7 @@ contextBridge.exposeInMainWorld('api', {
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),
+        getEchoModsPath: () => ipcRenderer.invoke('get-echo-mods-path'),
         setModsPath: (path) => ipcRenderer.invoke('set-mods-path', path),
         setDarkMode: (enabled) => ipcRenderer.invoke('set-dark-mode', enabled),
         getDarkMode: () => ipcRenderer.invoke('get-dark-mode'),

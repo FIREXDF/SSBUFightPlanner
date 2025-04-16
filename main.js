@@ -1054,6 +1054,10 @@ ipcMain.handle('get-mods-path', () => {
     return store.get('modsPath', '');
 });
 
+ipcMain.handle('get-echo-mods-path', () => {
+    return store.get('echoModPath', '');
+});
+
 ipcMain.handle('set-mods-path', (event, newPath) => {
     store.set('modsPath', newPath);
     log.info('Mods path updated:', newPath);
