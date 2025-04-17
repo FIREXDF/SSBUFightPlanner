@@ -3491,6 +3491,9 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
             const echoModePathInput = document.getElementById('echoModPath');
             if (echoModePathInput) {
                 echoModePathInput.value = selectedPath;
+                // Manually trigger the change event
+                const event = new Event('change');
+                echoModePathInput.dispatchEvent(event);
             }
         }
     } catch (error) {
@@ -3500,18 +3503,33 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
 
 // Get Echo Image and Details
 document.getElementById('echoModPath').addEventListener('change', async () => {
-    const echoModPath = document.getElementById('echoModPath');
+    const echoModMetadata = document.getElementById('echoModMetadata');
+    if (!echoModMetadata) {
+        console.error('Metadata container not found');
+        return;
+    }
+
+    let metadataContent = echoModMetadata.querySelector('.echo-metadata-content');
+    if (!metadataContent) {
+        metadataContent = document.createElement('div');
+        metadataContent.className = 'echo-metadata-content';
+        echoModMetadata.appendChild(metadataContent);
+    }
+
+    const echoModPath = document.getElementById('echoModPath').value;
     const echoModImage = document.getElementById('echoModImage');
-    const metadataContent = document.getElementsByClassName('echo-metatadata-content');
     
-    async function updateEchoModDetails() {
-    
+    try {
+        
         try {
             const [previewPath, modInfo] = await Promise.all([
                 window.api.modDetails.getEchoPreview(echoModPath),
                 window.api.modDetails.getEchoInfo(echoModPath)
             ]);
-
+            console.log('Echo Mod Path:', echoModPath);
+            console.log('Preview Path:', previewPath);
+            console.log('Echo Mod Image Element:', echoModImage);
+            
             echoModImage.src = previewPath || '';
 
             // If no info.toml exists or it's empty, show the "no description" message
@@ -3563,21 +3581,7 @@ document.getElementById('echoModPath').addEventListener('change', async () => {
             
             metadataContent.innerHTML = metadataHtml;
 
-            // Add event listener for description toggle
-            const toggleBtn = metadataContent.querySelector('.toggle-description');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', async (e) => {
-                    const descText = e.target.parentElement;
-                    const isExpanded = e.target.dataset.expanded === 'true';
-                    descText.style.maxHeight = isExpanded ? '100px' : 'none';
-                    e.target.textContent = await languageService.translate(
-                        isExpanded ? 'metadata.description.readMore' : 'metadata.description.readLess'
-                    );
-                    e.target.dataset.expanded = !isExpanded;
-                });
-            }
-        }
-        catch (error) {
+        }   catch (error) {
             console.error('Error loading mod details:', error);
             metadataContent.innerHTML = `
                 <div class="alert alert-danger">
@@ -3586,6 +3590,15 @@ document.getElementById('echoModPath').addEventListener('change', async () => {
                 </div>
             `;
         }
+    
     }
-    await updateEchoModDetails();
+    catch (error) {
+        console.error('Error in updateModPreview:', error);
+        metadataContent.innerHTML = `
+            <div class="alert alert-danger">
+                <p>${await languageService.translate('metadata.unknown')}</p>
+                <small>${this.escapeHtml(error.message)}</small>
+            </div>
+        `;
+    }
 });
