@@ -86,7 +86,8 @@ contextBridge.exposeInMainWorld('api', {
         getPreview: (modPath) => ipcRenderer.invoke('get-mod-preview', modPath),
         getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath),
         getEchoPreview: (echoModPath) => ipcRenderer.invoke('get-echo-mod-preview', echoModPath),
-        getEchoInfo: (echoModPath) => ipcRenderer.invoke('get-echo-mod-info', echoModPath)
+        getEchoInfo: (echoModPath) => ipcRenderer.invoke('get-echo-mod-info', echoModPath),
+        getNumColorSlots: (echoModPath) => ipcRenderer.invoke('get-num-color-slots', echoModPath)
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),

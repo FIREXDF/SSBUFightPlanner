@@ -3616,4 +3616,18 @@ document.getElementById('echoModPath').addEventListener('change', async (event) 
                 </div>
             `;
         }
-    });
+    })
+    
+    // Get Number of Color Slots
+    const colorSlots = document.getElementById('echoColorNumber');
+    const numColorSlots = await window.api.modDetails.getNumColorSlots(echoModPath);
+    if (numColorSlots) {
+        colorSlots.value = numColorSlots;
+    }
+    else {
+        console.error('Color slots element not found');
+    };
+
+
+
+

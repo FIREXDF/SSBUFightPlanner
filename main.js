@@ -998,6 +998,47 @@ ipcMain.handle('get-echo-mod-info', async (event, echoModPath) => {
     }
 });
 
+ipcMain.handle('get-num-color-slots', async (event, echoModPath) => {
+    try {
+        let totalColorSlots = 0;
+
+        // Read the mods folder to find all fighter directories
+        const fighterFolders = await fs.readdir(echoModPath, { withFileTypes: true });
+
+        // Iterate through each fighter folder
+        for (const fighterFolder of fighterFolders) {
+            if (!fighterFolder.isDirectory()) continue; // Skip non-directories
+
+            const fighterPath = path.join(echoModPath, fighterFolder.name);
+            const bodyFolderPath = path.join(fighterPath, 'model', 'body');
+
+            // Check if the body folder exists
+            if (await fse.pathExists(bodyFolderPath)) {
+                console.log(`Body folder found for fighter: ${fighterFolder.name}`);
+
+                // Read the contents of the body folder
+                const files = await fs.readdir(bodyFolderPath, { withFileTypes: true });
+
+                // Filter for folders that start with 'c' (e.g., c00, c01, etc.)
+                const colorFolders = files.filter(file => file.isDirectory() && /^c\d+$/.test(file.name));
+
+                // Add the count of color folders to the total
+                totalColorSlots += colorFolders.length;
+            }
+        }
+
+        if (totalColorSlots === 0) {
+            console.error('No body folder found for any fighter.');
+        }
+
+        return totalColorSlots; // Return the total count of color slots
+    } catch (error) {
+        console.error('Error getting number of color slots:', error);
+        return 0; // Return 0 in case of an error
+    }
+});
+
+
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
     try {
         const infoPath = path.join(modPath, 'info.toml');
