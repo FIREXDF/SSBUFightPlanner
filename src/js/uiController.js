@@ -3502,103 +3502,118 @@ document.getElementById('selectEchoModFolder').addEventListener('click', async (
 });
 
 // Get Echo Image and Details
-document.getElementById('echoModPath').addEventListener('change', async () => {
-    const echoModMetadata = document.getElementById('echoModMetadata');
-    if (!echoModMetadata) {
-        console.error('Metadata container not found');
-        return;
-    }
+document.getElementById('echoModPath').addEventListener('change', async (event) => {
+        const echoModMetadata = document.getElementById('echoModMetadata');
+        if (!echoModMetadata) {
+            console.error('Metadata container not found');
+            return;
+        }
 
-    let metadataContent = echoModMetadata.querySelector('.echo-metadata-content');
-    if (!metadataContent) {
-        metadataContent = document.createElement('div');
-        metadataContent.className = 'echo-metadata-content';
-        echoModMetadata.appendChild(metadataContent);
-    }
+        let metadataContent = echoModMetadata.querySelector('.echo-metadata-content');
+        if (!metadataContent) {
+            metadataContent = document.createElement('div');
+            metadataContent.className = 'echo-metadata-content';
+            echoModMetadata.appendChild(metadataContent);
+        }
 
-    const echoModPath = document.getElementById('echoModPath').value;
-    const echoModImage = document.getElementById('echoModImage');
-    
-    try {
+        const echoModPath = document.getElementById('echoModPath').value;
+        const echoModImage = document.getElementById('echoModImage');
         
         try {
-            const [previewPath, modInfo] = await Promise.all([
-                window.api.modDetails.getEchoPreview(echoModPath),
-                window.api.modDetails.getEchoInfo(echoModPath)
-            ]);
-            console.log('Echo Mod Path:', echoModPath);
-            console.log('Preview Path:', previewPath);
-            console.log('Echo Mod Image Element:', echoModImage);
             
-            echoModImage.src = previewPath || '';
+            try {
+                const [previewPath, modInfo] = await Promise.all([
+                    window.api.modDetails.getEchoPreview(echoModPath),
+                    window.api.modDetails.getEchoInfo(echoModPath)
+                ]);
+                console.log('Echo Mod Path:', echoModPath);
+                console.log('Preview Path:', previewPath);
+                console.log('Echo Mod Image Element:', echoModImage);
+                
+                echoModImage.src = previewPath || '';
 
-            // If no info.toml exists or it's empty, show the "no description" message
-            if (!modInfo) {
+                // If no info.toml exists or it's empty, show the "no description" message
+                if (!modInfo) {
+                    metadataContent.innerHTML = `
+                        <div class="alert alert-warning">
+                            <p>${await languageService.translate('mods.details.title')}:</p>
+                            <h5>Unknown Mod</h5>
+                            <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log('modInfo:', modInfo);
+
+                // Build metadata HTML with translations
+                
+                function escapeHtml(unsafe) {
+                    if (typeof unsafe !== 'string') {
+                        unsafe = String(unsafe); // Convert to string
+                    }
+                    return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+                }
+                
+                const metadataHtml = `
+                    <h5>${escapeHtml(modInfo?.display_name || modInfo?.mod_name)}</h5>
+                    ${modInfo?.version ? `
+                        <p><strong>${await languageService.translate('metadata.version.label')}:</strong> 
+                        ${escapeHtml(modInfo.version)}</p>` : ''
+                    }
+                    ${modInfo?.authors ? `
+                        <p><strong>${await languageService.translate('metadata.author.name')}:</strong> 
+                        ${escapeHtml(modInfo.authors)}</p>` : ''
+                    }
+                    ${modInfo?.category ? `
+                        <p><strong>${await languageService.translate('metadata.category.label')}:</strong> 
+                        ${await languageService.translate(`metadata.category.${modInfo.category.toLowerCase()}`) || escapeHtml(modInfo.category)}</p>` : ''
+                    }
+                    ${typeof modInfo?.wifi_safe !== 'undefined' ? `
+                        <p><strong>${await languageService.translate('mods.details.wifiSafe')}:</strong> 
+                        ${modInfo.wifi_safe ? '✔️' : '❌'}</p>` : ''
+                    }
+                    ${modInfo?.description ? `
+                        <div class="description-section">
+                            <strong>${await languageService.translate('metadata.description.title')}:</strong>
+                            <p class="description-text">
+                                ${escapeHtml(modInfo.description)}
+                            </p>
+                        </div>` : ''
+                    }
+                    ${modInfo?.url ? `
+                        <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
+                        <a href="#" onclick="window.api.openExternal('${escapeHtml(modInfo.url)}'); return false;">
+                            ${escapeHtml(modInfo.url)}
+                        </a></p>` : ''
+                    }
+                `;
+                
+                metadataContent.innerHTML = metadataHtml;
+
+            }   catch (error) {
+                console.error('Error loading mod details:', error);
                 metadataContent.innerHTML = `
-                    <div class="alert alert-warning">
-                        <p>${await languageService.translate('mods.details.title')}:</p>
-                        <h5>Unknown Mod</h5>
-                        <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
+                    <div class="alert alert-danger">
+                        <p>Error loading mod details</p>
+                        <small>${error.message}</small>
                     </div>
                 `;
-                return;
             }
-
-            // Build metadata HTML with translations
-            const metadataHtml = `
-                <h5>${this.escapeHtml(modInfo?.display_name || modInfo?.mod_name || mod.name)}</h5>
-                ${modInfo?.version ? `
-                    <p><strong>${await languageService.translate('metadata.version.label')}:</strong> 
-                    ${this.escapeHtml(modInfo.version)}</p>` : ''
-                }
-                ${modInfo?.authors ? `
-                    <p><strong>${await languageService.translate('metadata.author.name')}:</strong> 
-                    ${this.escapeHtml(modInfo.authors)}</p>` : ''
-                }
-                ${modInfo?.category ? `
-                    <p><strong>${await languageService.translate('metadata.category.label')}:</strong> 
-                    ${await languageService.translate(`metadata.category.${modInfo.category.toLowerCase()}`) || this.escapeHtml(modInfo.category)}</p>` : ''
-                }
-                ${typeof modInfo?.wifi_safe !== 'undefined' ? `
-                    <p><strong>${await languageService.translate('mods.details.wifiSafe')}:</strong> 
-                    ${modInfo.wifi_safe ? '✔️' : '❌'}</p>` : ''
-                }
-                ${modInfo?.description ? `
-                    <div class="description-section">
-                        <strong>${await languageService.translate('metadata.description.title')}:</strong>
-                        <p class="description-text">
-                            ${this.escapeHtml(modInfo.description)}
-                        </p>
-                    </div>` : ''
-                }
-                ${modInfo?.url ? `
-                    <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
-                    <a href="#" onclick="window.api.openExternal('${this.escapeHtml(modInfo.url)}'); return false;">
-                        ${this.escapeHtml(modInfo.url)}
-                    </a></p>` : ''
-                }
-            `;
-            
-            metadataContent.innerHTML = metadataHtml;
-
-        }   catch (error) {
-            console.error('Error loading mod details:', error);
+        
+        }
+        catch (error) {
+            console.error('Error in updateModPreview:', error);
             metadataContent.innerHTML = `
                 <div class="alert alert-danger">
-                    <p>Error loading mod details</p>
-                    <small>${error.message}</small>
+                    <p>${await languageService.translate('metadata.unknown')}</p>
+                    <small>${this.escapeHtml(error.message)}</small>
                 </div>
             `;
         }
-    
-    }
-    catch (error) {
-        console.error('Error in updateModPreview:', error);
-        metadataContent.innerHTML = `
-            <div class="alert alert-danger">
-                <p>${await languageService.translate('metadata.unknown')}</p>
-                <small>${this.escapeHtml(error.message)}</small>
-            </div>
-        `;
-    }
-});
+    });
