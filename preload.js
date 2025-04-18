@@ -10,6 +10,10 @@ window.addEventListener('error', (event) => {
 });
 
 contextBridge.exposeInMainWorld('electron', {
+    ipcRenderer: {
+        send: (channel, data) => ipcRenderer.send(channel, data),
+        on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
+      },
     downloadMod: async (url) => {
         try {
             return await ipcRenderer.invoke('download-mod', url);

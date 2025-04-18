@@ -1446,7 +1446,8 @@ async promptDialog(title, message, defaultValue) {
         if (messageElement) {
             messageElement.textContent = message;
         }
-    
+        window.electron.ipcRenderer.send('play-loading-audio');
+        
         // Show overlay
         loadingOverlay.classList.add('visible');
     
@@ -1455,7 +1456,7 @@ async promptDialog(title, message, defaultValue) {
         if (closeBtn) {
             closeBtn.onclick = () => this.hideLoading();
         }
-    
+        
         // Show/hide cancel button based on if it's a download
         const cancelBtn = document.getElementById('cancelDownloadBtn');
         if (cancelBtn) {
@@ -1478,10 +1479,12 @@ async promptDialog(title, message, defaultValue) {
         }
     }
     
+
     hideLoading() {
         const loadingOverlay = document.getElementById('loading-overlay');
         if (loadingOverlay) {
             loadingOverlay.classList.add('fade-out');
+            window.electron.ipcRenderer.send('stop-loading-audio');
             // Remove the overlay from DOM after transition completes
             setTimeout(() => {
                 loadingOverlay.classList.remove('visible', 'fade-out');
@@ -2375,6 +2378,8 @@ async showModInfoEditor(modPath) {
     showConflictsWarning(conflicts) {
         const descriptions = this.conflictDetector.getConflictDescriptions();
         
+        window.electron.ipcRenderer.send('play-conflict-audio');
+
         // Create modal for conflicts
         const modalHtml = `
             <div class="modal fade" id="conflictsModal" tabindex="-1">

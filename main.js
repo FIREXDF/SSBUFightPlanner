@@ -2259,3 +2259,14 @@ ipcMain.handle('get-mod-hash', async (event, modName) => {
     const { getHash } = require('./src/js/hash');
     return getHash(modName);
 });
+
+ipcMain.on('play-loading-audio', () => {
+    hiddenWindow.webContents.executeJavaScript('playLoading()').catch(console.error);
+  });
+  ipcMain.on('play-conflict-audio', () => {
+    hiddenWindow.webContents.executeJavaScript('playConflict()').catch(console.error);
+  });
+ipcMain.on('stop-loading-audio', () => {
+    hiddenWindow.webContents.executeJavaScript('stopLoading()').catch(console.error);  
+});
+module.exports.hiddenWindow = hiddenWindow;
