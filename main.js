@@ -1063,6 +1063,52 @@ ipcMain.handle('get-num-color-slots', async (event, echoModPath) => {
     }
 });
 
+ipcMain.handle('rename-c-folders', async (event, echoModPath, echoColorStart) => {
+    try {
+        const fighterFolders = await fs.readdir(echoModPath, { withFileTypes: true });
+        let currentColorSlot = parseInt(echoColorStart, 10); // Start from the provided echoColorStart value
+
+        for (const fighterFolder of fighterFolders) {
+            if (!fighterFolder.isDirectory()) continue; // Skip non-directories
+
+            const fighterPath = path.join(echoModPath, fighterFolder.name);
+            const targetFolders = ['model', 'motion'];
+
+            for (const targetFolder of targetFolders) {
+                const targetFolderPath = path.join(fighterPath, targetFolder);
+
+                if (await fse.pathExists(targetFolderPath)) {
+                    const subFolders = await fs.readdir(targetFolderPath, { withFileTypes: true });
+
+                    for (const subFolder of subFolders) {
+                        if (subFolder.isDirectory()) {
+                            const subFolderPath = path.join(targetFolderPath, subFolder.name);
+
+                            const cFolders = await fs.readdir(subFolderPath, { withFileTypes: true });
+                            for (const cFolder of cFolders) {
+                                if (cFolder.isDirectory() && /^c\d+$/.test(cFolder.name)) {
+                                    const oldPath = path.join(subFolderPath, cFolder.name);
+                                    const newName = `c${currentColorSlot.toString().padStart(2, '0')}`; // Format as cXX
+                                    const newPath = path.join(subFolderPath, newName);
+
+                                    await fs.rename(oldPath, newPath);
+                                    console.log(`Renamed: ${oldPath} -> ${newPath}`);
+
+                                    currentColorSlot++; // Increment the color slot for the next folder
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return { success: true, message: 'Folders renamed successfully' };
+    } catch (error) {
+        console.error('Error renaming c-folders:', error);
+        return { success: false, error: error.message };
+    }
+});
 
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
     try {

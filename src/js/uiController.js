@@ -3637,6 +3637,19 @@ document.getElementById('echoModPath').addEventListener('change', async (event) 
         }
 });
 
+document.getElementById('createEcho').addEventListener('click', async () => {
+    try {
+        const echoModPath = document.getElementById('echoModPath').value;
+        const echoColorStart = document.getElementById('echoColorStart').value;
+        await renameCFolders(echoModPath, echoColorStart);
+    }
+    catch (error) {
+        console.error('Error creating Echo Fighter:', error);
+        this.showError('Failed to create Echo Fighter: ' + error.message);
+    } finally {
+        this.hideLoading();
+    }
+});
 
 
 
