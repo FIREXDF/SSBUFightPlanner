@@ -3616,17 +3616,28 @@ document.getElementById('echoModPath').addEventListener('change', async (event) 
                 </div>
             `;
         }
-    })
+    
     
     // Get Number of Color Slots
     const colorSlots = document.getElementById('echoColorNumber');
-    const numColorSlots = await window.api.modDetails.getNumColorSlots(echoModPath);
-    if (numColorSlots) {
-        colorSlots.value = numColorSlots;
-    }
-    else {
-        console.error('Color slots element not found');
-    };
+    try {
+        const echoModPath = document.getElementById('echoModPath').value;
+        console.log('Calling getNumColorSlots with path:', echoModPath);
+        const numColorSlots = await window.api.modDetails.getNumColorSlots(echoModPath);
+        
+            if (numColorSlots !== undefined && numColorSlots !== null) {
+                colorSlots.value = numColorSlots;
+            } else {
+                console.error('Failed to fetch the number of color slots.');
+                colorSlots.value = '0'; // Default to 0 if no slots are found
+            }
+        } catch (error) {
+            console.error('Error fetching number of color slots:', error);
+            colorSlots.value = 'Error'; // Indicate an error in the UI
+        }
+});
+
+
 
 
 

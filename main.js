@@ -1000,17 +1000,42 @@ ipcMain.handle('get-echo-mod-info', async (event, echoModPath) => {
 
 ipcMain.handle('get-num-color-slots', async (event, echoModPath) => {
     try {
+        
+        console.log('Echo mod path:', echoModPath);
+        
         let totalColorSlots = 0;
-
+        
         // Read the mods folder to find all fighter directories
         const fighterFolders = await fs.readdir(echoModPath, { withFileTypes: true });
+        console.log('Fighter folders:', fighterFolders);
 
         // Iterate through each fighter folder
         for (const fighterFolder of fighterFolders) {
             if (!fighterFolder.isDirectory()) continue; // Skip non-directories
 
             const fighterPath = path.join(echoModPath, fighterFolder.name);
-            const bodyFolderPath = path.join(fighterPath, 'model', 'body');
+            
+            const bodyFolderPath = await getDynamicBodyFolderPath(fighterPath);
+
+            async function getDynamicBodyFolderPath(fighterPath) {
+                try {
+                    // Read the contents of the fighter folder
+                    const subFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+
+                    // Find the first subdirectory
+                    const dynamicFolder = subFolders.find((entry) => entry.isDirectory())?.name;
+
+                    if (!dynamicFolder) {
+                        throw new Error(`No subdirectory found in ${fighterPath}`);
+                    }
+
+                    // Construct the full path to the body folder
+                    return path.join(fighterPath, dynamicFolder, 'model', 'body');
+                } catch (error) {
+                    console.error('Error determining dynamic folder:', error);
+                    throw error;
+                }
+            }
 
             // Check if the body folder exists
             if (await fse.pathExists(bodyFolderPath)) {
