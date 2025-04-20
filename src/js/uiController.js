@@ -3561,7 +3561,7 @@ document.getElementById('echoModPath').addEventListener('change', async (event) 
                 }
                 
                 const metadataHtml = `
-                    <h5>${escapeHtml(modInfo?.display_name || modInfo?.mod_name)}</h5>
+                    <h5>${escapeHtml(modInfo?.display_name || modInfo?.mod_name || modInfo?.folder_name)}</h5>
                     ${modInfo?.version ? `
                         <p><strong>${await languageService.translate('metadata.version.label')}:</strong> 
                         ${escapeHtml(modInfo.version)}</p>` : ''

@@ -973,7 +973,8 @@ ipcMain.handle('get-mod-info', async (event, modPath) => {
 // Handle Echo Mod Info
 ipcMain.handle('get-echo-mod-preview', async (event, echoModPath) => {
     try {
-        const previewPath = path.join(echoModPath, 'preview.webp');
+        const normalizedPath = path.normalize(echoModPath);
+        const previewPath = path.join(normalizedPath, 'preview.webp');
         if (await fse.pathExists(previewPath)) {
             return previewPath;
         }
@@ -987,14 +988,22 @@ ipcMain.handle('get-echo-mod-preview', async (event, echoModPath) => {
 ipcMain.handle('get-echo-mod-info', async (event, echoModPath) => {
     try {
         const infoPath = path.join(echoModPath, 'info.toml');
+        let modInfo = {};
+
         if (await fse.pathExists(infoPath)) {
             const infoContent = await fs.readFile(infoPath, 'utf8');
-            return toml.parse(infoContent);
+            modInfo = toml.parse(infoContent);
         }
-        return null;
+
+        // If the mod name is not defined, use the folder name as the mod name
+        if (!modInfo.name) {
+            modInfo.name = path.basename(echoModPath); // Extract folder name
+        }
+        modInfo.folder_name = path.basename(echoModPath);
+        return modInfo;
     } catch (error) {
         console.error('Error getting mod info:', error);
-        return null;
+        return { name: path.basename(echoModPath) }; // Return folder name as fallback
     }
 });
 
