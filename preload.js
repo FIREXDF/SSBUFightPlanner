@@ -88,7 +88,8 @@ contextBridge.exposeInMainWorld('api', {
         getEchoPreview: (echoModPath) => ipcRenderer.invoke('get-echo-mod-preview', echoModPath),
         getEchoInfo: (echoModPath) => ipcRenderer.invoke('get-echo-mod-info', echoModPath),
         getNumColorSlots: (echoModPath) => ipcRenderer.invoke('get-num-color-slots', echoModPath),
-        renameCFolders: (echoModPath) => ipcRenderer.invoke('rename-c-folders')
+        renameCFolders: (echoModPath, echoColorStart) => ipcRenderer.invoke('rename-c-folders', echoModPath, echoColorStart),
+        renameCharaFiles: (echoModPath, newEchoID) => ipcRenderer.invoke('rename-chara-files', echoModPath, newEchoID)
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),

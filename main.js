@@ -1066,16 +1066,26 @@ ipcMain.handle('get-num-color-slots', async (event, echoModPath) => {
 ipcMain.handle('rename-c-folders', async (event, echoModPath, echoColorStart) => {
     try {
         const fighterFolders = await fs.readdir(echoModPath, { withFileTypes: true });
-        let currentColorSlot = parseInt(echoColorStart, 10); // Start from the provided echoColorStart value
+        const initialColorSlot = parseInt(echoColorStart, 10); // Store the initial echoColorStart value
 
         for (const fighterFolder of fighterFolders) {
             if (!fighterFolder.isDirectory()) continue; // Skip non-directories
 
             const fighterPath = path.join(echoModPath, fighterFolder.name);
+
+            // Dynamically find the intermediate folder (e.g., murabito)
+            const dynamicFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+            const dynamicFolder = dynamicFolders.find((folder) => folder.isDirectory());
+            if (!dynamicFolder) {
+                console.warn(`No dynamic folder found in ${fighterPath}`);
+                continue;
+            }
+
+            const dynamicFolderPath = path.join(fighterPath, dynamicFolder.name);
             const targetFolders = ['model', 'motion'];
 
             for (const targetFolder of targetFolders) {
-                const targetFolderPath = path.join(fighterPath, targetFolder);
+                const targetFolderPath = path.join(dynamicFolderPath, targetFolder);
 
                 if (await fse.pathExists(targetFolderPath)) {
                     const subFolders = await fs.readdir(targetFolderPath, { withFileTypes: true });
@@ -1083,6 +1093,9 @@ ipcMain.handle('rename-c-folders', async (event, echoModPath, echoColorStart) =>
                     for (const subFolder of subFolders) {
                         if (subFolder.isDirectory()) {
                             const subFolderPath = path.join(targetFolderPath, subFolder.name);
+
+                            // Reset the color slot for each subfolder
+                            let currentColorSlot = initialColorSlot;
 
                             const cFolders = await fs.readdir(subFolderPath, { withFileTypes: true });
                             for (const cFolder of cFolders) {
@@ -1106,6 +1119,39 @@ ipcMain.handle('rename-c-folders', async (event, echoModPath, echoColorStart) =>
         return { success: true, message: 'Folders renamed successfully' };
     } catch (error) {
         console.error('Error renaming c-folders:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
+    try {
+        const charaPath = path.join(echoModPath, 'ui', 'replace', 'chara');
+        const charaFolders = await fs.readdir(charaPath, { withFileTypes: true });
+
+        for (const folder of charaFolders) {
+            if (folder.isDirectory()) {
+                const folderPath = path.join(charaPath, folder.name);
+                const files = await fs.readdir(folderPath);
+
+                let counter = 0;
+                for (const file of files) {
+                    const filePath = path.join(folderPath, file);
+
+                    // Match the fighter name and replace it with newEchoID
+                    const newFileName = file.replace(/_(.*?)_\d+/, `_${newEchoID}_${counter.toString().padStart(2, '0')}`);
+                    const newFilePath = path.join(folderPath, newFileName);
+
+                    await fs.rename(filePath, newFilePath);
+                    console.log(`Renamed: ${filePath} -> ${newFilePath}`);
+
+                    counter++;
+                }
+            }
+        }
+
+        return { success: true, message: 'Chara files renamed successfully' };
+    } catch (error) {
+        console.error('Error renaming chara files:', error);
         return { success: false, error: error.message };
     }
 });

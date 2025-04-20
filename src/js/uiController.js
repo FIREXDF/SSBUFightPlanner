@@ -3641,7 +3641,10 @@ document.getElementById('createEcho').addEventListener('click', async () => {
     try {
         const echoModPath = document.getElementById('echoModPath').value;
         const echoColorStart = document.getElementById('echoColorStart').value;
-        await renameCFolders(echoModPath, echoColorStart);
+        const newEchoID = document.getElementById('newEchoID').value;
+        const newEchoName = document.getElementById('newEchoName').value;
+        await window.api.modDetails.renameCFolders(echoModPath, echoColorStart);
+        await window.api.modDetails.renameCharaFiles(echoModPath, newEchoID);
     }
     catch (error) {
         console.error('Error creating Echo Fighter:', error);
