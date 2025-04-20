@@ -3643,8 +3643,10 @@ document.getElementById('createEcho').addEventListener('click', async () => {
         const echoColorStart = document.getElementById('echoColorStart').value;
         const newEchoID = document.getElementById('newEchoID').value;
         const newEchoName = document.getElementById('newEchoName').value;
+        const numColorSlots = document.getElementById('echoColorNumber').value;
         await window.api.modDetails.renameCFolders(echoModPath, echoColorStart);
         await window.api.modDetails.renameCharaFiles(echoModPath, newEchoID);
+        await window.api.modDetails.createNewJson(echoModPath, echoColorStart);
     }
     catch (error) {
         console.error('Error creating Echo Fighter:', error);
