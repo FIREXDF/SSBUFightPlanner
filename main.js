@@ -1045,7 +1045,7 @@ ipcMain.handle('get-num-color-slots', async (event, echoModPath) => {
                 const files = await fs.readdir(bodyFolderPath, { withFileTypes: true });
 
                 // Filter for folders that start with 'c' (e.g., c00, c01, etc.)
-                const colorFolders = files.filter(file => file.isDirectory() && /^c\d+$/.test(file.name));
+                const colorFolders = files.filter(file => file.isDirectory());
 
                 // Add the count of color folders to the total
                 totalColorSlots += colorFolders.length;
@@ -1137,8 +1137,11 @@ ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
                 for (const file of files) {
                     const filePath = path.join(folderPath, file);
 
-                    // Match the fighter name and replace it with newEchoID
-                    const newFileName = file.replace(/_(.*?)_\d+/, `_${newEchoID}_${counter.toString().padStart(2, '0')}`);
+                    // Extract the folder name (e.g., chara_00)
+                    const folderName = folder.name;
+
+                    // Rename the file to include the folder name, newEchoID, and counter
+                    const newFileName = `${folderName}_${newEchoID}_${counter.toString().padStart(2, '0')}${path.extname(file)}`;
                     const newFilePath = path.join(folderPath, newFileName);
 
                     await fs.rename(filePath, newFilePath);
