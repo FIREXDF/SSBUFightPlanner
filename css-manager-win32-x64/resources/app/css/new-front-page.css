@@ -1,0 +1,283 @@
+* {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+@media only screen and (max-width: 1460px) {
+    .header-desktop {
+        display: none !important;
+    }
+    .header-mobile {
+        display: grid !important;
+    }
+    .tab {
+        align-items: center !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    .tab .button-parent {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media only screen and (max-width: 920px) {
+    .grid-container {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr !important;
+        gap: 1% 0% !important;
+        grid-template-areas: "." "." "." "." "." "." "." !important;
+    }
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+    background: url("../img/bg_test.webp") no-repeat fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+.content {
+    cursor: default;
+}
+
+.tabcontent {
+    display: none;
+}
+
+.tablinks {
+    font-weight: bold;
+}
+
+.header-desktop {
+    text-align: center;
+    display: grid;
+    text-align: center;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 2fr;
+    gap: 0px 0px;
+    grid-template-areas: ". . .";
+    margin-bottom: 2.5%;
+}
+
+.header-mobile {
+    display: none;
+    text-align: center;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 0.5fr 0.5fr;
+    gap: 0px 0px;
+    grid-template-areas: "." "." ".";
+}
+
+.main {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.grid-container {
+    display: grid;
+    text-align: center;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 5% 2%;
+    grid-template-areas: ". . ." ". . .";
+}
+
+.grid-container>img {
+    width: 100%;
+    border: 5px solid black;
+    cursor: pointer;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@keyframes cursor-anim {
+    0% {
+        background-position: 200% 0%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
+}
+
+.grid-container>img:hover {
+    border: 5px solid transparent;
+    background: linear-gradient( 90deg, rgb(255, 109, 0) 0%, rgb(255, 255, 0) 65%, rgb(255, 109, 0) 70%);
+    background-size: 200% 1px;
+    animation: cursor-anim 650ms linear infinite normal;
+}
+
+
+/* CREDIT DUE TO W3SCHOOLS FOR ALL THIS */
+
+
+/* Style the tab */
+
+.tab {
+    display: grid;
+    /* gap: 0.2rem; */
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    overflow: hidden;
+    justify-content: center;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 4%;
+}
+
+.button-parent {
+    background-color: white;
+    float: left;
+    margin-right: 1.2rem;
+    border: 3px solid black;
+    outline: none;
+    cursor: pointer;
+    /* padding: 14px 16px; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-weight: bold;
+    width: 75px;
+    height: 40px;
+}
+
+.button-block {
+    display: block;
+    float: none;
+    width: 100%;
+    height: 100%;
+}
+
+
+/* text-align: center;
+grid-template-columns: 1fr;
+grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr;
+gap: 1% 0%;
+grid-template-areas:
+    "."
+    "."
+    "."
+    "."
+    "."
+    "."
+    "."; */
+
+.button-parent button {
+    width: 75px;
+    min-height: 40px;
+    background-color: #d9e4ea;
+    outline: none;
+    cursor: pointer;
+    border: none;
+    font-size: 12px;
+}
+
+.button-block button {
+    width: 100%;
+    text-align: left;
+    font-size: 20px;
+}
+
+.button-block .content {
+    padding: 20px;
+    background-color: white;
+    display: none;
+}
+
+
+/* Change background color of buttons on hover */
+
+.button-parent:hover {
+    background: linear-gradient( 90deg, rgb(255, 109, 0) 0%, rgb(255, 255, 0) 65%, rgb(255, 109, 0) 70%);
+    background-size: 200% 1px;
+    animation: cursor-anim 650ms linear infinite normal;
+    border-color: transparent;
+}
+
+.button-parent:hover button {
+    color: white;
+    background-color: #df1624;
+    text-shadow: -1px 1px 0 #000, 1px 1px 0 #000, 1px -1px 0 #000;
+}
+
+
+/* Create an active/current tablink class */
+
+.button-parent button.active {
+    color: white;
+    background-color: #df1624;
+    border-color: black;
+    text-shadow: -1px 1px 0 #000, 1px 1px 0 #000, 1px -1px 0 #000;
+}
+
+.tab-text {
+    font-size: 19px;
+}
+
+.about {
+    background-color: white;
+    padding: 20px;
+    border: 2px solid black;
+}
+
+hr {
+    border-color: black;
+}
+
+a {
+    color: black;
+}
+
+a:visited {
+    color: black;
+}
+
+a:hover {
+    color: black;
+}
+
+.strike {
+    text-decoration: line-through;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+    width: 230px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+    top: -5px;
+    right: 105%;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease-out;
+}
+
+.tooltip .tooltiptext ul {
+    line-height: 1.5;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+    transition: all 0.2s ease-in;
+}

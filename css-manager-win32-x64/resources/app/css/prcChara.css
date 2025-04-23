@@ -1,0 +1,173 @@
+body {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.hide {
+    display: none !important;
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: -120% 0;
+    }
+}
+
+.buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.button-parent:hover .open {
+    background-color: greenyellow !important;
+}
+
+.button-parent:hover .save {
+    background-color: skyblue !important;
+}
+
+.container_chara {
+    position: relative;
+    margin: auto;
+    width: 80%;
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 0px;
+}
+
+.list-flex {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    max-width: 100%;
+}
+
+.list-grid {
+    display: grid;
+    gap: .25%;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 115px));
+    grid-template-rows: auto;
+    /* justify-items: center;
+    align-items: end; */
+    justify-self: center;
+    align-self: center;
+    place-items: center;
+}
+
+.item {
+    margin-right: 0.25%;
+    margin-bottom: 0.25%;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    border: 2px solid transparent;
+    flex: 0 1 auto;
+    color: white;
+    position: relative;
+    box-sizing: border-box;
+    box-shadow: 5px 5px 5px black;
+}
+
+.item>p {
+    z-index: -1;
+    margin-bottom: 12px;
+}
+
+.item:hover {
+    border: 2px solid red;
+    background-image: url("../img/chara_mask.png");
+}
+
+.image {
+    z-index: -1;
+    background-color: transparent;
+}
+
+.chara_name {
+    position: absolute;
+    bottom: -12px;
+    color: white;
+    font-size: 12px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    text-align: center;
+    word-wrap: anywhere;
+}
+
+.chara_icon {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 112px auto;
+    min-width: 112px;
+    min-height: 60px;
+    max-width: 112px;
+    max-height: 60px;
+    /* filter: contrast(102%); */
+}
+
+#context-menu-controller {
+    display: none;
+    position: absolute;
+    z-index: 999;
+}
+
+#character-context-menu {
+    margin-left: 40px;
+    margin-right: 40px;
+    background-color: white;
+    border: 2px solid black;
+    width: 316px;
+    padding: 20px;
+    font-weight: bold;
+}
+
+#left-arrow {
+    position: absolute;
+    clip-path: polygon(100% 20%, 100% 80%, 0% 50%);
+    height: 50px;
+    width: 28px;
+    margin: 0 auto;
+    background-color: red;
+    top: 116px;
+    background: linear-gradient( 90deg, rgb(255, 109, 0) 0%, rgb(255, 255, 0) 65%, rgb(255, 109, 0) 70%);
+    background-size: 200% 1px;
+    animation: cursor-anim 650ms linear infinite normal;
+    border-color: transparent;
+}
+
+.context-input-text {
+    border: 2px solid black;
+    width: 100%;
+    background-color: white;
+    -webkit-box-sizing: border-box;
+    /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;
+    /* Firefox, other Gecko */
+    box-sizing: border-box;
+    /* Opera/IE 8+ */
+}
+
+.context-input-select {
+    display: inline-block;
+    border: 2px solid black;
+    width: 100%;
+    background-color: white;
+}
+
+
+/*Graident Animation that I just gave up on (goes in .list-flex or .list-grid)
+    background: rgb(242, 255, 0);
+    background: linear-gradient(158deg, rgba(242, 255, 0, 1) 0%, rgba(242, 255, 0, 1) 15%, rgba(0, 0, 255, 1) 25%, rgba(0, 212, 255, 1) 50%, rgba(242, 255, 0, 1) 75%);
+    background-size: 600% 100%;
+    animation: gradient 5s linear infinite;
+    background-attachment: fixed; */

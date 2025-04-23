@@ -1,0 +1,38 @@
+{
+  "name": "css-manager",
+  "version": "1.0.0",
+  "description": "A manager to edit the ui_chara_db, ui_layout_db, and msbt data with a Web Interface.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make && xcopy /v /y run_with_console.bat out\\css-manager-win32-x64\\ && xcopy /v /y test_programs.bat out\\css-manager-win32-x64\\ && del /S /Q .\\out\\css-manager-win32-x64\\resources\\files\\*.prc && del /S /Q .\\out\\css-manager-win32-x64\\resources\\files\\*.msbt && del /S /Q .\\out\\css-manager-win32-x64\\resources\\tools\\prc2json\\ParamLabels.csv"
+  },
+  "repository": "",
+  "keywords": [
+    "Electron",
+    "Smash",
+    "Ultimate",
+    "CSS",
+    "Character Selection Screen",
+    "MSBT",
+    "prc"
+  ],
+  "author": "Ali Hussain (Coolsonickirby/Random)",
+  "license": "",
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.67",
+    "@electron-forge/maker-deb": "^6.0.0-beta.67",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.67",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.67",
+    "@electron-forge/maker-zip": "^6.0.0-beta.67",
+    "electron": "^21.1.1"
+  },
+  "dependencies": {
+    "command-exists": "^1.2.9",
+    "download": "^8.0.0",
+    "electron-progressbar": "^2.0.1",
+    "electron-squirrel-startup": "^1.0.0"
+  },
+  "config": {}
+}
