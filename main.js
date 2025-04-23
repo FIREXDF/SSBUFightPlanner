@@ -1181,63 +1181,66 @@ ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, num
             console.log(`Deleted old config file at: ${configPath}`);
         }
 
-        // Step 1: Dynamically gather fighter directories
+        // Step 1: Extract the fighter name from echoModPath
         const fighterPath = path.join(echoModPath, 'fighter');
         const fighterFolders = await fs.readdir(fighterPath, { withFileTypes: true });
-        const newDirInfos = [];
-        const newDirInfosBase = {};
-        const shareToVanilla = {};
-        const shareToAdded = {};
-        const newDirFiles = {};
+        const fighterName = fighterFolders.find(folder => folder.isDirectory())?.name;
 
-        for (const folder of fighterFolders) {
-            if (folder.isDirectory()) {
-                const fighterName = folder.name;
-                const fighterDir = path.join(fighterPath, fighterName);
-
-                // Dynamically generate paths for new directories
-                for (let i = 0; i < numColorSlots; i++) {
-                    const colorSlot = `c${(parseInt(echoColorStart, 10) + i).toString().padStart(3, '0')}`;
-                    const baseSlot = `c00`; // Assuming c00 is the base slot
-                    const newDir = `fighter/${fighterName}/${colorSlot}`;
-                    const baseDir = `fighter/${fighterName}/${baseSlot}`;
-
-                    newDirInfos.push(newDir);
-                    newDirInfosBase[`${newDir}/camera`] = `${baseDir}/camera`;
-                    newDirInfosBase[`${newDir}/cmn`] = `${baseDir}/cmn`;
-
-                    // Example of sharing files to vanilla
-                    shareToVanilla[`${baseDir}/model.nuanmb`] = [
-                        `${newDir}/model.nuanmb`
-                    ];
-
-                    // Example of sharing files to added
-                    shareToAdded[`${baseDir}/motion_list.bin`] = [
-                        `${newDir}/motion_list.bin`
-                    ];
-
-                    // Example of new directory files
-                    newDirFiles[newDir] = [
-                        `effect/fighter/${fighterName}/ef_${fighterName}_${colorSlot}.eff`
-                    ];
-                }
-            }
+        if (!fighterName) {
+            throw new Error('No fighter folder found in the provided echoModPath.');
         }
 
-        // Step 2: Create the configuration object
-        const configData = {
-            "new-dir-infos": newDirInfos,
-            "new-dir-infos-base": newDirInfosBase,
-            "share-to-vanilla": shareToVanilla,
-            "share-to-added": shareToAdded,
-            "new-dir-files": newDirFiles,
-            "echoColorStart": parseInt(echoColorStart, 10),
-            "numColorSlots": parseInt(numColorSlots, 10),
-            "createdAt": new Date().toISOString()
+        console.log(`Fighter name extracted: ${fighterName}`);
+
+        // Step 2: Read the base config.json structure
+        const baseConfigPath = path.join(__dirname, 'base-config.json'); // Adjust path as needed
+        const baseConfig = JSON.parse(await fs.readFile(baseConfigPath, 'utf8'));
+
+        // Step 3: Replace the fighter name and 'c' portions dynamically
+        const replaceFighterName = (value) => {
+            if (typeof value === 'string') {
+                return value.replace(/fighter\/captain/g, `fighter/${fighterName}`);
+            }
+            return value;
         };
 
-        // Step 3: Write the configuration to the file
-        await fs.writeFile(configPath, JSON.stringify(configData, null, 4), 'utf8');
+        const replaceColorSlots = (value) => {
+            if (typeof value === 'string') {
+                return value.replace(/c(\d{3})/g, (_, slot) => {
+                    const newSlot = parseInt(slot, 10) - 120 + parseInt(echoColorStart, 10);
+                    return `c${newSlot.toString().padStart(3, '0')}`;
+                });
+            }
+            return value;
+        };
+
+        const processObject = (obj) => {
+            for (const key in obj) {
+                if (typeof obj[key] === 'object') {
+                    processObject(obj[key]);
+                } else {
+                    obj[key] = replaceColorSlots(replaceFighterName(obj[key]));
+                }
+            }
+        };
+
+        const processKeys = (obj) => {
+            const updatedObj = {};
+            for (const key in obj) {
+                const newKey = replaceColorSlots(replaceFighterName(key));
+                updatedObj[newKey] = replaceColorSlots(replaceFighterName(obj[key]));
+            }
+            return updatedObj;
+        };
+
+        // Process the entire baseConfig
+        processObject(baseConfig);
+        if (baseConfig['new-dir-infos-base']) {
+            baseConfig['new-dir-infos-base'] = processKeys(baseConfig['new-dir-infos-base']);
+        }
+
+        // Step 4: Write the updated configuration to the file
+        await fs.writeFile(configPath, JSON.stringify(baseConfig, null, 4), 'utf8');
         console.log(`New config file created at: ${configPath}`);
         return { success: true, path: configPath };
     } catch (error) {
