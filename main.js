@@ -15,6 +15,7 @@ const log = require('electron-log');
 const { format } = require('date-fns');
 const { createFPP } = require('./src/js/createFPP');
 const { extractFPP } = require('./src/js/extractFPP');
+const { ca } = require('date-fns/locale');
 
 log.transports.file.level = 'info';
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
@@ -1171,80 +1172,66 @@ ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
 
 // Create New JSON for Echo Mod
 ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots) => {
-    const configPath = path.join(echoModPath, 'config.json');
-    
     try {
-        // Delete the old config file if it exists
-        const configExists = await fse.pathExists(configPath);
-        if (configExists) {
-            await fs.unlink(configPath);
-            console.log(`Deleted old config file at: ${configPath}`);
-        }
+        const configPath = path.join(echoModPath, 'config.json');
+        const newDirInfos = [];
+        const newDirInfosBase = {};
+        const shareToAdded = {};
 
-        // Step 1: Extract the fighter name from echoModPath
-        const fighterPath = path.join(echoModPath, 'fighter');
-        const fighterFolders = await fs.readdir(fighterPath, { withFileTypes: true });
-        const fighterName = fighterFolders.find(folder => folder.isDirectory())?.name;
-
-        if (!fighterName) {
-            throw new Error('No fighter folder found in the provided echoModPath.');
-        }
-
-        console.log(`Fighter name extracted: ${fighterName}`);
-
-        // Step 2: Read the base config.json structure
-        const baseConfigPath = path.join(__dirname, 'base-config.json'); // Adjust path as needed
-        const baseConfig = JSON.parse(await fs.readFile(baseConfigPath, 'utf8'));
-
-        // Step 3: Replace the fighter name and 'c' portions dynamically
-        const replaceFighterName = (value) => {
-            if (typeof value === 'string') {
-                return value.replace(/fighter\/captain/g, `fighter/${fighterName}`);
-            }
-            return value;
-        };
-
-        const replaceColorSlots = (value) => {
-            if (typeof value === 'string') {
-                return value.replace(/c(\d{3})/g, (_, slot) => {
-                    const newSlot = parseInt(slot, 10) - 120 + parseInt(echoColorStart, 10);
-                    return `c${newSlot.toString().padStart(3, '0')}`;
-                });
-            }
-            return value;
-        };
-
-        const processObject = (obj) => {
-            for (const key in obj) {
-                if (typeof obj[key] === 'object') {
-                    processObject(obj[key]);
-                } else {
-                    obj[key] = replaceColorSlots(replaceFighterName(obj[key]));
+        // Helper function to recursively scan directories
+        async function scanDirectory(dirPath, colorStart) {
+            console.log(`Scanning directory: ${dirPath} with colorStart: ${colorStart}`);
+            const entries = await fs.readdir(dirPath, { withFileTypes: true });
+        
+            for (const entry of entries) {
+                const entryPath = path.join(dirPath, entry.name);
+                console.log(`Processing entry: ${entryPath}`);
+        
+                if (entry.isDirectory()) {
+                    const relativePath = path.relative(echoModPath, entryPath).replace(/\\/g, '/');
+                    console.log(`Found directory: ${relativePath}`);
+                    if (relativePath.includes('/c')) {
+                        const basePath = relativePath.replace(/\/c\d+/, '/c00');
+                        const colorPath = relativePath.replace(/\/c\d+/, `/c${colorStart.toString().padStart(2, '0')}`);
+                        console.log(`Adding directory: ${colorPath}`);
+                        newDirInfos.push(colorPath);
+                        newDirInfosBase[colorPath] = basePath;
+                    }
+                    await scanDirectory(entryPath, colorStart);
+                } else if (entry.isFile()) {
+                    const relativePath = path.relative(echoModPath, entryPath).replace(/\\/g, '/');
+                    console.log(`Found file: ${relativePath}`);
+                    if (relativePath.includes('/c')) {
+                        const basePath = relativePath.replace(/\/c\d+/, '/c00');
+                        const colorPath = relativePath.replace(/\/c\d+/, `/c${colorStart.toString().padStart(2, '0')}`);
+                        console.log(`Adding file: ${colorPath}`);
+                        if (!shareToAdded[basePath]) {
+                            shareToAdded[basePath] = [];
+                        }
+                        shareToAdded[basePath].push(colorPath);
+                    }
                 }
             }
-        };
-
-        const processKeys = (obj) => {
-            const updatedObj = {};
-            for (const key in obj) {
-                const newKey = replaceColorSlots(replaceFighterName(key));
-                updatedObj[newKey] = replaceColorSlots(replaceFighterName(obj[key]));
-            }
-            return updatedObj;
-        };
-
-        // Process the entire baseConfig
-        processObject(baseConfig);
-        if (baseConfig['new-dir-infos-base']) {
-            baseConfig['new-dir-infos-base'] = processKeys(baseConfig['new-dir-infos-base']);
         }
 
-        // Step 4: Write the updated configuration to the file
-        await fs.writeFile(configPath, JSON.stringify(baseConfig, null, 4), 'utf8');
-        console.log(`New config file created at: ${configPath}`);
-        return { success: true, path: configPath };
+        // Start scanning the directory
+        for (let i = 0; i < numColorSlots; i++) {
+            await scanDirectory(echoModPath, echoColorStart + i);
+        }
+
+        // Create the final JSON structure
+        const jsonOutput = {
+            "new-dir-infos": newDirInfos,
+            "new-dir-infos-base": newDirInfosBase,
+            "share-to-added": shareToAdded,
+        };
+
+        // Write the JSON to the config file
+        await fs.writeFile(configPath, JSON.stringify(jsonOutput, null, 4), 'utf8');
+
+        return { success: true, message: 'JSON created successfully', path: configPath };
     } catch (error) {
-        console.error('Error creating config.json:', error);
+        console.error('Error creating new JSON:', error);
         return { success: false, error: error.message };
     }
 });
