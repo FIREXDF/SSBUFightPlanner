@@ -1171,69 +1171,7 @@ ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
 
 ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots) => {
     const configPath = path.join(echoModPath, 'config.json');
-
-    // Load the config.json file
-    let config;
-    try {
-        config = JSON.parse(await fs.readFile(configPath, 'utf8'));
-    } catch (err) {
-        console.error('Failed to read config.json:', err);
-        throw new Error('Failed to read config.json');
-    }
-
-    // Ensure 'new-dir-files' exists in the config
-    if (!config['new-dir-files']) {
-        console.warn("'new-dir-files' is not defined in the config. Initializing it as an empty object.");
-        config['new-dir-files'] = {};
-    }
-
-    // Extract original 'cXX' values from 'new-dir-infos'
-    const originalCValues = [...new Set(config['new-dir-infos']
-        .map(path => path.match(/\/c\d{2}/)?.[0]?.slice(1)) // Extract 'cXX'
-        .filter(Boolean))]; // Remove null/undefined values
-
-    // Ensure the number of original values matches the number of slots
-    if (originalCValues.length > numColorSlots) {
-        throw new Error(`Number of original 'cXX' values (${originalCValues.length}) exceeds the number of slots (${numColorSlots}).`);
-    }
-
-    // Map original 'cXX' values to new 'cXX' values
-    const cValueMap = {};
-    originalCValues.forEach((originalC, index) => {
-        const newC = `c${(echoColorStart + index).toString().padStart(2, '0')}`;
-        cValueMap[originalC] = newC;
-    });
-
-    // Helper function to replace 'cXX' values in a string
-    const replaceCValues = (str) => {
-        for (const [originalC, newC] of Object.entries(cValueMap)) {
-            str = str.replace(new RegExp(`/${originalC}`, 'g'), `/${newC}`);
-        }
-        return str;
-    };
-
-    // Update 'new-dir-infos'
-    const updatedNewDirInfos = config['new-dir-infos'].map(path => replaceCValues(path));
-
-    // Update 'new-dir-files'
-    const updatedNewDirFiles = {};
-    for (const [key, value] of Object.entries(config['new-dir-files'])) {
-        const newKey = replaceCValues(key);
-        updatedNewDirFiles[newKey] = value.map(file => replaceCValues(file));
-    }
-
-    // Update the config object
-    config['new-dir-infos'] = updatedNewDirInfos;
-    config['new-dir-files'] = updatedNewDirFiles;
-
-    // Save the updated config
-    try {
-        await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8');
-        console.log(`Updated config.json with new 'cXX' values starting at c${echoColorStart.toString().padStart(2, '0')} and limited to ${numColorSlots} slots.`);
-    } catch (err) {
-        console.error('Failed to save updated config.json:', err);
-        throw new Error('Failed to save updated config.json');
-    }
+    
 });
 
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
