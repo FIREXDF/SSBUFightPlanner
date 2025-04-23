@@ -1169,9 +1169,81 @@ ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
 });
 
 
+// Create New JSON for Echo Mod
 ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots) => {
     const configPath = path.join(echoModPath, 'config.json');
     
+    try {
+        // Delete the old config file if it exists
+        const configExists = await fse.pathExists(configPath);
+        if (configExists) {
+            await fs.unlink(configPath);
+            console.log(`Deleted old config file at: ${configPath}`);
+        }
+
+        // Step 1: Dynamically gather fighter directories
+        const fighterPath = path.join(echoModPath, 'fighter');
+        const fighterFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+        const newDirInfos = [];
+        const newDirInfosBase = {};
+        const shareToVanilla = {};
+        const shareToAdded = {};
+        const newDirFiles = {};
+
+        for (const folder of fighterFolders) {
+            if (folder.isDirectory()) {
+                const fighterName = folder.name;
+                const fighterDir = path.join(fighterPath, fighterName);
+
+                // Dynamically generate paths for new directories
+                for (let i = 0; i < numColorSlots; i++) {
+                    const colorSlot = `c${(parseInt(echoColorStart, 10) + i).toString().padStart(3, '0')}`;
+                    const baseSlot = `c00`; // Assuming c00 is the base slot
+                    const newDir = `fighter/${fighterName}/${colorSlot}`;
+                    const baseDir = `fighter/${fighterName}/${baseSlot}`;
+
+                    newDirInfos.push(newDir);
+                    newDirInfosBase[`${newDir}/camera`] = `${baseDir}/camera`;
+                    newDirInfosBase[`${newDir}/cmn`] = `${baseDir}/cmn`;
+
+                    // Example of sharing files to vanilla
+                    shareToVanilla[`${baseDir}/model.nuanmb`] = [
+                        `${newDir}/model.nuanmb`
+                    ];
+
+                    // Example of sharing files to added
+                    shareToAdded[`${baseDir}/motion_list.bin`] = [
+                        `${newDir}/motion_list.bin`
+                    ];
+
+                    // Example of new directory files
+                    newDirFiles[newDir] = [
+                        `effect/fighter/${fighterName}/ef_${fighterName}_${colorSlot}.eff`
+                    ];
+                }
+            }
+        }
+
+        // Step 2: Create the configuration object
+        const configData = {
+            "new-dir-infos": newDirInfos,
+            "new-dir-infos-base": newDirInfosBase,
+            "share-to-vanilla": shareToVanilla,
+            "share-to-added": shareToAdded,
+            "new-dir-files": newDirFiles,
+            "echoColorStart": parseInt(echoColorStart, 10),
+            "numColorSlots": parseInt(numColorSlots, 10),
+            "createdAt": new Date().toISOString()
+        };
+
+        // Step 3: Write the configuration to the file
+        await fs.writeFile(configPath, JSON.stringify(configData, null, 4), 'utf8');
+        console.log(`New config file created at: ${configPath}`);
+        return { success: true, path: configPath };
+    } catch (error) {
+        console.error('Error creating config.json:', error);
+        return { success: false, error: error.message };
+    }
 });
 
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
