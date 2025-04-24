@@ -16,6 +16,7 @@ const { format } = require('date-fns');
 const { createFPP } = require('./src/js/createFPP');
 const { extractFPP } = require('./src/js/extractFPP');
 const { ca } = require('date-fns/locale');
+const { init, main } = require('./src/js/createnewjson');
 
 log.transports.file.level = 'info';
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
@@ -1169,128 +1170,69 @@ ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
     }
 });
 
-
-// Create New JSON for Echo Mod
 ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots) => {
+    console.log('Creating new JSON for Echo Mod:', echoModPath, echoColorStart, numColorSlots);
+
     try {
-        const configPath = path.join(echoModPath, 'config.json');
-        const newDirInfos = [];
-        const newDirInfosBase = {};
-        const shareToVanilla = {};
-        const shareToAdded = {};
-        const newDirFiles = {};
-
-        // Helper function to create directories
-        async function makeDirsFromFile(filePath) {
-            const dirName = path.dirname(filePath);
-            await fs.mkdir(dirName, { recursive: true });
+        // Ensure namesData is loaded
+        if (!globalThis.namesData) {
+            const namesFilePath = path.join(__dirname, 'Files', 'names.data');
+            const namesFileContent = await fs.readFile(namesFilePath, 'utf8');
+            globalThis.namesData = namesFileContent.split('\n').map(name => name.trim()).filter(name => name);
         }
 
-        // Helper function to find all fighter files
-        async function findFighterFiles(modDirectory) {
-            const allFiles = [];
-            async function walkDirectory(dir) {
-                const entries = await fs.readdir(dir, { withFileTypes: true });
-                for (const entry of entries) {
-                    const fullPath = path.join(dir, entry.name);
-                    if (entry.isDirectory()) {
-                        await walkDirectory(fullPath);
-                    } else {
-                        const relativePath = path.relative(modDirectory, fullPath).replace(/\\/g, '/');
-                        allFiles.push(relativePath);
-                    }
-                }
-            }
-            await walkDirectory(modDirectory);
-            return allFiles;
+        // Dynamically find the original fighter folder under echoModPath/Fighter
+        const fighterPath = path.join(echoModPath, 'Fighter');
+        const fighterFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+        const originalFighterFolder = fighterFolders.find(folder => folder.isDirectory());
+
+        if (!originalFighterFolder) {
+            throw new Error(`No original fighter folder found under: ${fighterPath}`);
         }
 
-        // Helper function to reslot fighter files
-        async function reslotFighterFiles(modDirectory, fighterFiles, currentAlt, targetAlt, shareSlot, fighterName) {
-            const reslottedFiles = [];
-            for (const file of fighterFiles) {
-                if (!file.includes(`/${currentAlt}/`)) continue;
+        const fighterName = originalFighterFolder.name; // Use the folder name as the fighter name
+        console.log(`Original fighter name determined: ${fighterName}`);
 
-                let newFile = file.replace(`/${currentAlt}/`, `/${targetAlt}/`);
-                if (file.startsWith(`fighter/${fighterName}`)) {
-                    await makeDirsFromFile(path.join(echoModPath, newFile));
-                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
-                    reslottedFiles.push(newFile);
-                } else if (file.startsWith('ui/replace/chara') || file.startsWith('ui/replace_patch/chara')) {
-                    const lookFor = `${currentAlt.slice(1)}.bntx`;
-                    const replaceWith = `${targetAlt.slice(1)}.bntx`;
-                    newFile = file.replace(lookFor, replaceWith);
-                    await makeDirsFromFile(path.join(echoModPath, newFile));
-                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
-                } else if (file.startsWith(`sound/bank/fighter/se_${fighterName}`) || file.startsWith(`sound/bank/fighter_voice/vc_${fighterName}`)) {
-                    newFile = file.replace(`_${currentAlt}`, `_${targetAlt}`);
-                    await makeDirsFromFile(path.join(echoModPath, newFile));
-                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
-                    reslottedFiles.push(newFile);
-                } else if (file.startsWith(`effect/fighter/${fighterName}`)) {
-                    newFile = file.replace(currentAlt.slice(1), targetAlt.slice(1));
-                    await makeDirsFromFile(path.join(echoModPath, newFile));
-                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
-                    reslottedFiles.push(newFile);
-                }
-            }
+        // Define paths and parameters
+        const hashesFile = path.join(__dirname, 'Files', 'Hashes_all.txt'); // Adjust the path as needed
+        const currentAlt = `c00`; // Starting alt
+        const outDir = echoModPath; // Output directory is the same as echoModPath
 
-            // Add new slot configuration
-            if (shareSlot) {
-                const shareSlotInt = parseInt(shareSlot.slice(1)) % 8;
-                const currentAltInt = parseInt(currentAlt.slice(1));
-                const targetAltInt = parseInt(targetAlt.slice(1));
-                const baseSlot = currentAltInt <= 7 ? `c0${shareSlotInt}` : `c0${targetAltInt % 8}`;
-                addNewSlot(`fighter/${fighterName}`, currentAlt, targetAlt, baseSlot);
-            } else {
-                addMissingFiles(reslottedFiles, fighterName, targetAlt);
-            }
+        // Initialize the environment
+        init(hashesFile, echoModPath, false);
 
-            return reslottedFiles;
-        }
-
-        // Helper function to add missing files
-        function addMissingFiles(reslottedFiles, fighterName, targetAlt) {
-            const newDirInfo = `fighter/${fighterName}/${targetAlt}`;
-            if (!newDirFiles[newDirInfo]) {
-                newDirFiles[newDirInfo] = [];
-            }
-            for (const file of reslottedFiles) {
-                if (!newDirFiles[newDirInfo].includes(file)) {
-                    newDirFiles[newDirInfo].push(file);
-                }
-            }
-        }
-
-        // Helper function to add a new slot
-        function addNewSlot(dirInfo, sourceSlot, newSlot, shareSlot) {
-            const newSlotPath = `${dirInfo}/${newSlot}`;
-            const shareSlotPath = `${dirInfo}/${shareSlot}`;
-            if (!newDirInfos.includes(newSlotPath)) {
-                newDirInfos.push(newSlotPath);
-            }
-            newDirInfosBase[newSlotPath] = shareSlotPath;
-        }
-
-        // Main logic
-        const fighterFiles = await findFighterFiles(echoModPath);
-        for (let i = 0; i < numColorSlots; i++) {
-            const currentAlt = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
-            const targetAlt = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
-            await reslotFighterFiles(echoModPath, fighterFiles, currentAlt, targetAlt, '', 'fighter_name');
-        }
-
-        // Create the final JSON structure
-        const jsonOutput = {
-            "new-dir-infos": newDirInfos,
-            "new-dir-infos-base": newDirInfosBase,
-            "share-to-vanilla": shareToVanilla,
-            "share-to-added": shareToAdded,
-            "new-dir-files": newDirFiles,
+        // Initialize configData
+        const configData = {
+            "new-dir-infos": [],
+            "new-dir-infos-base": {},
+            "share-to-vanilla": {},
+            "share-to-added": {},
+            "new-dir-files": {}
         };
 
-        // Write the JSON to the config file
-        await fs.writeFile(configPath, JSON.stringify(jsonOutput, null, 4), 'utf8');
+        // Loop through the number of color slots and populate configData
+        for (let i = 0; i < numColorSlots; i++) {
+            const targetAlt = `c${(parseInt(echoColorStart) + i).toString().padStart(2, '0')}`;
+            const shareSlot = ''; // Adjust if sharing slots is required
+
+            // Example: Add directories to new-dir-infos
+            const newDir = `fighter/${fighterName}/model/body/${targetAlt}`;
+            configData["new-dir-infos"].push(newDir);
+
+            // Example: Map new directories to base directories in new-dir-infos-base
+            configData["new-dir-infos-base"][newDir] = `fighter/${fighterName}/model/body/c00`;
+
+            // Example: Add files to new-dir-files
+            configData["new-dir-files"][newDir] = [
+                `${newDir}/model.numdlb`,
+                `${newDir}/model.numshb`
+            ];
+        }
+
+        // Save the generated JSON to echoModPath/config.json
+        const configPath = path.join(echoModPath, 'config.json');
+        await fs.writeFile(configPath, JSON.stringify(configData, null, 4), 'utf8');
+        console.log(`JSON creation completed successfully. Config saved at: ${configPath}`);
 
         return { success: true, message: 'JSON created successfully', path: configPath };
     } catch (error) {

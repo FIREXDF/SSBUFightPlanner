@@ -3646,7 +3646,7 @@ document.getElementById('createEcho').addEventListener('click', async () => {
         const numColorSlots = document.getElementById('echoColorNumber').value;
         await window.api.modDetails.renameCFolders(echoModPath, echoColorStart);
         await window.api.modDetails.renameCharaFiles(echoModPath, newEchoID);
-        await window.api.modDetails.createNewJson(echoModPath, echoColorStart);
+        await window.api.modDetails.createNewJson(echoModPath, echoColorStart, numColorSlots);
     }
     catch (error) {
         console.error('Error creating Echo Fighter:', error);
