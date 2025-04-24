@@ -1176,54 +1176,117 @@ ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, num
         const configPath = path.join(echoModPath, 'config.json');
         const newDirInfos = [];
         const newDirInfosBase = {};
+        const shareToVanilla = {};
         const shareToAdded = {};
+        const newDirFiles = {};
 
-        // Helper function to recursively scan directories
-        async function scanDirectory(dirPath, colorStart) {
-            console.log(`Scanning directory: ${dirPath} with colorStart: ${colorStart}`);
-            const entries = await fs.readdir(dirPath, { withFileTypes: true });
-        
-            for (const entry of entries) {
-                const entryPath = path.join(dirPath, entry.name);
-                console.log(`Processing entry: ${entryPath}`);
-        
-                if (entry.isDirectory()) {
-                    const relativePath = path.relative(echoModPath, entryPath).replace(/\\/g, '/');
-                    console.log(`Found directory: ${relativePath}`);
-                    if (relativePath.includes('/c')) {
-                        const basePath = relativePath.replace(/\/c\d+/, '/c00');
-                        const colorPath = relativePath.replace(/\/c\d+/, `/c${colorStart.toString().padStart(2, '0')}`);
-                        console.log(`Adding directory: ${colorPath}`);
-                        newDirInfos.push(colorPath);
-                        newDirInfosBase[colorPath] = basePath;
+        // Helper function to create directories
+        async function makeDirsFromFile(filePath) {
+            const dirName = path.dirname(filePath);
+            await fs.mkdir(dirName, { recursive: true });
+        }
+
+        // Helper function to find all fighter files
+        async function findFighterFiles(modDirectory) {
+            const allFiles = [];
+            async function walkDirectory(dir) {
+                const entries = await fs.readdir(dir, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(dir, entry.name);
+                    if (entry.isDirectory()) {
+                        await walkDirectory(fullPath);
+                    } else {
+                        const relativePath = path.relative(modDirectory, fullPath).replace(/\\/g, '/');
+                        allFiles.push(relativePath);
                     }
-                    await scanDirectory(entryPath, colorStart);
-                } else if (entry.isFile()) {
-                    const relativePath = path.relative(echoModPath, entryPath).replace(/\\/g, '/');
-                    console.log(`Found file: ${relativePath}`);
-                    if (relativePath.includes('/c')) {
-                        const basePath = relativePath.replace(/\/c\d+/, '/c00');
-                        const colorPath = relativePath.replace(/\/c\d+/, `/c${colorStart.toString().padStart(2, '0')}`);
-                        console.log(`Adding file: ${colorPath}`);
-                        if (!shareToAdded[basePath]) {
-                            shareToAdded[basePath] = [];
-                        }
-                        shareToAdded[basePath].push(colorPath);
-                    }
+                }
+            }
+            await walkDirectory(modDirectory);
+            return allFiles;
+        }
+
+        // Helper function to reslot fighter files
+        async function reslotFighterFiles(modDirectory, fighterFiles, currentAlt, targetAlt, shareSlot, fighterName) {
+            const reslottedFiles = [];
+            for (const file of fighterFiles) {
+                if (!file.includes(`/${currentAlt}/`)) continue;
+
+                let newFile = file.replace(`/${currentAlt}/`, `/${targetAlt}/`);
+                if (file.startsWith(`fighter/${fighterName}`)) {
+                    await makeDirsFromFile(path.join(echoModPath, newFile));
+                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
+                    reslottedFiles.push(newFile);
+                } else if (file.startsWith('ui/replace/chara') || file.startsWith('ui/replace_patch/chara')) {
+                    const lookFor = `${currentAlt.slice(1)}.bntx`;
+                    const replaceWith = `${targetAlt.slice(1)}.bntx`;
+                    newFile = file.replace(lookFor, replaceWith);
+                    await makeDirsFromFile(path.join(echoModPath, newFile));
+                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
+                } else if (file.startsWith(`sound/bank/fighter/se_${fighterName}`) || file.startsWith(`sound/bank/fighter_voice/vc_${fighterName}`)) {
+                    newFile = file.replace(`_${currentAlt}`, `_${targetAlt}`);
+                    await makeDirsFromFile(path.join(echoModPath, newFile));
+                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
+                    reslottedFiles.push(newFile);
+                } else if (file.startsWith(`effect/fighter/${fighterName}`)) {
+                    newFile = file.replace(currentAlt.slice(1), targetAlt.slice(1));
+                    await makeDirsFromFile(path.join(echoModPath, newFile));
+                    await fs.copyFile(path.join(modDirectory, file), path.join(echoModPath, newFile));
+                    reslottedFiles.push(newFile);
+                }
+            }
+
+            // Add new slot configuration
+            if (shareSlot) {
+                const shareSlotInt = parseInt(shareSlot.slice(1)) % 8;
+                const currentAltInt = parseInt(currentAlt.slice(1));
+                const targetAltInt = parseInt(targetAlt.slice(1));
+                const baseSlot = currentAltInt <= 7 ? `c0${shareSlotInt}` : `c0${targetAltInt % 8}`;
+                addNewSlot(`fighter/${fighterName}`, currentAlt, targetAlt, baseSlot);
+            } else {
+                addMissingFiles(reslottedFiles, fighterName, targetAlt);
+            }
+
+            return reslottedFiles;
+        }
+
+        // Helper function to add missing files
+        function addMissingFiles(reslottedFiles, fighterName, targetAlt) {
+            const newDirInfo = `fighter/${fighterName}/${targetAlt}`;
+            if (!newDirFiles[newDirInfo]) {
+                newDirFiles[newDirInfo] = [];
+            }
+            for (const file of reslottedFiles) {
+                if (!newDirFiles[newDirInfo].includes(file)) {
+                    newDirFiles[newDirInfo].push(file);
                 }
             }
         }
 
-        // Start scanning the directory
+        // Helper function to add a new slot
+        function addNewSlot(dirInfo, sourceSlot, newSlot, shareSlot) {
+            const newSlotPath = `${dirInfo}/${newSlot}`;
+            const shareSlotPath = `${dirInfo}/${shareSlot}`;
+            if (!newDirInfos.includes(newSlotPath)) {
+                newDirInfos.push(newSlotPath);
+            }
+            newDirInfosBase[newSlotPath] = shareSlotPath;
+        }
+
+        // Main logic
+        const fighterFiles = await findFighterFiles(echoModPath);
         for (let i = 0; i < numColorSlots; i++) {
-            await scanDirectory(echoModPath, echoColorStart + i);
+            const currentAlt = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
+            const targetAlt = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
+            await reslotFighterFiles(echoModPath, fighterFiles, currentAlt, targetAlt, '', 'fighter_name');
         }
 
         // Create the final JSON structure
         const jsonOutput = {
             "new-dir-infos": newDirInfos,
             "new-dir-infos-base": newDirInfosBase,
+            "share-to-vanilla": shareToVanilla,
             "share-to-added": shareToAdded,
+            "new-dir-files": newDirFiles,
         };
 
         // Write the JSON to the config file
