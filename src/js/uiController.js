@@ -3640,7 +3640,7 @@ document.getElementById('echoModPath').addEventListener('change', async (event) 
 document.getElementById('createEcho').addEventListener('click', async () => {
     try {
         const echoModPath = document.getElementById('echoModPath').value;
-        const echoColorStart = document.getElementById('echoColorStart').value;
+        const echoColorStart = parseInt(document.getElementById('echoColorStart').value, 10);
         const newEchoID = document.getElementById('newEchoID').value;
         const newEchoName = document.getElementById('newEchoName').value;
         const numColorSlots = document.getElementById('echoColorNumber').value;

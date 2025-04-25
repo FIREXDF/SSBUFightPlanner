@@ -1198,43 +1198,15 @@ ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, num
         const currentAlt = `c00`; // Starting alt
         const outDir = echoModPath; // Output directory is the same as echoModPath
 
-        // Initialize the environment
-        init(hashesFile, echoModPath, false);
+        // Initialize the environment using init from createnewjson.js
+        init(hashesFile, echoModPath, false, fighterName); // Pass fighterName here
 
-        // Initialize configData
-        const configData = {
-            "new-dir-infos": [],
-            "new-dir-infos-base": {},
-            "share-to-vanilla": {},
-            "share-to-added": {},
-            "new-dir-files": {}
-        };
+        // Call the main function from createnewjson.js
+        main(echoModPath, hashesFile, fighterName, currentAlt, '', '', outDir, echoColorStart, numColorSlots);
 
-        // Loop through the number of color slots and populate configData
-        for (let i = 0; i < numColorSlots; i++) {
-            const targetAlt = `c${(parseInt(echoColorStart) + i).toString().padStart(2, '0')}`;
-            const shareSlot = ''; // Adjust if sharing slots is required
+        console.log(`JSON creation completed successfully. Config saved at: ${path.join(outDir, 'config.json')}`);
 
-            // Example: Add directories to new-dir-infos
-            const newDir = `fighter/${fighterName}/model/body/${targetAlt}`;
-            configData["new-dir-infos"].push(newDir);
-
-            // Example: Map new directories to base directories in new-dir-infos-base
-            configData["new-dir-infos-base"][newDir] = `fighter/${fighterName}/model/body/c00`;
-
-            // Example: Add files to new-dir-files
-            configData["new-dir-files"][newDir] = [
-                `${newDir}/model.numdlb`,
-                `${newDir}/model.numshb`
-            ];
-        }
-
-        // Save the generated JSON to echoModPath/config.json
-        const configPath = path.join(echoModPath, 'config.json');
-        await fs.writeFile(configPath, JSON.stringify(configData, null, 4), 'utf8');
-        console.log(`JSON creation completed successfully. Config saved at: ${configPath}`);
-
-        return { success: true, message: 'JSON created successfully', path: configPath };
+        return { success: true, message: 'JSON created successfully', path: path.join(outDir, 'config.json') };
     } catch (error) {
         console.error('Error creating new JSON:', error);
         return { success: false, error: error.message };
