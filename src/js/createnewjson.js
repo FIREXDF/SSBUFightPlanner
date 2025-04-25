@@ -110,7 +110,7 @@ function init(hashesFile, modDirectory, newConfig, fighterName) {
   globalThis.fileArray = dirInfo.file_array;
 }
 
-function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fighterName, echoColorStart, numColorSlots) {
+function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fighterName, echoColorStart, numColorSlots, baseEchoSlot) {
   const newDirInfos = [];
   const newDirInfosBase = {};
   const shareToVanilla = {};
@@ -128,11 +128,11 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
     newDirInfos.push(`fighter/${fighterName}/movie/${slot}`);
     newDirInfos.push(`fighter/${fighterName}/result/${slot}`);
 
-    newDirInfosBase[`fighter/${fighterName}/${slot}/camera`] = `fighter/${fighterName}/c00/camera`;
-    newDirInfosBase[`fighter/${fighterName}/kirbycopy/${slot}/bodymotion`] = `fighter/${fighterName}/kirbycopy/c00/bodymotion`;
-    newDirInfosBase[`fighter/${fighterName}/kirbycopy/${slot}/cmn`] = `fighter/${fighterName}/kirbycopy/c00/cmn`;
-    newDirInfosBase[`fighter/${fighterName}/kirbycopy/${slot}/sound`] = `fighter/${fighterName}/kirbycopy/c00/sound`;
-    newDirInfosBase[`fighter/${fighterName}/${slot}/cmn`] = `fighter/${fighterName}/c00/cmn`;
+    newDirInfosBase[`fighter/${fighterName}/${slot}/camera`] = `fighter/${fighterName}/${baseEchoSlot}/camera`;
+    newDirInfosBase[`fighter/${fighterName}/kirbycopy/${slot}/bodymotion`] = `fighter/${fighterName}/kirbycopy/${baseEchoSlot}/bodymotion`;
+    newDirInfosBase[`fighter/${fighterName}/kirbycopy/${slot}/cmn`] = `fighter/${fighterName}/kirbycopy/${baseEchoSlot}/cmn`;
+    newDirInfosBase[`fighter/${fighterName}/kirbycopy/${slot}/sound`] = `fighter/${fighterName}/kirbycopy/${baseEchoSlot}/sound`;
+    newDirInfosBase[`fighter/${fighterName}/${slot}/cmn`] = `fighter/${fighterName}/${baseEchoSlot}/cmn`;
   }
 
   // Parse data for the original fighter and generate `share-to-vanilla`
@@ -148,7 +148,36 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
 
       shareToVanilla[baseFile] = sharedFiles;
     });
-  }
+}
+
+// Add data from new_dir-info_with_files_trimmed.json
+if (globalThis.dirsData) {
+  Object.keys(globalThis.dirsData).forEach((dirKey) => {
+      const files = globalThis.dirsData[dirKey];
+
+      // Ensure `files` is an array before iterating
+      if (Array.isArray(files)) {
+          files.forEach((file) => {
+              const baseFile = file.replace(/c\d{2,3}/, 'c00'); // Normalize to 'c00'
+              const sharedFiles = [];
+
+              for (let i = 0; i < numColorSlots; i++) {
+                  const slot = `c${(echoColorStart + i).toString()}`;
+                  sharedFiles.push(file.replace(/c\d{2,3}/, slot)); // Replace 'cXX' or 'cXXX' with the new slot
+              }
+
+              // Merge with existing share-to-vanilla data
+              if (!shareToVanilla[baseFile]) {
+                  shareToVanilla[baseFile] = sharedFiles;
+              } else {
+                  shareToVanilla[baseFile] = [...new Set([...shareToVanilla[baseFile], ...sharedFiles])];
+              }
+          });
+      } else {
+          console.warn(`Unexpected data format for dirKey '${dirKey}':`, files);
+      }
+  });
+}
 
   // Update the global resulting configuration
   globalThis.resultingConfig["new-dir-infos"] = newDirInfos;
@@ -165,12 +194,12 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
   console.log(`Configuration saved to ${configPath}`);
 }
 
-function main(modDirectory, hashesFile, fighterName, currentAlt, targetAlt, shareSlot, outDir, echoColorStart, numColorSlots) {
+function main(modDirectory, hashesFile, fighterName, currentAlt, targetAlt, shareSlot, outDir, echoColorStart, numColorSlots, baseEchoSlot) {
   if (outDir && !fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
   }
   console.log("Starting reslotFighterFiles...");
-  reslotFighterFiles(modDirectory, currentAlt, targetAlt, shareSlot, outDir, fighterName, echoColorStart, numColorSlots);
+  reslotFighterFiles(modDirectory, currentAlt, targetAlt, shareSlot, outDir, fighterName, echoColorStart, numColorSlots, baseEchoSlot);
 
   console.log("Resulting Config:", globalThis.resultingConfig);
 }

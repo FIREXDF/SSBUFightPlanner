@@ -3644,9 +3644,10 @@ document.getElementById('createEcho').addEventListener('click', async () => {
         const newEchoID = document.getElementById('newEchoID').value;
         const newEchoName = document.getElementById('newEchoName').value;
         const numColorSlots = document.getElementById('echoColorNumber').value;
+        const baseEchoSlot = document.getElementById('baseEchoSlot').value;
         await window.api.modDetails.renameCFolders(echoModPath, echoColorStart);
         await window.api.modDetails.renameCharaFiles(echoModPath, newEchoID);
-        await window.api.modDetails.createNewJson(echoModPath, echoColorStart, numColorSlots);
+        await window.api.modDetails.createNewJson(echoModPath, echoColorStart, numColorSlots, baseEchoSlot);
     }
     catch (error) {
         console.error('Error creating Echo Fighter:', error);

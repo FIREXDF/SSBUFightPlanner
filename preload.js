@@ -90,7 +90,7 @@ contextBridge.exposeInMainWorld('api', {
         getNumColorSlots: (echoModPath) => ipcRenderer.invoke('get-num-color-slots', echoModPath),
         renameCFolders: (echoModPath, echoColorStart) => ipcRenderer.invoke('rename-c-folders', echoModPath, echoColorStart),
         renameCharaFiles: (echoModPath, newEchoID) => ipcRenderer.invoke('rename-chara-files', echoModPath, newEchoID),
-        createNewJson: (echoModPath, echoColorStart, numColorSlots) => ipcRenderer.invoke('create-new-json', echoModPath, echoColorStart, numColorSlots)
+        createNewJson: (echoModPath, echoColorStart, numColorSlots, baseEchoSlot) => ipcRenderer.invoke('create-new-json', echoModPath, echoColorStart, numColorSlots, baseEchoSlot),
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),

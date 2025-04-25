@@ -1170,7 +1170,7 @@ ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
     }
 });
 
-ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots) => {
+ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots, baseEchoSlot) => {
     console.log('Creating new JSON for Echo Mod:', echoModPath, echoColorStart, numColorSlots);
 
     try {
@@ -1202,7 +1202,7 @@ ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, num
         init(hashesFile, echoModPath, false, fighterName); // Pass fighterName here
 
         // Call the main function from createnewjson.js
-        main(echoModPath, hashesFile, fighterName, currentAlt, '', '', outDir, echoColorStart, numColorSlots);
+        main(echoModPath, hashesFile, fighterName, currentAlt, '', '', outDir, echoColorStart, numColorSlots, baseEchoSlot);
 
         console.log(`JSON creation completed successfully. Config saved at: ${path.join(outDir, 'config.json')}`);
 
