@@ -136,63 +136,195 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
   }
 
   // Parse data for the original fighter and generate `share-to-vanilla`
-  if (globalThis.fighterData && globalThis.fighterData.file_array) {
-    globalThis.fighterData.file_array.forEach((file) => {
-      const baseFile = file.replace(/c\d{2,3}/, 'c00'); // Replace any 'cXX' or 'cXXX' with 'c00'
-      const sharedFiles = [];
-
-      for (let i = 0; i < numColorSlots; i++) {
-        const slot = `c${(echoColorStart + i).toString()}`;
-        sharedFiles.push(file.replace(/c\d{2,3}/, slot)); // Replace 'cXX' or 'cXXX' with the new slot
-      }
-
-      shareToVanilla[baseFile] = sharedFiles;
-    });
-}
-
-// Add data from new_dir-info_with_files_trimmed.json
-if (globalThis.dirsData) {
-  Object.keys(globalThis.dirsData).forEach((dirKey) => {
+  if (globalThis.dirsData) {
+    Object.keys(globalThis.dirsData).forEach((dirKey) => {
       const files = globalThis.dirsData[dirKey];
-
+  
       // Ensure `files` is an array before iterating
       if (Array.isArray(files)) {
-          files.forEach((file) => {
-              const baseFile = file.replace(/c\d{2,3}/, 'c00'); // Normalize to 'c00'
-              const sharedFiles = [];
-
-              for (let i = 0; i < numColorSlots; i++) {
-                  const slot = `c${(echoColorStart + i).toString()}`;
-                  sharedFiles.push(file.replace(/c\d{2,3}/, slot)); // Replace 'cXX' or 'cXXX' with the new slot
-              }
-
-              // Merge with existing share-to-vanilla data
-              if (!shareToVanilla[baseFile]) {
-                  shareToVanilla[baseFile] = sharedFiles;
-              } else {
-                  shareToVanilla[baseFile] = [...new Set([...shareToVanilla[baseFile], ...sharedFiles])];
-              }
-          });
+        files.forEach((file) => {
+          // Filter for specific paths to add to `share-to-vanilla`
+          if (
+            file.startsWith(`fighter/kirby/model/copy_${fighterName}`) ||
+            file.startsWith(`fighter/${fighterName}/model/`) ||
+            file.startsWith(`sound/bank/fighter/se_${fighterName}`) ||
+            file.startsWith(`sound/bank/fighter_voice/vc_${fighterName}`)
+          ) {
+            const baseFile = file.replace(/c\d{2,3}/, 'c00'); // Normalize to 'c00'
+            const sharedFiles = [];
+  
+            // Generate shared files for each color slot
+            for (let i = 0; i < numColorSlots; i++) {
+              const slot = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
+              const targetFile = file.replace(/c\d{2,3}/, slot); // Replace 'cXX' or 'cXXX' with the new slot
+              sharedFiles.push(targetFile);
+            }
+  
+            // Add to `share-to-vanilla`
+            if (!shareToVanilla[baseFile]) {
+              shareToVanilla[baseFile] = [];
+            }
+            shareToVanilla[baseFile] = [...new Set([...shareToVanilla[baseFile], ...sharedFiles])];
+          }
+        });
       } else {
-          console.warn(`Unexpected data format for dirKey '${dirKey}':`, files);
+        console.warn(`Unexpected data format for dirKey '${dirKey}':`, files);
       }
+    });
+  }
+
+// Automatically find files to add to `share-to-added`
+if (globalThis.dirsData) {
+  Object.keys(globalThis.dirsData).forEach((dirKey) => {
+    const files = globalThis.dirsData[dirKey];
+
+    // Ensure `files` is an array before iterating
+    if (Array.isArray(files)) {
+      files.forEach((file) => {
+        console.log(`Processing file: ${file}`); // Debug log
+
+        // Add to share-to-vanilla
+        if (
+          file.startsWith(`fighter/kirby/model/copy_${fighterName}`) ||
+          file.startsWith(`fighter/${fighterName}/model/`) ||
+          file.startsWith(`sound/bank/fighter/se_${fighterName}`) ||
+          file.startsWith(`sound/bank/fighter_voice/vc_${fighterName}`)
+        ) {
+          console.log(`Matched file for share-to-vanilla: ${file}`);
+          const baseFile = file.replace(/c\d{2,3}/, 'c00'); // Normalize to 'c00'
+          const sharedFiles = [];
+
+          for (let i = 0; i < numColorSlots; i++) {
+            const slot = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
+            const targetFile = file.replace(/c\d{2,3}/, slot);
+            sharedFiles.push(targetFile);
+          }
+
+          if (!shareToVanilla[baseFile]) {
+            shareToVanilla[baseFile] = [];
+          }
+          shareToVanilla[baseFile] = [...new Set([...shareToVanilla[baseFile], ...sharedFiles])];
+        }
+
+        // Add to share-to-added
+        if (
+          file.startsWith(`camera/fighter/${fighterName}/`) ||
+          file.startsWith(`fighter/${fighterName}/motion/`)
+        ) {
+          console.log(`Matched file for share-to-added: ${file}`);
+          const baseFile = file.replace(/c\d{2,3}/, 'c00');
+          const sharedFiles = [];
+
+          for (let i = 0; i < numColorSlots; i++) {
+            const slot = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
+            const targetFile = file.replace(/c\d{2,3}/, slot);
+            sharedFiles.push(targetFile);
+          }
+
+          if (!shareToAdded[baseFile]) {
+            shareToAdded[baseFile] = [];
+          }
+          shareToAdded[baseFile] = [...new Set([...shareToAdded[baseFile], ...sharedFiles])];
+        }
+      });
+    } else {
+      console.warn(`Unexpected data format for dirKey '${dirKey}':`, files);
+    }
   });
 }
+
+// Automatically populate `new-dir-files`
+if (globalThis.dirsData) {
+  // Combine processing of `share-to-vanilla`, `share-to-added`, and echo mod files into `new-dir-files`
+  const combinedShares = { ...shareToVanilla, ...shareToAdded };
+
+  // Process `share-to-vanilla` and `share-to-added`
+  Object.entries(combinedShares).forEach(([baseFile, sharedFiles]) => {
+    sharedFiles.forEach((file) => {
+      let dirPath = '';
+      if (file.startsWith(`fighter/${fighterName}/camera/`)) {
+        dirPath = `fighter/${fighterName}/camera/${path.basename(file, path.extname(file))}`;
+      } else if (file.startsWith(`fighter/${fighterName}/kirbycopy/`)) {
+        dirPath = `fighter/${fighterName}/kirbycopy/${path.basename(file, path.extname(file))}`;
+      } else if (file.startsWith(`fighter/${fighterName}/movie/`)) {
+        dirPath = `fighter/${fighterName}/movie/${path.basename(file, path.extname(file))}`;
+      } else if (file.startsWith(`fighter/${fighterName}/result/`)) {
+        dirPath = `fighter/${fighterName}/result/${path.basename(file, path.extname(file))}`;
+      } else if (file.startsWith(`fighter/${fighterName}/`)) {
+        dirPath = `fighter/${fighterName}/${path.basename(file, path.extname(file))}`;
+      }
+
+      if (dirPath) {
+        if (!newDirFiles[dirPath]) {
+          newDirFiles[dirPath] = [];
+        }
+        if (!newDirFiles[dirPath].includes(file)) {
+          newDirFiles[dirPath].push(file);
+        }
+      }
+    });
+  });
+
+  // Process echo mod files
+  const echoDirs = ['sound', 'effect', 'fighter'];
+  echoDirs.forEach((dir) => {
+    const echoPath = path.join(modDir, dir);
+    if (fs.existsSync(echoPath)) {
+      const echoFiles = findFighterFiles(echoPath); // Use the helper function to collect all files
+      echoFiles.forEach((file) => {
+        const relativePath = file.replace(modDir, '').replace(/\\/g, '/');
+        const match = relativePath.match(/c\d{2,3}/); // Extract the 'c' value
+        if (match) {
+          const dirPath = path.dirname(relativePath);
+
+          if (!newDirFiles[dirPath]) {
+            newDirFiles[dirPath] = [];
+          }
+          if (!newDirFiles[dirPath].includes(relativePath)) {
+            newDirFiles[dirPath].push(relativePath);
+          }
+        }
+      });
+    }
+  });
+}
+
+  // Add empty directories explicitly if needed
+  for (let i = 0; i < numColorSlots; i++) {
+    const slot = `c${(echoColorStart + i).toString().padStart(2, '0')}`; // Generate slot (e.g., c00, c01, etc.)
+    const requiredDirs = [
+      `fighter/${fighterName}/movie/${slot}`,
+      `fighter/${fighterName}/result/${slot}`
+    ];
+  
+    requiredDirs.forEach((dir) => {
+      if (!newDirFiles[dir]) {
+        newDirFiles[dir] = [];
+      }
+    });
+  }
+
+
+
 
   // Update the global resulting configuration
   globalThis.resultingConfig["new-dir-infos"] = newDirInfos;
   globalThis.resultingConfig["new-dir-infos-base"] = newDirInfosBase;
   globalThis.resultingConfig["share-to-vanilla"] = shareToVanilla;
+  globalThis.resultingConfig["share-to-added"] = shareToAdded;
+  globalThis.resultingConfig["new-dir-files"] = newDirFiles;
 
   console.log("Generated new-dir-infos:", newDirInfos);
   console.log("Generated new-dir-infos-base:", newDirInfosBase);
   console.log("Generated share-to-vanilla:", shareToVanilla);
+  console.log("Generated share-to-added:", shareToAdded);
+  console.log("Generated new-dir-files:", newDirFiles);
 
   // Save the resulting configuration to a JSON file
   const configPath = path.join(outDir, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify(globalThis.resultingConfig, null, 2), 'utf-8');
   console.log(`Configuration saved to ${configPath}`);
-}
+};
 
 function main(modDirectory, hashesFile, fighterName, currentAlt, targetAlt, shareSlot, outDir, echoColorStart, numColorSlots, baseEchoSlot) {
   if (outDir && !fs.existsSync(outDir)) {

@@ -1125,11 +1125,31 @@ ipcMain.handle('rename-c-folders', async (event, echoModPath, echoColorStart) =>
                     }
                 }
             }
+
+            // Handle effect files under echoModPath/effect/fighter/fighterName
+            const effectPath = path.join(echoModPath, 'effect', 'fighter', fighterFolder.name);
+            if (await fse.pathExists(effectPath)) {
+                const effectFiles = await fs.readdir(effectPath, { withFileTypes: true });
+
+                let currentColorSlot = initialColorSlot; // Reset color slot for effect files
+                for (const effectFile of effectFiles) {
+                    if (effectFile.isFile() && /c\d{2,3}/.test(effectFile.name)) {
+                        const oldPath = path.join(effectPath, effectFile.name);
+                        const newName = effectFile.name.replace(/c\d{2,3}/, `c${currentColorSlot.toString().padStart(2, '0')}`);
+                        const newPath = path.join(effectPath, newName);
+
+                        await fs.rename(oldPath, newPath);
+                        console.log(`Renamed effect file: ${oldPath} -> ${newPath}`);
+
+                        currentColorSlot++; // Increment the color slot for the next file
+                    }
+                }
+            }
         }
 
-        return { success: true, message: 'Folders renamed successfully' };
+        return { success: true, message: 'Folders and effect files renamed successfully' };
     } catch (error) {
-        console.error('Error renaming c-folders:', error);
+        console.error('Error renaming c-folders and effect files:', error);
         return { success: false, error: error.message };
     }
 });
