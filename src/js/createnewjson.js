@@ -135,45 +135,6 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
     newDirInfosBase[`fighter/${fighterName}/${slot}/cmn`] = `fighter/${fighterName}/${baseEchoSlot}/cmn`;
   }
 
-  const fighterDirectories = globalThis.dirsData[fighterName];
-  if (typeof fighterDirectories === "object") {
-    Object.keys(fighterDirectories).forEach((dirKey) => {
-      const files = fighterDirectories[dirKey];
-  // Parse data for the original fighter and generate `share-to-vanilla'
-  
-      // Ensure `files` is an array before iterating
-      if (Array.isArray(files)) {
-        files.forEach((file) => {
-          // Filter for specific paths to add to `share-to-vanilla`
-          if (
-            file.startsWith(`fighter/kirby/model/copy_${fighterName}`) ||
-            file.startsWith(`fighter/${fighterName}/model/`) ||
-            file.startsWith(`sound/bank/fighter/se_${fighterName}`) ||
-            file.startsWith(`sound/bank/fighter_voice/vc_${fighterName}`)
-          ) {
-            const baseFile = file.replace(/c\d{2,3}/, 'c00'); // Normalize to 'c00'
-            const sharedFiles = [];
-  
-            // Generate shared files for each color slot
-            for (let i = 0; i < numColorSlots; i++) {
-              const slot = `c${(echoColorStart + i).toString().padStart(2, '0')}`;
-              const targetFile = file.replace(/c\d{2,3}/, slot); // Replace 'cXX' or 'cXXX' with the new slot
-              sharedFiles.push(targetFile);
-            }
-  
-            // Add to `share-to-vanilla`
-            if (!shareToVanilla[baseFile]) {
-              shareToVanilla[baseFile] = [];
-            }
-            shareToVanilla[baseFile] = [...new Set([...shareToVanilla[baseFile], ...sharedFiles])];
-          }
-        });
-      } else {
-        console.warn(`Unexpected data format for dirKey '${dirKey}':`, files);
-      }
-    });
-  }
-
 // Automatically find files to add to `share-to-added` and share-to-vanilla`
 if (globalThis.dirsData) {
   Object.keys(globalThis.dirsData).forEach((dirKey) => {
