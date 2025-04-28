@@ -135,10 +135,11 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
     newDirInfosBase[`fighter/${fighterName}/${slot}/cmn`] = `fighter/${fighterName}/${baseEchoSlot}/cmn`;
   }
 
-  // Parse data for the original fighter and generate `share-to-vanilla`
-  if (globalThis.dirsData) {
-    Object.keys(globalThis.dirsData).forEach((dirKey) => {
-      const files = globalThis.dirsData[dirKey];
+  const fighterDirectories = globalThis.dirsData[fighterName];
+  if (typeof fighterDirectories === "object") {
+    Object.keys(fighterDirectories).forEach((dirKey) => {
+      const files = fighterDirectories[dirKey];
+  // Parse data for the original fighter and generate `share-to-vanilla'
   
       // Ensure `files` is an array before iterating
       if (Array.isArray(files)) {
@@ -173,9 +174,10 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
     });
   }
 
-// Automatically find files to add to `share-to-added`
+// Automatically find files to add to `share-to-added` and share-to-vanilla`
 if (globalThis.dirsData) {
   Object.keys(globalThis.dirsData).forEach((dirKey) => {
+    
     const files = globalThis.dirsData[dirKey];
 
     // Ensure `files` is an array before iterating
