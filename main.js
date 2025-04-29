@@ -2527,15 +2527,3 @@ ipcMain.handle('get-mod-hash', async (event, modName) => {
     return getHash(modName);
 });
 
-// Handle Restart Button
-
-ipcMain.handle('restart-app', () => {
-    try {
-        app.relaunch();
-        app.exit(0);
-    } catch (error) {
-        console.error('Error restarting app:', error);
-        throw error;
-    }
-});
-
