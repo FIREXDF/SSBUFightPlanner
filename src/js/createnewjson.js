@@ -175,8 +175,7 @@ function reslotFighterFiles(modDir, currentAlt, targetAlt, shareSlot, outDir, fi
     // Add to `share-to-added`
     if (
       file.startsWith(`camera/fighter/${fighterName}/`) ||
-      file.startsWith(`fighter/${fighterName}/motion/`) ||
-      (fighterName === 'koopa' && file.startsWith(`fighter/koopag/motion/`)) // Include 'koopag' motion files for 'koopa'
+      file.startsWith(`fighter/${fighterName}/motion/`)
     ) {
       const baseFile = file.replace(/c\d{2,3}/, 'c00');
       const sharedFiles = [];
