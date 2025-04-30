@@ -3479,3 +3479,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeUI();
 });
+
+// Populate GameBanana Mods
+
+document.addEventListener('DOMContentLoaded', () => {
+    const modsList = document.getElementById('gamebananaModsList');
+    const categoryButtons = document.querySelectorAll('#gamebananaCategories button');
+
+    function populateMods(category = null) {
+        modsList.innerHTML = ''; // Clear existing mods
+        const filteredMods = category
+            ? modsData.filter(mod => mod.category === category)
+            : modsData;
+
+        filteredMods.forEach(mod => {
+            const modCard = document.createElement('div');
+            modCard.className = 'card';
+            modCard.style.width = '18rem';
+
+            modCard.innerHTML = `
+                <img src="${mod.image}" class="card-img-top" alt="${mod.title}">
+                <div class="card-body">
+                    <h5 class="card-title">${mod.title}</h5>
+                    <p class="card-text">Author: ${mod.author}</p>
+                    <p class="card-text">Version: ${mod.version}</p>
+                    <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
+                    <button class="btn btn-success mt-2" onclick="downloadMod('${mod.link}')">Download</button>
+                </div>
+            `;
+
+            modsList.appendChild(modCard);
+        });
+    }
+
+    // Handle category button clicks
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const category = button.getAttribute('data-category');
+            populateMods(category);
+        });
+    });
+
+    // Initial population of mods (default to "Featured")
+    populateMods("Featured");
+
+    // Example download function
+    window.downloadMod = (link) => {
+        console.log(`Downloading mod from: ${link}`);
+        // Add your FightPlanner 1-click download logic here
+    };
+});
+
+
+
+
