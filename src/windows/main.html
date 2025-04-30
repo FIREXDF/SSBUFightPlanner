@@ -55,6 +55,12 @@
                 <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gamebanana-tab" data-bs-toggle="pill" 
+                    data-bs-target="#gamebanana" type="button" role="tab">
+                <i class="bi bi-cloud-download me-2"></i><span>GameBanana</span>
+            </button>
+        </li>
         <li class="nav-item ms-auto me-3">
             <img 
                 src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" 
@@ -172,6 +178,48 @@
                         <button class="btn btn-secondary" id="createFpp" title="Create FPP Package">
                             <i class="bi bi-file-earmark-zip"></i>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GameBanana Tab -->
+        <div class="tab-pane fade h-100" id="gamebanana" role="tabpanel">
+            <div class="container-fluid h-100">
+                <div class="row h-100">
+                    <!-- Mods List (Left Side) -->
+                    <div class="col-9 p-3 overflow-auto">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Mods</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="gamebananaModsList" class="d-flex flex-wrap gap-3">
+                                    <!-- Mod cards will be dynamically populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categories (Right Side) -->
+                    <div class="col-3 p-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Categories</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="gamebananaCategories" class="d-flex flex-column gap-2">
+                                    <!-- Category buttons -->
+                                    <button class="btn btn-outline-primary" data-category="Featured">Featured</button>
+                                    <button class="btn btn-outline-primary" data-category="Skins">Skins</button>
+                                    <button class="btn btn-outline-primary" data-category="Movesets">Movesets</button>
+                                    <button class="btn btn-outline-primary" data-category="Stages">Stages</button>
+                                    <button class="btn btn-outline-primary" data-category="Effects">Effects</button>
+                                    <button class="btn btn-outline-primary" data-category="Audio">Audio</button>
+                                    <button class="btn btn-outline-primary" data-category="Other/Misc">Other/Misc</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
