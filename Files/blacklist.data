@@ -1,0 +1,65 @@
+# Only for config.json
+# Lines starting with # are ignored
+# Lines starting with . are considered file extensions.
+# Lines with a file path containing a c08 are treated as c00, c01, c02, ..., c07
+
+# fighter/kirby/model/copy_pfushigisou_cap/c08/dark_model.numatb
+# .file
+
+effect/fighter/chrom/ef_chrom_c08.eff
+effect/fighter/chrom/trail_c08/tex_chrom_sword1.nutexb
+effect/fighter/chrom/trail_c08/tex_chrom_sword2.nutexb
+
+effect/fighter/rosetta/ef_rosetta_c08.eff
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.nuanmb
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.nuhlpb
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.numatb
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.numdlb
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.nusktb
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.nusrcmdlb
+effect/fighter/rosetta/model/m_rosettafinalpowerstarlight_c08/c00/model.xmb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.nuanmb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.nuhlpb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.numatb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.numdlb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.nusktb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.nusrcmdlb
+effect/fighter/rosetta/model/m_rosettagalaxyarc2_c08/c00/model.xmb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.nuanmb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.nuhlpb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.numatb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.numdlb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.nusktb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.nusrcmdlb
+effect/fighter/rosetta/model/m_rosettatwinklearc_c08/c00/model.xmb
+
+effect/fighter/lucario/ef_lucario_c08.eff
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/ef_lucario_megasinka00.nutexb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/ef_lucario_megasinka01.nutexb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/ef_lucario_megasinka02.nutexb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.nuanmb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.nuhlpb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.numatb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.numdlb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.numshb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.numshexb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.nusktb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.nusrcmdlb
+effect/fighter/lucario/model/m_lucariofinalmegasinka_c08/c00/model.xmb
+effect/fighter/lucario/trail_c08/lucario_shinsoku1.nutexb
+effect/fighter/lucario/trail_c08/lucario_shinsoku2.nutexb
+effect/fighter/lucario/trail_c08/texlucarioshinsokutrace.nutexb
+
+effect/fighter/mewtwo/ef_mewtwo_c08.eff
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/ef_lucario_megasinka00.nutexb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/ef_lucario_megasinka01.nutexb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/ef_lucario_megasinka02.nutexb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.nuanmb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.nuhlpb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.numatb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.numdlb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.numshb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.numshexb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.nusktb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.nusrcmdlb
+effect/fighter/mewtwo/model/m_lucariofinalmegasinka_c08/c00/model.xmb

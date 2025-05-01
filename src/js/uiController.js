@@ -1648,7 +1648,7 @@ async updateModPreview(modId) {
         modImage.src = '';
         return;
     }
-
+    // Populate Mod Image and Metadata
     try {
         const mod = await this.modManager.getMod(modId);
         if (!mod) {
@@ -3479,3 +3479,190 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeUI();
 });
+
+// Get Echo Fighter Path
+document.getElementById('selectEchoModFolder').addEventListener('click', async () => {
+    try {
+        // Open a folder selection dialog
+        const result = await window.api.dialog.showOpenDialog({
+            properties: ['openDirectory'], // Allow folder selection
+        });
+
+        // Check if the user selected a folder
+        if (!result.canceled && result.filePaths.length > 0) {
+            const selectedPath = result.filePaths[0];
+
+            // Set the selected path to the input field
+            const echoModePathInput = document.getElementById('echoModPath');
+            if (echoModePathInput) {
+                echoModePathInput.value = selectedPath;
+                // Manually trigger the change event
+                const event = new Event('change');
+                echoModePathInput.dispatchEvent(event);
+            }
+        }
+    } catch (error) {
+        console.error('Error selecting folder:', error);
+    }
+});
+
+// Get Echo Image and Details
+document.getElementById('echoModPath').addEventListener('change', async (event) => {
+        const echoModMetadata = document.getElementById('echoModMetadata');
+        if (!echoModMetadata) {
+            console.error('Metadata container not found');
+            return;
+        }
+
+        let metadataContent = echoModMetadata.querySelector('.echo-metadata-content');
+        if (!metadataContent) {
+            metadataContent = document.createElement('div');
+            metadataContent.className = 'echo-metadata-content';
+            echoModMetadata.appendChild(metadataContent);
+        }
+
+        const echoModPath = document.getElementById('echoModPath').value;
+        const echoModImage = document.getElementById('echoModImage');
+        
+        try {
+            
+            try {
+                const [previewPath, modInfo] = await Promise.all([
+                    window.api.modDetails.getEchoPreview(echoModPath),
+                    window.api.modDetails.getEchoInfo(echoModPath)
+                ]);
+                console.log('Echo Mod Path:', echoModPath);
+                console.log('Preview Path:', previewPath);
+                console.log('Echo Mod Image Element:', echoModImage);
+                
+                echoModImage.src = previewPath || '';
+
+                // If no info.toml exists or it's empty, show the "no description" message
+                if (!modInfo) {
+                    metadataContent.innerHTML = `
+                        <div class="alert alert-warning">
+                            <p>${await languageService.translate('mods.details.title')}:</p>
+                            <h5>Unknown Mod</h5>
+                            <p class="text-muted">${await languageService.translate('metadata.description.empty')}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log('modInfo:', modInfo);
+
+                // Build metadata HTML with translations
+                
+                function escapeHtml(unsafe) {
+                    if (typeof unsafe !== 'string') {
+                        unsafe = String(unsafe); // Convert to string
+                    }
+                    return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+                }
+                
+                const metadataHtml = `
+                    <h5>${escapeHtml(modInfo?.display_name || modInfo?.mod_name || modInfo?.folder_name)}</h5>
+                    ${modInfo?.version ? `
+                        <p><strong>${await languageService.translate('metadata.version.label')}:</strong> 
+                        ${escapeHtml(modInfo.version)}</p>` : ''
+                    }
+                    ${modInfo?.authors ? `
+                        <p><strong>${await languageService.translate('metadata.author.name')}:</strong> 
+                        ${escapeHtml(modInfo.authors)}</p>` : ''
+                    }
+                    ${modInfo?.category ? `
+                        <p><strong>${await languageService.translate('metadata.category.label')}:</strong> 
+                        ${await languageService.translate(`metadata.category.${modInfo.category.toLowerCase()}`) || escapeHtml(modInfo.category)}</p>` : ''
+                    }
+                    ${typeof modInfo?.wifi_safe !== 'undefined' ? `
+                        <p><strong>${await languageService.translate('mods.details.wifiSafe')}:</strong> 
+                        ${modInfo.wifi_safe ? '✔️' : '❌'}</p>` : ''
+                    }
+                    ${modInfo?.description ? `
+                        <div class="description-section">
+                            <strong>${await languageService.translate('metadata.description.title')}:</strong>
+                            <p class="description-text">
+                                ${escapeHtml(modInfo.description)}
+                            </p>
+                        </div>` : ''
+                    }
+                    ${modInfo?.url ? `
+                        <p><strong>${await languageService.translate('metadata.author.website')}:</strong> 
+                        <a href="#" onclick="window.api.openExternal('${escapeHtml(modInfo.url)}'); return false;">
+                            ${escapeHtml(modInfo.url)}
+                        </a></p>` : ''
+                    }
+                `;
+                
+                metadataContent.innerHTML = metadataHtml;
+
+            }   catch (error) {
+                console.error('Error loading mod details:', error);
+                metadataContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <p>Error loading mod details</p>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+            }
+        
+        }
+        catch (error) {
+            console.error('Error in updateModPreview:', error);
+            metadataContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <p>${await languageService.translate('metadata.unknown')}</p>
+                    <small>${this.escapeHtml(error.message)}</small>
+                </div>
+            `;
+        }
+    
+    
+    // Get Number of Color Slots
+    const colorSlots = document.getElementById('echoColorNumber');
+    try {
+        const echoModPath = document.getElementById('echoModPath').value;
+        console.log('Calling getNumColorSlots with path:', echoModPath);
+        const numColorSlots = await window.api.modDetails.getNumColorSlots(echoModPath);
+        
+            if (numColorSlots !== undefined && numColorSlots !== null) {
+                colorSlots.value = numColorSlots;
+            } else {
+                console.error('Failed to fetch the number of color slots.');
+                colorSlots.value = '0'; // Default to 0 if no slots are found
+            }
+        } catch (error) {
+            console.error('Error fetching number of color slots:', error);
+            colorSlots.value = 'Error'; // Indicate an error in the UI
+        }
+});
+
+document.getElementById('createEcho').addEventListener('click', async () => {
+    try {
+        const echoModPath = document.getElementById('echoModPath').value;
+        const echoColorStart = parseInt(document.getElementById('echoColorStart').value, 10);
+        const newEchoID = document.getElementById('newEchoID').value;
+        const newEchoName = document.getElementById('newEchoName').value;
+        const numColorSlots = document.getElementById('echoColorNumber').value;
+        const baseEchoSlot = document.getElementById('baseEchoSlot').value;
+        await window.api.modDetails.renameCFolders(echoModPath, echoColorStart);
+        await window.api.modDetails.renameCharaFiles(echoModPath, newEchoID);
+        await window.api.modDetails.createNewJson(echoModPath, echoColorStart, numColorSlots, baseEchoSlot);
+    }
+    catch (error) {
+        console.error('Error creating Echo Fighter:', error);
+        this.showError('Failed to create Echo Fighter: ' + error.message);
+    } finally {
+        this.hideLoading();
+    }
+});
+
+
+
+
+
