@@ -3536,7 +3536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modsList.innerHTML = '<p>Loading mods...</p>';
 
         const sectionId = categoryToSectionId[category] || null;
-        const modsData = await fetchGameBananaMods(sectionId);  // Use the new handler
+        const modsData = await fetchGameBananaModInfo(sectionId);  // Use the new handler
 
         modsList.innerHTML = '';
 
