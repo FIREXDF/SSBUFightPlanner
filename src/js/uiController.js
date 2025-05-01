@@ -3486,13 +3486,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const modsList = document.getElementById('gamebananaModsList');
     const categoryButtons = document.querySelectorAll('#gamebananaCategories button');
 
-    function populateMods(category = null) {
-        modsList.innerHTML = ''; // Clear existing mods
-        const filteredMods = category
-            ? modsData.filter(mod => mod.category === category)
-            : modsData;
+    // Fetch mods from GameBanana website or API
+    async function fetchMods(category = 'Featured') {
+        try {
+            let url;
+            if (category === 'Featured') {
+                // Use the Featured page URL for scraping
+                url = 'https://gamebanana.com/games/featured/6498?_idGameRow=6498';
+            } else {
+                // Use the URL for the specific category
+                url = `https://gamebanana.com/games/cats/6498?cat=${category}`;
+            }
+    
+            const response = await fetch(url);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract mod details from the page
+            const mods = Array.from(doc.querySelectorAll('.FeaturedItems .Item, .Items .Item')).map(mod => ({
+                id: mod.querySelector('.ItemTitle a')?.href.split('/').pop() || 'Unknown',
+                title: mod.querySelector('.ItemTitle')?.textContent.trim() || 'Unknown',
+                author: mod.querySelector('.ItemSubmitter')?.textContent.trim() || 'Unknown',
+                image: mod.querySelector('.ItemThumb img')?.src || 'https://via.placeholder.com/150',
+                link: mod.querySelector('.ItemTitle a')?.href || '#',
+            }));
+    
+            return mods;
+        } catch (error) {
+            console.error('Failed to fetch mods:', error);
+            return [];
+        }
+    }
 
-        filteredMods.forEach(mod => {
+    // Populate mods list
+    async function populateMods(category = 'Featured') {
+        modsList.innerHTML = '<p>Loading mods...</p>'; // Show loading message
+        const modsData = await fetchMods(category);
+        modsList.innerHTML = ''; // Clear existing mods
+
+        modsData.forEach(mod => {
             const modCard = document.createElement('div');
             modCard.className = 'card';
             modCard.style.width = '18rem';
@@ -3502,14 +3535,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card-body">
                     <h5 class="card-title">${mod.title}</h5>
                     <p class="card-text">Author: ${mod.author}</p>
-                    <p class="card-text">Version: ${mod.version}</p>
                     <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
-                    <button class="btn btn-success mt-2" onclick="downloadMod('${mod.link}')">Download</button>
+                    <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
                 </div>
             `;
 
             modsList.appendChild(modCard);
+
+            // Add event listener for the download button
+            modCard.querySelector('.btn-success').addEventListener('click', () => {
+                triggerFightPlannerDownload(mod.link);
+            });
         });
+    }
+
+    // Trigger FightPlanner 1-click download
+    function triggerFightPlannerDownload(link) {
+        console.log(`Triggering FightPlanner 1-click download for: ${link}`);
+        window.electron.downloadMod(link);
     }
 
     // Handle category button clicks
@@ -3521,14 +3564,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial population of mods (default to "Featured")
-    populateMods("Featured");
-
-    // Example download function
-    window.downloadMod = (link) => {
-        console.log(`Downloading mod from: ${link}`);
-        // Add your FightPlanner 1-click download logic here
-    };
+    populateMods();
 });
+
 
 
 

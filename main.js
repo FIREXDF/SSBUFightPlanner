@@ -2270,4 +2270,3 @@ ipcMain.on('stop-loading-audio', () => {
     hiddenWindow.webContents.executeJavaScript('stopLoading()').catch(console.error);  
 });
 module.exports.hiddenWindow = hiddenWindow;
-
