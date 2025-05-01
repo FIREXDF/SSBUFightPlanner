@@ -3484,48 +3484,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const modsList = document.getElementById('gamebananaModsList');
-    const categoryButtons = document.querySelectorAll('#gamebananaCategories button');
 
-    // Fetch mods from GameBanana website or API
-    async function fetchMods(category = 'Featured') {
+    const categoryToSectionId = {
+        'Featured': null,
+        'Skins': 9599,
+        'Movesets': 9615,
+        'Stages': 9600,
+        'Effects': 9611,
+        'Audio': 9601,
+        'Other/Misc': 9604,
+        'UI': 9603,
+        'Final Smash': 9610,
+        'Skyline': 9614,
+        'Gameplay': 9607,
+        'Animation': 9609,
+        'Mod Packs': 9605,
+        'Music Packs': 9606,
+        'Tools': 9602
+    };
+    async function fetchGameBananaModInfo(modId) {
+        const url = `https://api.gamebanana.com/Core/Item/GetItem?itemid=${modId}&gameid=6498&format=json`;
+    
         try {
-            let url;
-            if (category === 'Featured') {
-                // Use the Featured page URL for scraping
-                url = 'https://gamebanana.com/games/featured/6498?_idGameRow=6498';
-            } else {
-                // Use the URL for the specific category
-                url = `https://gamebanana.com/games/cats/6498?cat=${category}`;
+            const response = await fetch(url);
+            const data = await response.json();
+    
+            if (!data || data.error) {
+                throw new Error('Failed to fetch mod data from GameBanana');
             }
     
-            const response = await fetch(url);
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // Extract mod details from the page
-            const mods = Array.from(doc.querySelectorAll('.FeaturedItems .Item, .Items .Item')).map(mod => ({
-                id: mod.querySelector('.ItemTitle a')?.href.split('/').pop() || 'Unknown',
-                title: mod.querySelector('.ItemTitle')?.textContent.trim() || 'Unknown',
-                author: mod.querySelector('.ItemSubmitter')?.textContent.trim() || 'Unknown',
-                image: mod.querySelector('.ItemThumb img')?.src || 'https://via.placeholder.com/150',
-                link: mod.querySelector('.ItemTitle a')?.href || '#',
-            }));
+            // Map API data to mod info structure
+            const modInfo = {
+                id: data.itemid,
+                title: data.name,
+                author: data.ownername,
+                description: data.description,
+                previewImage: data.preview ? data.preview.url : 'https://gamebanana.com/themes/gamebanana/images/defaults/defaultheader.png',
+                link: `https://gamebanana.com/mods/${data.itemid}`,
+                category: data.category || 'Uncategorized',
+                // You can add more fields as per your requirements
+            };
     
-            return mods;
+            console.log(`Fetched mod info for ${modId}:`, modInfo);
+            return modInfo;
         } catch (error) {
-            console.error('Failed to fetch mods:', error);
-            return [];
+            console.error(`Error fetching GameBanana mod info for ${modId}:`, error);
+            return { error: 'Failed to fetch mod info from GameBanana' };
         }
     }
-
-    // Populate mods list
     async function populateMods(category = 'Featured') {
-        modsList.innerHTML = '<p>Loading mods...</p>'; // Show loading message
-        const modsData = await fetchMods(category);
-        modsList.innerHTML = ''; // Clear existing mods
+        modsList.innerHTML = '<p>Loading mods...</p>';
+
+        const sectionId = categoryToSectionId[category] || null;
+        const modsData = await fetchGameBananaMods(sectionId);  // Use the new handler
+
+        modsList.innerHTML = '';
 
         modsData.forEach(mod => {
+            const categories = Array.isArray(mod.category) ? mod.category.join(', ') : mod.category;
+
             const modCard = document.createElement('div');
             modCard.className = 'card';
             modCard.style.width = '18rem';
@@ -3535,6 +3552,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="card-body">
                     <h5 class="card-title">${mod.title}</h5>
                     <p class="card-text">Author: ${mod.author}</p>
+                    <p class="card-text">Category: ${categories}</p>
                     <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
                     <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
                 </div>
@@ -3542,20 +3560,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             modsList.appendChild(modCard);
 
-            // Add event listener for the download button
             modCard.querySelector('.btn-success').addEventListener('click', () => {
                 triggerFightPlannerDownload(mod.link);
             });
         });
     }
 
-    // Trigger FightPlanner 1-click download
     function triggerFightPlannerDownload(link) {
         console.log(`Triggering FightPlanner 1-click download for: ${link}`);
-        window.electron.downloadMod(link);
+        window.electron.downloadMod(link); // This can remain as is for the local file handling
     }
 
-    // Handle category button clicks
+    const categoryButtons = document.querySelectorAll('button[data-category]');
     categoryButtons.forEach(button => {
         button.addEventListener('click', () => {
             const category = button.getAttribute('data-category');
@@ -3563,11 +3579,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initial population of mods (default to "Featured")
-    populateMods();
+    populateMods(); // Initial load with default category
 });
-
-
-
-
 

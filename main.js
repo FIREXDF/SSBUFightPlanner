@@ -956,17 +956,129 @@ ipcMain.handle('get-mod-preview', async (event, modPath) => {
     }
 });
 
+const fixTomlDuplicates = (content) => {
+    const lines = content.split('\n');
+    const keyMap = {};
+    const resultLines = [];
+
+    for (let line of lines) {
+        const trimmed = line.trim();
+
+        // Skip empty lines and comments
+        if (trimmed === '' || trimmed.startsWith('#') || trimmed.startsWith('[')) {
+            resultLines.push(line);
+            continue;
+        }
+
+        // Match key-value pair
+        const match = trimmed.match(/^([a-zA-Z0-9_-]+)\s*=\s*(.+)$/);
+        if (match) {
+            const key = match[1];
+            const value = match[2];
+
+            if (!keyMap[key]) {
+                keyMap[key] = [value];
+            } else {
+                keyMap[key].push(value);
+            }
+        } else {
+            resultLines.push(line); // keep non key-value lines as-is
+        }
+    }
+
+    // Now reconstruct TOML
+    const fixedLines = [];
+    const handledKeys = new Set();
+
+    for (let line of lines) {
+        const trimmed = line.trim();
+
+        if (trimmed === '' || trimmed.startsWith('#') || trimmed.startsWith('[')) {
+            fixedLines.push(line);
+            continue;
+        }
+
+        const match = trimmed.match(/^([a-zA-Z0-9_-]+)\s*=\s*(.+)$/);
+        if (match) {
+            const key = match[1];
+            if (handledKeys.has(key)) {
+                continue; // skip duplicate line
+            }
+
+            const values = keyMap[key];
+            if (values.length === 1) {
+                fixedLines.push(`${key} = ${values[0]}`);
+            } else {
+                fixedLines.push(`${key} = [${values.join(', ')}]`);
+            }
+
+            handledKeys.add(key);
+        } else {
+            fixedLines.push(line);
+        }
+    }
+
+    return fixedLines.join('\n');
+};
+
+const parseTomlWithFix = (content) => {
+    try {
+        return toml.parse(content);
+    } catch (error) {
+        if (error.message.includes('Cannot redefine existing key')) {
+            // Try auto-fixing all duplicates
+            const fixedContent = fixTomlDuplicates(content);
+
+            // Try parsing fixed version
+            return toml.parse(fixedContent);
+        }
+
+        throw error; // re-throw other errors
+    }
+};
+
+
 ipcMain.handle('get-mod-info', async (event, modPath) => {
     try {
         const infoPath = path.join(modPath, 'info.toml');
         if (await fse.pathExists(infoPath)) {
             const infoContent = await fs.readFile(infoPath, 'utf8');
-            return toml.parse(infoContent);
+            try {
+                const modInfo = parseTomlWithFix(infoContent);
+
+                console.log(`Loaded mod info for ${modPath}:`, modInfo); // ✅ Log it
+                return modInfo;
+            } catch (parseError) {
+                console.error(`Invalid TOML in ${infoPath}:`, parseError.message);
+                return {
+                    error: `Invalid mod info file (info.toml): ${parseError.message}`
+                };
+            }
+        } else {
+            console.warn(`info.toml not found at ${infoPath}`);
+            return null;
         }
-        return null;
     } catch (error) {
         console.error('Error getting mod info:', error);
         return null;
+    }
+});
+
+// New IPC handler for fetching GameBanana mod info
+ipcMain.handle('get-gamebanana-mod-info', async (event, modId) => {
+    try {
+        const modInfo = await fetchGameBananaModInfo(modId); // Use the dedicated GameBanana handler
+
+        if (modInfo.error) {
+            return {
+                error: `Error fetching GameBanana mod info: ${modInfo.error}`
+            };
+        }
+
+        return modInfo; // Return the fetched mod info
+    } catch (error) {
+        console.error('Error getting GameBanana mod info:', error);
+        return { error: 'Unexpected error fetching GameBanana mod info' };
     }
 });
 
