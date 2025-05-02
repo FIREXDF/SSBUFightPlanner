@@ -3484,9 +3484,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const modsList = document.getElementById('gamebananaModsList');
-
+    const cheerio = require('cheerio');
+    const axios = require('axios');
+    // Map categories to section IDs
     const categoryToSectionId = {
-        'Featured': null,
+        'Featured': 9599,
         'Skins': 9599,
         'Movesets': 9615,
         'Stages': 9600,
@@ -3502,57 +3504,87 @@ document.addEventListener('DOMContentLoaded', () => {
         'Music Packs': 9606,
         'Tools': 9602
     };
-    async function fetchGameBananaModInfo(modId) {
-        const url = `https://api.gamebanana.com/Core/Item/GetItem?itemid=${modId}&gameid=6498&format=json`;
-    
+
+    // Fetch mod IDs by category using scraping
+    async function fetchModsByCategory(categoryId) {
+        const url = `https://gamebanana.com/mods/cats/${categoryId}`;
         try {
-            const response = await fetch(url);
-            const data = await response.json();
+            const { data } = await window.api.axios.get(url); // Use axios from the exposed API
+            const $ = window.api.cheerio.load(data); // Use cheerio from the exposed API
     
-            if (!data || data.error) {
-                throw new Error('Failed to fetch mod data from GameBanana');
-            }
+            const modIds = [];
+            $('.ItemList .Item').each((_, element) => {
+                const modLink = $(element).find('.Title a').attr('href');
+                const modIdMatch = modLink.match(/\/mods\/(\d+)/);
+                if (modIdMatch) {
+                    modIds.push(modIdMatch[1]);
+                }
+            });
     
-            // Map API data to mod info structure
-            const modInfo = {
-                id: data.itemid,
-                title: data.name,
-                author: data.ownername,
-                description: data.description,
-                previewImage: data.preview ? data.preview.url : 'https://gamebanana.com/themes/gamebanana/images/defaults/defaultheader.png',
-                link: `https://gamebanana.com/mods/${data.itemid}`,
-                category: data.category || 'Uncategorized',
-                // You can add more fields as per your requirements
-            };
-    
-            console.log(`Fetched mod info for ${modId}:`, modInfo);
-            return modInfo;
+            return modIds;
         } catch (error) {
-            console.error(`Error fetching GameBanana mod info for ${modId}:`, error);
-            return { error: 'Failed to fetch mod info from GameBanana' };
+            console.error('Error fetching mods by category:', error);
+            return [];
         }
     }
+
+    // Fetch mod info using the `get-gamebanana-mod-info` IPC handler
+    async function fetchGameBananaModInfo(modId) {
+        if (!modId) {
+            console.error('Invalid modId:', modId);
+            return []; // Return an empty array if modId is null or undefined
+        }
+
+        try {
+            // Use the IPC handler to fetch mod info
+            const modInfo = await window.api.invoke('get-gamebanana-mod-info', modId);
+            if (!modInfo) {
+                throw new Error('Failed to fetch mod info');
+            }
+
+            console.log(`Fetched mod info for ${modId}:`, modInfo);
+            return [modInfo]; // Return as an array
+        } catch (error) {
+            console.error(`Error fetching GameBanana mod info for ${modId}:`, error);
+            return []; // Return an empty array on error
+        }
+    }
+
+    // Populate mods dynamically based on category
     async function populateMods(category = 'Featured') {
         modsList.innerHTML = '<p>Loading mods...</p>';
 
-        const sectionId = categoryToSectionId[category] || null;
-        const modsData = await fetchGameBananaModInfo(sectionId);  // Use the new handler
+        const sectionId = categoryToSectionId[category];
+        if (!sectionId) {
+            modsList.innerHTML = '<p>No mods available for this category.</p>';
+            return;
+        }
+
+        const modIds = await fetchModsByCategory(sectionId);
+        if (modIds.length === 0) {
+            modsList.innerHTML = '<p>No mods found for this category.</p>';
+            return;
+        }
+
+        const allMods = [];
+        for (const modId of modIds) {
+            const modsData = await fetchGameBananaModInfo(modId);
+            if (Array.isArray(modsData)) {
+                allMods.push(...modsData);
+            }
+        }
 
         modsList.innerHTML = '';
-
-        modsData.forEach(mod => {
-            const categories = Array.isArray(mod.category) ? mod.category.join(', ') : mod.category;
-
+        allMods.forEach(mod => {
             const modCard = document.createElement('div');
             modCard.className = 'card';
             modCard.style.width = '18rem';
 
             modCard.innerHTML = `
-                <img src="${mod.image}" class="card-img-top" alt="${mod.title}">
+                <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
                 <div class="card-body">
                     <h5 class="card-title">${mod.title}</h5>
-                    <p class="card-text">Author: ${mod.author}</p>
-                    <p class="card-text">Category: ${categories}</p>
+                    <p class="card-text">Description: ${mod.description}</p>
                     <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
                     <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
                 </div>
@@ -3566,11 +3598,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function triggerFightPlannerDownload(link) {
-        console.log(`Triggering FightPlanner 1-click download for: ${link}`);
-        window.electron.downloadMod(link); // This can remain as is for the local file handling
+    // Trigger mod download
+    async function triggerFightPlannerDownload(modLink) {
+        try {
+            await window.api.downloadMod(modLink);
+            showToast('Download started', 'success');
+        } catch (error) {
+            console.error('Error starting download:', error);
+            showToast('Failed to start download', 'error');
+        }
     }
 
+    // Add event listener to category buttons
     const categoryButtons = document.querySelectorAll('button[data-category]');
     categoryButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -3578,7 +3617,4 @@ document.addEventListener('DOMContentLoaded', () => {
             populateMods(category);
         });
     });
-
-    populateMods(); // Initial load with default category
 });
-

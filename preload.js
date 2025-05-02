@@ -1,5 +1,4 @@
 const { contextBridge, ipcRenderer } = require('electron');
-
 // Global error handler to ignore specific errors
 window.addEventListener('error', (event) => {
     const errorMessage = event.message || '';
@@ -14,6 +13,14 @@ contextBridge.exposeInMainWorld('electron', {
         send: (channel, data) => ipcRenderer.send(channel, data),
         on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
       },
+      getModInfo: async (modPath) => {
+        try {
+            return await ipcRenderer.invoke('get-mod-info', modPath);
+        } catch (error) {
+            console.error('Error getting mod info:', error);
+            throw error;
+        }
+    },
     downloadMod: async (url) => {
         try {
             return await ipcRenderer.invoke('download-mod', url);
