@@ -3484,8 +3484,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const modsList = document.getElementById('gamebananaModsList');
-    const cheerio = require('cheerio');
-    const axios = require('axios');
     // Map categories to section IDs
     const categoryToSectionId = {
         'Featured': 9599,
