@@ -999,6 +999,35 @@ ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
     }
 });
 
+ipcMain.handle('fetch-mods', async (event, categoryId) => {
+    const url = `https://gamebanana.com/mods/cats/${categoryId}`;
+    console.log(`Fetching mods from: ${url}`);
+
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    try {
+        await page.goto(url, { waitUntil: 'networkidle2' });
+        const modIds = await page.evaluate(() => {
+            const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
+            return Array.from(modElements).map(mod => {
+                const linkElement = mod.querySelector('a');
+                const href = linkElement?.getAttribute('href');
+                const match = href?.match(/\/mods\/(\d+)/); // Extract modId from the URL
+                return match ? match[1] : null;
+            }).filter(id => id !== null);
+        });
+
+        console.log(`Found ${modIds.length} mods`);
+        return modIds;
+    } catch (error) {
+        console.error(`Error fetching mods:`, error);
+        return [];
+    } finally {
+        await browser.close();
+    }
+});
+
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
     try {
         const infoPath = path.join(modPath, 'info.toml');

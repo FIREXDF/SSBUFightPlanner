@@ -3524,8 +3524,6 @@ async function fetchModDetailsFromAPI(modId) {
         if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
         const data = await response.json();
 
-        console.log('Raw API Response:', data);
-
         // Extract mod details
         const title = data.name || 'Unknown Title';
         const description = data.description || 'No description available.';
