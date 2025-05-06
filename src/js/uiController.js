@@ -3486,120 +3486,137 @@ document.addEventListener('DOMContentLoaded', () => {
     const modsList = document.getElementById('gamebananaModsList');
     // Map categories to section IDs
     const categoryToSectionId = {
-        'Featured': 9599,
-        'Skins': 9599,
-        'Movesets': 9615,
-        'Stages': 9600,
-        'Effects': 9611,
-        'Audio': 9601,
-        'Other/Misc': 9604,
-        'UI': 9603,
-        'Final Smash': 9610,
-        'Skyline': 9614,
-        'Gameplay': 9607,
-        'Animation': 9609,
-        'Mod Packs': 9605,
-        'Music Packs': 9606,
-        'Tools': 9602
+        'Featured': 3330,
+        'Skins': 3330,
+        'Movesets': 3325,
+        'Stages': 6089,
+        'Effects': 1177,
+        'Audio': 6489,
+        'Other/Misc': 3319,
+        'UI': 1760,
+        'Final Smash': 15713,
+        'Skyline': 3322,
+        'Gameplay': 26521,
+        'Animation': 3321,
+        'Mod Packs': 3320,
+        'Music Packs': 15929,
+        'Tools': 6498
     };
 
-    // Fetch mod IDs by category using scraping
+
     async function fetchModsByCategory(categoryId) {
-        const url = `https://gamebanana.com/mods/cats/${categoryId}`;
         try {
-            const { data } = await window.api.axios.get(url); // Use axios from the exposed API
-            const $ = window.api.cheerio.load(data); // Use cheerio from the exposed API
-    
-            const modIds = [];
-            $('.ItemList .Item').each((_, element) => {
-                const modLink = $(element).find('.Title a').attr('href');
-                const modIdMatch = modLink.match(/\/mods\/(\d+)/);
-                if (modIdMatch) {
-                    modIds.push(modIdMatch[1]);
-                }
-            });
-    
+            const modIds = await window.api.fetchMods(categoryId);
+            console.log(`Fetched mod IDs:`, modIds);
             return modIds;
         } catch (error) {
-            console.error('Error fetching mods by category:', error);
+            console.error(`Error fetching mods for category ${categoryId}:`, error);
             return [];
         }
     }
 
-    // Fetch mod info using the `get-gamebanana-mod-info` IPC handler
-    async function fetchGameBananaModInfo(modId) {
-        if (!modId) {
-            console.error('Invalid modId:', modId);
-            return []; // Return an empty array if modId is null or undefined
-        }
+// Fetch mod details from its webpage
+async function fetchModDetailsFromAPI(modId) {
+    const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=name,description,screenshots,downloads,likes`;
+    console.log(`Fetching mod details from API: ${url}`);
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
+        const data = await response.json();
 
-        try {
-            // Use the IPC handler to fetch mod info
-            const modInfo = await window.api.invoke('get-gamebanana-mod-info', modId);
-            if (!modInfo) {
-                throw new Error('Failed to fetch mod info');
-            }
+        console.log('Raw API Response:', data);
 
-            console.log(`Fetched mod info for ${modId}:`, modInfo);
-            return [modInfo]; // Return as an array
-        } catch (error) {
-            console.error(`Error fetching GameBanana mod info for ${modId}:`, error);
-            return []; // Return an empty array on error
-        }
+        // Extract mod details
+        const title = data.name || 'Unknown Title';
+        const description = data.description || 'No description available.';
+        const previewImage = data.screenshots?.[0]?._sFile
+            ? `https://images.gamebanana.com/img/ss/mods/${data.screenshots[0]._sFile}`
+            : 'https://via.placeholder.com/150'; // Fallback image
+        const downloadCount = data.downloads || '0';
+        const likes = data.likes || '0';
+        const link = `https://gamebanana.com/mods/${modId}`;
+
+        console.log(`Fetched details for mod ${modId}:`, { title, description, previewImage, downloadCount, likes, link });
+        return { id: modId, title, description, previewImage, downloadCount, likes, link };
+    } catch (error) {
+        console.error(`Error fetching mod details for modId ${modId}:`, error);
+        return null;
+    }
+}
+
+// Populate mods dynamically based on category
+let currentPage = 1; // Track the current page
+const modsPerPage = 25; // Number of mods to show per page
+
+async function populateMods(category) {
+    modsList.innerHTML = '<p>Loading mods...</p>';
+    const sectionId = categoryToSectionId[category];
+    if (!sectionId) {
+        console.error(`No section ID found for category: ${category}`);
+        modsList.innerHTML = '<p>No mods available for this category.</p>';
+        return;
     }
 
-    // Populate mods dynamically based on category
-    async function populateMods(category = 'Featured') {
-        modsList.innerHTML = '<p>Loading mods...</p>';
+    const modIds = await fetchModsByCategory(sectionId);
+    console.log(`Found ${modIds.length} mods for category ${category}`);
+    if (modIds.length === 0) {
+        modsList.innerHTML = '<p>No mods found for this category.</p>';
+        return;
+    }
 
-        const sectionId = categoryToSectionId[category];
-        if (!sectionId) {
-            modsList.innerHTML = '<p>No mods available for this category.</p>';
-            return;
-        }
+    // Paginate mods
+    const startIndex = (currentPage - 1) * modsPerPage;
+    const endIndex = startIndex + modsPerPage;
+    const modsToShow = modIds.slice(startIndex, endIndex);
 
-        const modIds = await fetchModsByCategory(sectionId);
-        if (modIds.length === 0) {
-            modsList.innerHTML = '<p>No mods found for this category.</p>';
-            return;
-        }
+    const allMods = [];
+    for (const modId of modsToShow) {
+        const modDetails = await fetchModDetailsFromAPI(modId);
+        if (modDetails) allMods.push(modDetails);
+    }
 
-        const allMods = [];
-        for (const modId of modIds) {
-            const modsData = await fetchGameBananaModInfo(modId);
-            if (Array.isArray(modsData)) {
-                allMods.push(...modsData);
-            }
-        }
-
-        modsList.innerHTML = '';
-        allMods.forEach(mod => {
-            const modCard = document.createElement('div');
-            modCard.className = 'card';
-            modCard.style.width = '18rem';
-
-            modCard.innerHTML = `
-                <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
-                <div class="card-body">
-                    <h5 class="card-title">${mod.title}</h5>
-                    <p class="card-text">Description: ${mod.description}</p>
-                    <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
-                    <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
-                </div>
-            `;
-
-            modsList.appendChild(modCard);
-
-            modCard.querySelector('.btn-success').addEventListener('click', () => {
-                triggerFightPlannerDownload(mod.link);
-            });
+    // Append mods to the list
+    if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
+    allMods.forEach(mod => {
+        const modCard = document.createElement('div');
+        modCard.className = 'card';
+        modCard.style.width = '18rem';
+        modCard.innerHTML = `
+            <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
+            <div class="card-body">
+                <h5 class="card-title">${mod.title}</h5>
+                <p class="card-text">${mod.description}</p>
+                <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
+                <p class="card-text"><strong>Likes:</strong> ${mod.likes}</p>
+                <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
+                <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
+            </div>
+        `;
+        modsList.appendChild(modCard);
+    
+        // Add download button functionality
+        modCard.querySelector('.btn-success').addEventListener('click', () => {
+            triggerFightPlannerDownload(mod.link);
         });
+    });
+
+    // Add "Load More" button if there are more mods to show
+    if (endIndex < modIds.length) {
+        const loadMoreButton = document.createElement('button');
+        loadMoreButton.className = 'btn btn-secondary mt-3';
+        loadMoreButton.textContent = 'Load More';
+        loadMoreButton.addEventListener('click', () => {
+            currentPage++;
+            populateMods(category); // Load the next page
+        });
+        modsList.appendChild(loadMoreButton);
     }
+}
 
     // Trigger mod download
     async function triggerFightPlannerDownload(modLink) {
         try {
-            await window.api.downloadMod(modLink);
+            await window.electron.downloadMod(modLink);
             showToast('Download started', 'success');
         } catch (error) {
             console.error('Error starting download:', error);

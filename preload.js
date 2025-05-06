@@ -79,6 +79,9 @@ contextBridge.exposeInMainWorld('api', {
         deleteModFile: (modPath, filePath) => ipcRenderer.invoke('delete-mod-file', { modPath, filePath }),
         writeModFile: (filePath, content) => ipcRenderer.invoke('write-mod-file', { filePath, content })
     },
+    gamebanana: {
+        fetchGameBananaInfo: (url) => ipcRenderer.invoke('fetch-gamebanana-mod-info', url)
+    },
     pluginOperations: {
         loadPlugins: () => ipcRenderer.invoke('load-plugins'),
         installPlugin: (filePath) => {

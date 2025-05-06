@@ -15,6 +15,7 @@ const log = require('electron-log');
 const { format } = require('date-fns');
 const { createFPP } = require('./src/js/createFPP');
 const { extractFPP } = require('./src/js/extractFPP');
+const puppeteer = require('puppeteer');
 log.transports.file.level = 'info';
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
 
@@ -969,7 +970,7 @@ ipcMain.handle('get-mod-info', async (event, modPath) => {
 });
 
 // New IPC handler for fetching GameBanana mod info
-ipcMain.handle('get-gamebanana-mod-info', async (event, modId) => {
+ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
     const fields = [
         'name',
         'description',
@@ -977,7 +978,7 @@ ipcMain.handle('get-gamebanana-mod-info', async (event, modId) => {
     ].join(',');
 
     const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
-
+    console.log('Fetching mod info from:', url);
     try {
         const response = await axios.get(url);
         if (response.status !== 200 || !response.data) {
