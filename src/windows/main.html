@@ -211,7 +211,18 @@
                                 <div id="gamebananaCategories" class="d-flex flex-column gap-2">
                                     <!-- Category buttons -->
                                     <button class="btn btn-outline-primary" data-category="Featured">Featured</button>
-                                    <button class="btn btn-outline-primary" data-category="Skins">Skins</button>
+                                    <button class="btn btn-outline-primary" data-category="Skins" id="skinsButton">Skins</button>
+                                    <button 
+                                        class="btn btn-outline-primary dropdown-toggle" 
+                                        type="button" 
+                                        id="characterDropdown" 
+                                        data-bs-toggle="dropdown" 
+                                        aria-expanded="false">
+                                        Characters
+                                    </button>
+                                    <ul class="dropdown-menu" id="characterDropdownMenu">
+                                        <!-- Character options will be dynamically populated -->
+                                    </ul>
                                     <button class="btn btn-outline-primary" data-category="Movesets">Movesets</button>
                                     <button class="btn btn-outline-primary" data-category="Stages">Stages</button>
                                     <button class="btn btn-outline-primary" data-category="Effects">Effects</button>

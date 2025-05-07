@@ -1048,6 +1048,53 @@ ipcMain.handle('fetch-mods', async (event, categoryId) => {
     }
 });
 
+ipcMain.handle('fetch-characters', async () => {
+    const url = 'https://gamebanana.com/mods/cats/3330';
+    console.log(`Fetching characters from: ${url}`);
+
+    let browser;
+    try {
+        // Launch Puppeteer
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+
+        // Set a user agent to mimic a real browser
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        );
+
+        // Navigate to the URL
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        // Wait for the required selector to appear
+        await page.waitForSelector('#SubcategoriesListModule records record recordcell.Info a', { timeout: 60000 });
+
+        // Extract character names and URLs
+        const characters = await page.evaluate(() => {
+            const links = document.querySelectorAll('#SubcategoriesListModule records record recordcell.Info a');
+            return Array.from(links).map(link => ({
+                name: link.textContent.trim(),
+                url: link.href
+            }));
+        });
+
+        console.log(`Found ${characters.length} characters`);
+        return characters;
+    } catch (error) {
+        console.error(`Error fetching characters:`, error);
+        return [];
+    } finally {
+        // Ensure the browser is closed to free resources
+        if (browser) {
+            await browser.close();
+        }
+    }
+});
+
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
     try {
         const infoPath = path.join(modPath, 'info.toml');

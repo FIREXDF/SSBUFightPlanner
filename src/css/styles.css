@@ -14,6 +14,11 @@
     visibility: hidden;
 }
 
+#characterDropdownMenu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
 .loading-overlay.minimized {
     opacity: 0;
     pointer-events: none;

@@ -3635,3 +3635,85 @@ async function populateMods(category) {
         });
     });
 });
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const characterDropdownMenu = document.getElementById('characterDropdownMenu');
+    const characterDropdownButton = document.getElementById('characterDropdown'); // The button that toggles the dropdown
+    const modsList = document.getElementById('gamebananaModsList'); // Declare modsList here
+
+    try {
+        // Fetch characters using the Puppeteer-based function
+        const characters = await window.api.fetchCharacters();
+
+        // Populate the dropdown menu
+        characters.forEach(character => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <button class="dropdown-item" data-character="${character.name}" data-url="${character.url}">
+                    ${character.name}
+                </button>`;
+            characterDropdownMenu.appendChild(listItem);
+        });
+
+        console.log('Characters populated successfully.');
+    } catch (error) {
+        console.error('Error populating characters:', error);
+    }
+
+    // Fetch mods for a specific character
+    async function fetchModsForCharacter(categoryId) {
+        try {
+            modsList.innerHTML = '<p>Loading mods...</p>'; // Use modsList here
+            const modIds = await window.api.fetchMods(categoryId); // Use API to fetch mod IDs
+            if (!modIds || modIds.length === 0) {
+                modsList.innerHTML = '<p>No mods found for this character.</p>';
+                return;
+            }
+
+            const allMods = [];
+            for (const modId of modIds) {
+                const modDetails = await fetchModDetailsFromAPI(modId); // Fetch mod details
+                if (modDetails) allMods.push(modDetails);
+            }
+
+            // Populate mods list
+            modsList.innerHTML = '';
+            allMods.forEach(mod => {
+                const modCard = document.createElement('div');
+                modCard.className = 'card';
+                modCard.style.width = '18rem';
+                modCard.innerHTML = `
+                    <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
+                    <div class="card-body">
+                        <h5 class="card-title">${mod.title}</h5>
+                        <p class="card-text">${mod.description}</p>
+                        <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
+                        <p class="card-text"><strong>Likes:</strong> ${mod.likes}</p>
+                        <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
+                    </div>`;
+                modsList.appendChild(modCard);
+            });
+
+            console.log('Mods populated successfully.');
+        } catch (error) {
+            console.error('Error fetching mods for character:', error);
+            modsList.innerHTML = '<p>Failed to load mods.</p>';
+        }
+    }
+
+    // Add event listener to handle character selection
+    characterDropdownMenu.addEventListener('click', (event) => {
+        console.log('Dropdown menu clicked'); // Debug log
+        const selectedCharacter = event.target.getAttribute('data-character');
+        const characterUrl = event.target.getAttribute('data-url');
+        if (selectedCharacter && characterUrl) {
+            console.log(`Selected character: ${selectedCharacter}`);
+            
+            // Update the dropdown button text to show the selected character
+            characterDropdownButton.textContent = `(${selectedCharacter})`;
+
+            // Fetch mods for the selected character
+            fetchModsForCharacter(characterUrl);
+        }
+    });
+});
