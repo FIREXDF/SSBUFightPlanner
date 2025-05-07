@@ -3524,14 +3524,18 @@ async function fetchModDetailsFromAPI(modId) {
         if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
         const data = await response.json();
 
+        console.log('Raw API response:', data);
+
         // Extract mod details
-        const title = data.name || 'Unknown Title';
-        const description = data.description || 'No description available.';
-        const previewImage = data.screenshots?.[0]?._sFile
-            ? `https://images.gamebanana.com/img/ss/mods/${data.screenshots[0]._sFile}`
+        const title = data[0] || 'Unknown Title'; // First element is the title
+        const description = data[1] || 'No description available.'; // Second element is the description
+        const screenshotsRaw = data[2] || '[]'; // Third element is the screenshots (JSON string)
+        const screenshots = JSON.parse(screenshotsRaw); // Parse the JSON string
+        const previewImage = screenshots.length > 0 && screenshots[0]._sFile
+            ? `https://images.gamebanana.com/img/ss/mods/${screenshots[0]._sFile}`
             : 'https://via.placeholder.com/150'; // Fallback image
-        const downloadCount = data.downloads || '0';
-        const likes = data.likes || '0';
+        const downloadCount = data[3] || '0'; // Fourth element is the download count
+        const likes = data[4] || '0'; // Fifth element is the likes
         const link = `https://gamebanana.com/mods/${modId}`;
 
         console.log(`Fetched details for mod ${modId}:`, { title, description, previewImage, downloadCount, likes, link });

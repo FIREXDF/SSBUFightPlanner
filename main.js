@@ -1003,11 +1003,28 @@ ipcMain.handle('fetch-mods', async (event, categoryId) => {
     const url = `https://gamebanana.com/mods/cats/${categoryId}`;
     console.log(`Fetching mods from: ${url}`);
 
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
+    let browser;
     try {
-        await page.goto(url, { waitUntil: 'networkidle2' });
+        // Launch Puppeteer with proper arguments
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+
+        // Set a user agent to mimic a real browser
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        );
+
+        // Navigate to the URL
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        // Wait for the required selector to appear
+        await page.waitForSelector('div.Record.Flow.ModRecord.HasPreview', { timeout: 60000 });
+
+        // Extract mod IDs
         const modIds = await page.evaluate(() => {
             const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
             return Array.from(modElements).map(mod => {
@@ -1024,7 +1041,10 @@ ipcMain.handle('fetch-mods', async (event, categoryId) => {
         console.error(`Error fetching mods:`, error);
         return [];
     } finally {
-        await browser.close();
+        // Ensure the browser is closed to free resources
+        if (browser) {
+            await browser.close();
+        }
     }
 });
 
