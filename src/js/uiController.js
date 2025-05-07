@@ -3791,11 +3791,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     
                 // Add the 'active' class to the clicked button
                 button.classList.add('active');
-    
-                // Fetch mods for the selected category
-                const category = button.getAttribute('data-category');
-                if (category) {
-                    fetchModsForCategory(category);
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('gamebananaSearchInput');
+        const modsList = document.getElementById('gamebananaModsList');
+
+        searchInput.addEventListener('input', () => {
+            const searchText = searchInput.value.toLowerCase();
+            const modCards = modsList.querySelectorAll('.mod-card'); // Assuming mod cards have a class "mod-card"
+
+            modCards.forEach(card => {
+                const modText = card.textContent.toLowerCase();
+                if (modText.includes(searchText)) {
+                    card.style.display = ''; // Show the card
+                } else {
+                    card.style.display = 'none'; // Hide the card
                 }
             });
         });
