@@ -3777,5 +3777,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const categoryId = new URL(characterUrl).pathname.split('/').pop();
             currentPage = 1; // Reset to the first page
             fetchModsForCharacter(categoryId);
+            characterDropdownButton.textContent = `(${selectedCharacter})`; // Update button text)'
         }});
     });
