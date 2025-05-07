@@ -3780,3 +3780,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             characterDropdownButton.textContent = `(${selectedCharacter})`; // Update button text)'
         }});
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const gamebananaButtons = document.querySelectorAll('#gamebananaCategories .btn');
+    
+        gamebananaButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove the 'active' class from all buttons
+                gamebananaButtons.forEach(btn => btn.classList.remove('active'));
+    
+                // Add the 'active' class to the clicked button
+                button.classList.add('active');
+    
+                // Fetch mods for the selected category
+                const category = button.getAttribute('data-category');
+                if (category) {
+                    fetchModsForCategory(category);
+                }
+            });
+        });
+    });

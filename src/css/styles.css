@@ -19,6 +19,13 @@
     overflow-y: auto;
 }
 
+#gamebananaCategories .btn.active {
+    background-color: #0d6efd; /* Bootstrap primary color */
+    color: white;
+    border-color: #0d6efd;
+    transition-duration: .3s;
+}
+
 .loading-overlay.minimized {
     opacity: 0;
     pointer-events: none;
