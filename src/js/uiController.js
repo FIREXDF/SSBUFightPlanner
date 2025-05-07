@@ -3660,24 +3660,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error populating characters:', error);
     }
 
-    // Fetch mods for a specific character
+    async function fetchModDetailsFromAPI(modId) {
+        const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=name,description,screenshots,downloads,likes`;
+        console.log(`Fetching mod details from API: ${url}`);
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
+            const data = await response.json();
+    
+            console.log('Raw API response:', data);
+    
+            // Extract mod details
+            const title = data[0] || 'Unknown Title'; // First element is the title
+            const description = data[1] || 'No description available.'; // Second element is the description
+            const screenshotsRaw = data[2] || '[]'; // Third element is the screenshots (JSON string)
+            const screenshots = JSON.parse(screenshotsRaw); // Parse the JSON string
+            const previewImage = screenshots.length > 0 && screenshots[0]._sFile
+                ? `https://images.gamebanana.com/img/ss/mods/${screenshots[0]._sFile}`
+                : 'https://via.placeholder.com/150'; // Fallback image
+            const downloadCount = data[3] || '0'; // Fourth element is the download count
+            const likes = data[4] || '0'; // Fifth element is the likes
+            const link = `https://gamebanana.com/mods/${modId}`;
+    
+            console.log(`Fetched details for mod ${modId}:`, { title, description, previewImage, downloadCount, likes, link });
+            return { id: modId, title, description, previewImage, downloadCount, likes, link };
+        } catch (error) {
+            console.error(`Error fetching mod details for modId ${modId}:`, error);
+            return null;
+        }
+    }
+
+    let currentPage = 1; // Track the current page
+    const modsPerPage = 15; // Number of mods to fetch per page
+    
     async function fetchModsForCharacter(categoryId) {
         try {
-            modsList.innerHTML = '<p>Loading mods...</p>'; // Use modsList here
-            const modIds = await window.api.fetchMods(categoryId); // Use API to fetch mod IDs
+            // Show a loading message for the first page
+            if (currentPage === 1) {
+                modsList.innerHTML = '<p>Loading mods...</p>';
+            }
+    
+            // Fetch mod IDs for the current page
+            const modIds = await window.api.fetchMods(categoryId, currentPage, modsPerPage);
             if (!modIds || modIds.length === 0) {
-                modsList.innerHTML = '<p>No mods found for this character.</p>';
+                if (currentPage === 1) {
+                    modsList.innerHTML = '<p>No mods found for this character.</p>';
+                }
                 return;
             }
-
+    
             const allMods = [];
             for (const modId of modIds) {
                 const modDetails = await fetchModDetailsFromAPI(modId); // Fetch mod details
                 if (modDetails) allMods.push(modDetails);
             }
-
-            // Populate mods list
-            modsList.innerHTML = '';
+    
+            // Append mods to the list
+            if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
             allMods.forEach(mod => {
                 const modCard = document.createElement('div');
                 modCard.className = 'card';
@@ -3690,10 +3729,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
                         <p class="card-text"><strong>Likes:</strong> ${mod.likes}</p>
                         <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
+                        <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
                     </div>`;
                 modsList.appendChild(modCard);
+    
+                // Add download button functionality
+                modCard.querySelector('.btn-success').addEventListener('click', () => {
+                    triggerFightPlannerDownload(mod.link);
+                });
             });
-
+    
+            // Add "Load More" button if there are more mods to fetch
+            if (modIds.length === modsPerPage) {
+                const loadMoreButton = document.createElement('button');
+                loadMoreButton.className = 'btn btn-secondary mt-3';
+                loadMoreButton.textContent = 'Load More';
+                loadMoreButton.addEventListener('click', () => {
+                    currentPage++;
+                    fetchModsForCharacter(categoryId); // Fetch the next page
+                });
+                modsList.appendChild(loadMoreButton);
+            }
+    
             console.log('Mods populated successfully.');
         } catch (error) {
             console.error('Error fetching mods for character:', error);
@@ -3701,19 +3758,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function triggerFightPlannerDownload(modLink) {
+        try {
+            await window.electron.downloadMod(modLink);
+            showToast('Download started', 'success');
+        } catch (error) {
+            console.error('Error starting download:', error);
+            showToast('Failed to start download', 'error');
+        }
+    };
+
     // Add event listener to handle character selection
     characterDropdownMenu.addEventListener('click', (event) => {
-        console.log('Dropdown menu clicked'); // Debug log
         const selectedCharacter = event.target.getAttribute('data-character');
         const characterUrl = event.target.getAttribute('data-url');
+    
         if (selectedCharacter && characterUrl) {
-            console.log(`Selected character: ${selectedCharacter}`);
-            
-            // Update the dropdown button text to show the selected character
-            characterDropdownButton.textContent = `(${selectedCharacter})`;
-
-            // Fetch mods for the selected character
-            fetchModsForCharacter(characterUrl);
-        }
+            const categoryId = new URL(characterUrl).pathname.split('/').pop();
+            currentPage = 1; // Reset to the first page
+            fetchModsForCharacter(categoryId);
+        }});
     });
-});

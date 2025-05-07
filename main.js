@@ -999,8 +999,9 @@ ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
     }
 });
 
-ipcMain.handle('fetch-mods', async (event, categoryId) => {
-    const url = `https://gamebanana.com/mods/cats/${categoryId}`;
+ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage) => {
+    const offset = (currentPage - 1) * modsPerPage; // Calculate the offset
+    const url = `https://gamebanana.com/mods/cats/${categoryId}?start=${offset}&count=${modsPerPage}`;
     console.log(`Fetching mods from: ${url}`);
 
     let browser;

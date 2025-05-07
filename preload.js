@@ -59,7 +59,7 @@ contextBridge.exposeInMainWorld('electron', {
 });
 
 contextBridge.exposeInMainWorld('api', {
-    fetchMods: (categoryId) => ipcRenderer.invoke('fetch-mods', categoryId),
+    fetchMods: (categoryId, currentPage, modsPerPage) => ipcRenderer.invoke('fetch-mods', categoryId, currentPage, modsPerPage),
     fetchCharacters: () => ipcRenderer.invoke('fetch-characters'),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     tutorial: {
