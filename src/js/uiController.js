@@ -3504,10 +3504,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    async function fetchModsByCategory(categoryId) {
+    async function fetchModsByCategory(categoryId, currentPage, modsPerPage) {
         try {
-            const modIds = await window.api.fetchMods(categoryId);
-            console.log(`Fetched mod IDs:`, modIds);
+            const modIds = await window.api.fetchMods(categoryId, currentPage, modsPerPage);
+            console.log(`Fetched mod IDs for page ${currentPage}:`, modIds);
             return modIds;
         } catch (error) {
             console.error(`Error fetching mods for category ${categoryId}:`, error);
@@ -3523,9 +3523,6 @@ async function fetchModDetailsFromAPI(modId) {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
         const data = await response.json();
-
-        console.log('Raw API response:', data);
-
         // Extract mod details
         const title = data[0] || 'Unknown Title'; // First element is the title
         const description = data[1] || 'No description available.'; // Second element is the description
@@ -3548,71 +3545,95 @@ async function fetchModDetailsFromAPI(modId) {
 
 // Populate mods dynamically based on category
 let currentPage = 1; // Track the current page
-const modsPerPage = 25; // Number of mods to show per page
+const modsPerPage = 15; // Number of mods to show per page
+let isLoading = false; // Prevent multiple simultaneous requests
+let hasMoreMods = true; // Track if there are more mods to load
 
 async function populateMods(category) {
-    modsList.innerHTML = '<p>Loading mods...</p>';
+    if (isLoading || !hasMoreMods) return; // Prevent duplicate requests
+    isLoading = true;
+
+    const modsList = document.getElementById('gamebananaModsList');
+    if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
+
     const sectionId = categoryToSectionId[category];
     if (!sectionId) {
         console.error(`No section ID found for category: ${category}`);
         modsList.innerHTML = '<p>No mods available for this category.</p>';
+        isLoading = false;
         return;
     }
 
-    const modIds = await fetchModsByCategory(sectionId);
-    console.log(`Found ${modIds.length} mods for category ${category}`);
-    if (modIds.length === 0) {
-        modsList.innerHTML = '<p>No mods found for this category.</p>';
-        return;
-    }
+    try {
+        // Fetch mod IDs for the selected category and current page
+        const modIds = await fetchModsByCategory(sectionId, currentPage, modsPerPage);
+        console.log(`Found ${modIds.length} mods for category ${category} on page ${currentPage}`);
+        if (modIds.length === 0) {
+            hasMoreMods = false; // No more mods to load
+            if (currentPage === 1) modsList.innerHTML = '<p>No mods found for this category.</p>';
+            return;
+        }
 
-    // Paginate mods
-    const startIndex = (currentPage - 1) * modsPerPage;
-    const endIndex = startIndex + modsPerPage;
-    const modsToShow = modIds.slice(startIndex, endIndex);
+        const allMods = [];
+        for (const modId of modIds) {
+            const modDetails = await fetchModDetailsFromAPI(modId);
+            if (modDetails) allMods.push(modDetails);
+        }
 
-    const allMods = [];
-    for (const modId of modsToShow) {
-        const modDetails = await fetchModDetailsFromAPI(modId);
-        if (modDetails) allMods.push(modDetails);
-    }
+        // Append mods to the list
+        if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
+        allMods.forEach(mod => {
+            const modCard = document.createElement('div');
+            modCard.className = 'card';
+            modCard.style.width = '18rem';
+            modCard.innerHTML = `
+                <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
+                <div class="card-body mod-card">
+                    <h5 class="card-title">${mod.title}</h5>
+                    <p class="card-text">${mod.description}</p>
+                    <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
+                    <p class="card-text"><strong>Likes:</strong> ${mod.likes}</p>
+                    <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
+                    <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
+                </div>
+            `;
+            modsList.appendChild(modCard);
 
-    // Append mods to the list
-    if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
-    allMods.forEach(mod => {
-        const modCard = document.createElement('div');
-        modCard.className = 'card';
-        modCard.style.width = '18rem';
-        modCard.innerHTML = `
-            <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
-            <div class="card-body mod-card">
-                <h5 class="card-title">${mod.title}</h5>
-                <p class="card-text">${mod.description}</p>
-                <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
-                <p class="card-text"><strong>Likes:</strong> ${mod.likes}</p>
-                <a href="${mod.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
-                <button class="btn btn-success mt-2" data-mod-id="${mod.id}">Download</button>
-            </div>
-        `;
-        modsList.appendChild(modCard);
-    
-        // Add download button functionality
-        modCard.querySelector('.btn-success').addEventListener('click', () => {
-            triggerFightPlannerDownload(mod.link);
+            // Add download button functionality
+            modCard.querySelector('.btn-success').addEventListener('click', () => {
+                triggerFightPlannerDownload(mod.link);
+            });
         });
+
+        // Increment the page for the next load
+        currentPage++;
+    } catch (error) {
+        console.error('Error populating mods:', error);
+        if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
+    } finally {
+        isLoading = false; // Reset loading flag
+    }
+}
+
+// Add infinite scrolling
+const modsContainer = document.getElementById('gamebananaCardBody'); // Replace with the correct container ID or class
+
+if (modsContainer) {
+    modsContainer.addEventListener('scroll', () => {
+        const scrollPosition = modsContainer.scrollTop + modsContainer.clientHeight;
+        const threshold = modsContainer.scrollHeight - 200; // Trigger 200px before the bottom
+
+        if (scrollPosition >= threshold) {
+            const selectedCategory = document.querySelector('#gamebananaCategories .btn.active')?.dataset.category;
+            console.log(`Selected Category: ${selectedCategory}`); // Debugging log
+
+            if (selectedCategory) {
+                populateMods(selectedCategory);
+            }
+        }
     });
-
-    // Add "Load More" button if there are more mods to show
-    if (endIndex < modIds.length) {
-        const loadMoreButton = document.createElement('button');
-        loadMoreButton.className = 'btn btn-secondary mt-3';
-        loadMoreButton.textContent = 'Load More';
-        loadMoreButton.addEventListener('click', () => {
-            currentPage++;
-            populateMods(category); // Load the next page
-        });
-        modsList.appendChild(loadMoreButton);
-    }
+} else {
+    console.error('Mods container not found');
 }
 
     // Trigger mod download
