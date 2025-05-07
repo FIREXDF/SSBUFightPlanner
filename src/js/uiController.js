@@ -3585,7 +3585,7 @@ async function populateMods(category) {
         modCard.style.width = '18rem';
         modCard.innerHTML = `
             <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
-            <div class="card-body">
+            <div class="card-body mod-card">
                 <h5 class="card-title">${mod.title}</h5>
                 <p class="card-text">${mod.description}</p>
                 <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
@@ -3723,7 +3723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 modCard.style.width = '18rem';
                 modCard.innerHTML = `
                     <img src="${mod.previewImage}" class="card-img-top" alt="${mod.title}">
-                    <div class="card-body">
+                    <div class="card-body mod-card">
                         <h5 class="card-title">${mod.title}</h5>
                         <p class="card-text">${mod.description}</p>
                         <p class="card-text"><strong>Downloads:</strong> ${mod.downloadCount}</p>
@@ -3798,17 +3798,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('gamebananaSearchInput');
         const modsList = document.getElementById('gamebananaModsList');
-
+    
         searchInput.addEventListener('input', () => {
-            const searchText = searchInput.value.toLowerCase();
-            const modCards = modsList.querySelectorAll('.mod-card'); // Assuming mod cards have a class "mod-card"
-
+            const searchText = searchInput.value.toLowerCase(); // Get the value of the input
+            const modCards = modsList.querySelectorAll('.card'); // Select the entire card element
+    
             modCards.forEach(card => {
-                const modText = card.textContent.toLowerCase();
+                const modText = card.textContent.toLowerCase(); // Get the text content of the card
                 if (modText.includes(searchText)) {
-                    card.style.display = ''; // Show the card
+                    card.style.display = ''; // Show the entire card if it matches the search text
                 } else {
-                    card.style.display = 'none'; // Hide the card
+                    card.style.display = 'none'; // Hide the entire card if it doesn't match
                 }
             });
         });
