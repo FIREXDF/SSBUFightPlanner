@@ -3517,31 +3517,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Fetch mod details from its webpage
 async function fetchModDetailsFromAPI(modId) {
-    const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=name,description,screenshots,downloads,likes`;
-    console.log(`Fetching mod details from API: ${url}`);
+    let fields = 'name,description,_sPreview,downloads,Nsfw().bIsNsfw(),likes';
+    const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
+    console.log(`Fetching mod details from URL: ${url}`); // Debugging log
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
         const data = await response.json();
-        // Extract mod details
-        const title = data[0] || 'Unknown Title'; // First element is the title
-        const description = data[1] || 'No description available.'; // Second element is the description
-        const screenshotsRaw = data[2] || '[]'; // Third element is the screenshots (JSON string)
-        const screenshots = JSON.parse(screenshotsRaw); // Parse the JSON string
-        const previewImage = screenshots.length > 0 && screenshots[0]._sFile
-            ? `https://images.gamebanana.com/img/ss/mods/${screenshots[0]._sFile}`
-            : 'https://via.placeholder.com/150'; // Fallback image
-        const downloadCount = data[3] || '0'; // Fourth element is the download count
-        const likes = data[4] || '0'; // Fifth element is the likes
-        const link = `https://gamebanana.com/mods/${modId}`;
 
-        console.log(`Fetched details for mod ${modId}:`, { title, description, previewImage, downloadCount, likes, link });
-        return { id: modId, title, description, previewImage, downloadCount, likes, link };
+        return {
+            id: modId,
+            title: data[0] || 'Unknown Title',
+            description: data[1] || 'No description available.',
+            previewImage: data[2] || 'https://via.placeholder.com/150', 
+            downloadCount: data[3] || '0',
+            nsfw: data[4] || false,
+            likes: data[5] || '0',            
+            link: `https://gamebanana.com/mods/${modId}`
+        };
+
+        
     } catch (error) {
         console.error(`Error fetching mod details for modId ${modId}:`, error);
         return null;
     }
 }
+
+
 
 // Populate mods dynamically based on category
 let currentPage = 1; // Track the current page
@@ -3550,7 +3552,7 @@ let isLoading = false; // Prevent multiple simultaneous requests
 let hasMoreMods = true; // Track if there are more mods to load
 
 async function populateMods(category) {
-    if (isLoading || !hasMoreMods) return; // Prevent duplicate requests
+    if (isLoading || !hasMoreMods) return;
     isLoading = true;
 
     const modsList = document.getElementById('gamebananaModsList');
@@ -3565,18 +3567,17 @@ async function populateMods(category) {
     }
 
     try {
-        // Fetch mod IDs for the selected category and current page
         const modIds = await fetchModsByCategory(sectionId, currentPage, modsPerPage);
-        console.log(`Found ${modIds.length} mods for category ${category} on page ${currentPage}`);
         if (modIds.length === 0) {
-            hasMoreMods = false; // No more mods to load
+            hasMoreMods = false;
             if (currentPage === 1) modsList.innerHTML = '<p>No mods found for this category.</p>';
             return;
         }
 
-        if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
+        if (currentPage === 1) modsList.innerHTML = '';
 
-        // Fetch and append each mod sequentially
+        const nsfwToggle = document.getElementById('nsfwToggle').checked;
+
         for (const modId of modIds) {
             const modDetails = await fetchModDetailsFromAPI(modId);
             if (modDetails) {
@@ -3584,7 +3585,10 @@ async function populateMods(category) {
                 modCard.className = 'card';
                 modCard.style.width = '18rem';
                 modCard.innerHTML = `
-                    <img src="${modDetails.previewImage}" class="card-img-top" alt="${modDetails.title}">
+                    <div class="card-img-top mod-image-container ${modDetails.nsfw ? 'nsfw' : ''}">
+                        <img src="${modDetails.previewImage}" alt="${modDetails.title}" class="mod-image ${modDetails.nsfw && nsfwToggle ? 'blurred' : ''}">
+                        ${modDetails.nsfw ? '<span class="nsfw-label">NSFW</span>' : ''}
+                    </div>
                     <div class="card-body mod-card">
                         <h5 class="card-title">${modDetails.title}</h5>
                         <p class="card-text">${modDetails.description}</p>
@@ -3596,22 +3600,24 @@ async function populateMods(category) {
                 `;
                 modsList.appendChild(modCard);
 
-                // Add download button functionality
                 modCard.querySelector('.btn-success').addEventListener('click', () => {
                     triggerFightPlannerDownload(modDetails.link);
                 });
             }
         }
 
-        // Increment the page for the next load
         currentPage++;
     } catch (error) {
         console.error('Error populating mods:', error);
         if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
     } finally {
-        isLoading = false; // Reset loading flag
+        isLoading = false;
     }
 }
+
+// Attach functions to the window object
+window.populateMods = populateMods;
+window.fetchModDetailsFromAPI = fetchModDetailsFromAPI;
 
 // Add infinite scrolling
 const modsContainer = document.getElementById('gamebananaCardBody'); // Replace with the correct container ID or class
@@ -3655,6 +3661,8 @@ if (modsContainer) {
     });
 });
 
+//Fetch Characters for dropdown menu
+
 document.addEventListener('DOMContentLoaded', async () => {
     const characterDropdownMenu = document.getElementById('characterDropdownMenu');
 
@@ -3677,33 +3685,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error populating characters:', error);
     }
 });
-    async function fetchModDetailsFromAPI(modId) {
-        const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=name,description,screenshots,downloads,likes`;
-        console.log(`Fetching mod details from API: ${url}`);
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Failed to fetch mod details: ${response.statusText}`);
-            const data = await response.json();
-    
-            // Extract mod details
-            const title = data[0] || 'Unknown Title'; // First element is the title
-            const description = data[1] || 'No description available.'; // Second element is the description
-            const screenshotsRaw = data[2] || '[]'; // Third element is the screenshots (JSON string)
-            const screenshots = JSON.parse(screenshotsRaw); // Parse the JSON string
-            const previewImage = screenshots.length > 0 && screenshots[0]._sFile
-                ? `https://images.gamebanana.com/img/ss/mods/${screenshots[0]._sFile}`
-                : 'https://via.placeholder.com/150'; // Fallback image
-            const downloadCount = data[3] || '0'; // Fourth element is the download count
-            const likes = data[4] || '0'; // Fifth element is the likes
-            const link = `https://gamebanana.com/mods/${modId}`;
-    
-            console.log(`Fetched details for mod ${modId}:`, { title, description, previewImage, downloadCount, likes, link });
-            return { id: modId, title, description, previewImage, downloadCount, likes, link };
-        } catch (error) {
-            console.error(`Error fetching mod details for modId ${modId}:`, error);
-            return null;
-        }
-    }
 
     let currentPage = 1; // Track the current page
     const modsPerPage = 15; // Number of mods to fetch per page
@@ -3713,7 +3694,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function fetchModsForCharacter(categoryId) {
     if (isLoading || !hasMoreMods) return; // Prevent duplicate requests
     isLoading = true;
-
+    const modsList = document.getElementById('gamebananaModsList');
     try {
         // Show a loading message for the first page
         if (currentPage === 1) {
@@ -3785,7 +3766,7 @@ if (modsContainer) {
     });
 } else {
     console.error('Mods container not found');
-}
+};
 
     async function triggerFightPlannerDownload(modLink) {
         try {
@@ -3796,62 +3777,67 @@ if (modsContainer) {
             showToast('Failed to start download', 'error');
         }
     };
-
-    // Add event listener to handle character selection
-characterDropdownMenu.addEventListener('click', (event) => {
-    const selectedCharacter = event.target.getAttribute('data-character');
-    const characterUrl = event.target.getAttribute('data-url');
-    const modsList = document.getElementById('gamebananaModsList');
-    const characterDropdownButton = document.getElementById('characterDropdown'); // The button that toggles the dropdown
-
-    if (selectedCharacter && characterUrl) {
-        // Remove 'active' class from all dropdown items
-        const dropdownItems = characterDropdownMenu.querySelectorAll('.dropdown-item');
-        dropdownItems.forEach(item => item.classList.remove('active'));
-
-        // Add 'active' class to the clicked item
-        event.target.classList.add('active');
-
-        // Extract the category ID from the URL
-        const categoryId = new URL(characterUrl).pathname.split('/').pop();
-        currentPage = 1; // Reset to the first page
-        hasMoreMods = true; // Reset the flag for more mods
-        modsList.innerHTML = ''; // Clear the mods list
-
-        // Update the dropdown button text to reflect the selected character
-        characterDropdownButton.textContent = `(${selectedCharacter})`;
-        characterDropdownButton.setAttribute('data-selected-category', categoryId); // Store the selected category
-
-        // Fetch mods for the selected category
-        fetchModsForCharacter(categoryId);
-    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const characterDropdownMenu = document.getElementById('characterDropdownMenu');
+        const characterDropdownButton = document.getElementById('characterDropdown'); // The button that toggles the dropdown
+        const modsList = document.getElementById('gamebananaModsList');
+    
+        characterDropdownMenu.addEventListener('click', (event) => {
+            const selectedCharacter = event.target.getAttribute('data-character');
+            const characterUrl = event.target.getAttribute('data-url');
+    
+            if (selectedCharacter && characterUrl) {
+                // Remove 'active' class from all dropdown items
+                const dropdownItems = characterDropdownMenu.querySelectorAll('.dropdown-item');
+                dropdownItems.forEach(item => item.classList.remove('active'));
+    
+                // Add 'active' class to the clicked item
+                event.target.classList.add('active');
+    
+                // Extract the category ID from the URL
+                const categoryId = new URL(characterUrl).pathname.split('/').pop();
+                currentPage = 1; // Reset to the first page
+                hasMoreMods = true; // Reset the flag for more mods
+                modsList.innerHTML = ''; // Clear the mods list
+    
+                // Update the dropdown button text to reflect the selected character
+                characterDropdownButton.textContent = `(${selectedCharacter})`;
+                characterDropdownButton.setAttribute('data-selected-category', categoryId); // Store the selected category
+    
+                // Fetch mods for the selected category
+                fetchModsForCharacter(categoryId);
+            }
+        });
+    });
 
 
     document.addEventListener('DOMContentLoaded', () => {
-        const gamebananaButtons = document.querySelectorAll('#gamebananaCategories .btn');
-        const modsList = document.getElementById('gamebananaModsList'); // The container for mods
-    
-        gamebananaButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Remove the 'active' class from all buttons
-                gamebananaButtons.forEach(btn => btn.classList.remove('active'));
-    
-                // Add the 'active' class to the clicked button
-                button.classList.add('active');
-    
-                // Clear the mods list
-                modsList.innerHTML = '';
-    
-                // Fetch mods for the selected category
-                const category = button.getAttribute('data-category');
-                if (category) {
-                    currentPage = 1; // Reset to the first page
-                    hasMoreMods = true; // Reset the flag for more mods
-                    populateMods(category);
-                }
-            });
+    const gamebananaButtons = document.querySelectorAll('#gamebananaCategories .btn');
+    const modsList = document.getElementById('gamebananaModsList'); // The container for mods
+
+    gamebananaButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove the 'active' class from all buttons
+            gamebananaButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Add the 'active' class to the clicked button
+            button.classList.add('active');
+
+            // Clear the mods list
+            modsList.innerHTML = '';
+
+            // Fetch mods for the selected category
+            const category = button.getAttribute('data-category');
+            if (category) {
+                currentPage = 1; // Reset to the first page
+                hasMoreMods = true; // Reset the flag for more mods
+                populateMods(category); // Call the function to load mods for the selected category
+            }
         });
     });
+});
+
 
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('gamebananaSearchInput');
@@ -3871,4 +3857,15 @@ characterDropdownMenu.addEventListener('click', (event) => {
             });
         });
     });
-});
+
+    // Add event listener for NSFW toggle
+    document.getElementById('nsfwToggle').addEventListener('change', () => {
+        const modImages = document.querySelectorAll('.mod-image');
+        const nsfwToggle = document.getElementById('nsfwToggle').checked;
+    
+        modImages.forEach(image => {
+            if (image.closest('.mod-image-container').classList.contains('nsfw')) {
+                image.classList.toggle('blurred', nsfwToggle);
+            }
+        });
+    });

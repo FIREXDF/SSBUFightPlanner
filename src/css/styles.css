@@ -26,6 +26,40 @@
     transition-duration: .3s;
 }
 
+.mod-image-container {
+    position: relative;
+}
+
+.card-img-top {
+    flex-shrink: 0; /* Prevent the image from shrinking */
+    height: auto; /* Allow the height to adjust dynamically */
+    max-height: 200px; /* Set a maximum height for consistency */
+    object-fit: cover; /* Ensure the image fills the container without distortion */
+    width: 100%; /* Make the image span the full width of the card */
+    border-radius: 0.25rem; /* Optional: Add rounded corners to match the card */
+}
+
+.mod-image.blurred {
+    filter: blur(15px);
+}
+
+.nsfw-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: red;
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 5px;
+    z-index: 10;
+}
+
+#nsfwToggle {
+    transition-duration: .3s;
+}
+
 .loading-overlay.minimized {
     opacity: 0;
     pointer-events: none;
