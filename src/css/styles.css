@@ -14,6 +14,20 @@
     visibility: hidden;
 }
 
+#gamebananaModsList {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 cards per row */
+    gap: 16px; /* Space between cards */
+    padding: 16px; /* Optional: Add padding around the grid */
+}
+
+/* Mod card styling */
+#gamebananaModsList .card {
+    width: 100%; /* Ensure cards take up full column width */
+    height: 100%; /* Ensure cards take up full height */
+    box-sizing: border-box; /* Include padding and border in width */
+}
+
 #characterDropdownMenu {
     max-height: 300px;
     overflow-y: auto;

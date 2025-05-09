@@ -3589,10 +3589,16 @@ async function populateMods(category) {
                         <div class="card-body">
                             <h5 class="card-title">${modDetails.title}</h5>
                             <p class="card-text">${modDetails.description}</p>
-                            <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View Mod</a>
+                            <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
+                            <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
+                            <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
+                            <button class="btn btn-success mt-2" data-mod-id="${modDetails.id}">Download</button>
                         </div>
                     </div>
                 `;
+                modCard.querySelector('.btn-success').addEventListener('click', () => {
+                    triggerFightPlannerDownload(modDetails.link);
+                });
             }
         });
 
@@ -3614,10 +3620,9 @@ const modsContainer = document.getElementById('gamebananaCardBody'); // Replace 
 
 if (modsContainer) {
     modsContainer.addEventListener('scroll', () => {
-        const scrollPosition = modsContainer.scrollTop + modsContainer.clientHeight;
-        const threshold = modsContainer.scrollHeight - 200; // Trigger 200px before the bottom
+        const isScrolledToBottom = modsContainer.scrollTop + modsContainer.clientHeight === modsContainer.scrollHeight;
 
-        if (scrollPosition >= threshold) {
+        if (isScrolledToBottom) {
             const selectedCategory = document.querySelector('#gamebananaCategories .btn.active')?.dataset.category;
             console.log(`Selected Category: ${selectedCategory}`); // Debugging log
 
@@ -3685,6 +3690,7 @@ async function fetchModsForCharacter(categoryId) {
     if (isLoading || !hasMoreMods) return; // Prevent duplicate requests
     isLoading = true;
     const modsList = document.getElementById('gamebananaModsList');
+
     try {
         // Show a loading message for the first page
         if (currentPage === 1) {
@@ -3702,16 +3708,20 @@ async function fetchModsForCharacter(categoryId) {
         }
 
         if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
-            
+
         const nsfwToggle = document.getElementById('nsfwToggle').checked;
 
-        for (const modId of modIds) {
-            const modDetails = await fetchModDetailsFromAPI(modId);
+        // Fetch all mod details in parallel
+        const modDetailsList = await Promise.all(modIds.map(fetchModDetailsFromAPI));
+
+        // Render all mod cards
+        modDetailsList.forEach(modDetails => {
             if (modDetails) {
                 const modCard = document.createElement('div');
                 modCard.className = 'card';
                 modCard.style.width = '18rem';
                 modCard.innerHTML = `
+                <div class="card">    
                     <div class="card-img-top mod-image-container ${modDetails.nsfw ? 'nsfw' : ''}">
                         <img src="${modDetails.previewImage}" alt="${modDetails.title}" class="mod-image ${modDetails.nsfw && nsfwToggle ? 'blurred' : ''}">
                         ${modDetails.nsfw ? '<span class="nsfw-label">NSFW</span>' : ''}
@@ -3724,14 +3734,16 @@ async function fetchModsForCharacter(categoryId) {
                         <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
                         <button class="btn btn-success mt-2" data-mod-id="${modDetails.id}">Download</button>
                     </div>
+                </div>
                 `;
                 modsList.appendChild(modCard);
 
+                // Add download button functionality
                 modCard.querySelector('.btn-success').addEventListener('click', () => {
                     triggerFightPlannerDownload(modDetails.link);
                 });
             }
-        }
+        });
 
         // Increment the page for the next load
         currentPage++;
@@ -3748,10 +3760,9 @@ const modsContainer = document.getElementById('gamebananaCardBody'); // Replace 
 
 if (modsContainer) {
     modsContainer.addEventListener('scroll', () => {
-        const scrollPosition = modsContainer.scrollTop + modsContainer.clientHeight;
-        const threshold = modsContainer.scrollHeight - 200; // Trigger 200px before the bottom
+        const isScrolledToBottom = modsContainer.scrollTop + modsContainer.clientHeight >= modsContainer.scrollHeight;
 
-        if (scrollPosition >= threshold) {
+        if (isScrolledToBottom) {
             const selectedCategory = document.querySelector('button.dropdown-item.active')?.dataset.category;
             if (selectedCategory) {
                 fetchModsForCharacter(selectedCategory);
@@ -3760,7 +3771,7 @@ if (modsContainer) {
     });
 } else {
     console.error('Mods container not found');
-};
+}
 
     async function triggerFightPlannerDownload(modLink) {
         try {
