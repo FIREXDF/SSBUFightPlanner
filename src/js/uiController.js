@@ -3581,26 +3581,35 @@ async function populateMods(category) {
         const modDetailsList = await Promise.all(modIds.map(fetchModDetailsFromAPI));
 
         // Render all mod cards
-        modDetailsList.forEach(modDetails => {
-            if (!modDetails.nsfw || nsfwToggle) {
-                modsList.innerHTML += `
-                    <div class="card mod-card">
-                        <img src="${modDetails.previewImage}" class="card-img-top mod-image ${modDetails.nsfw ? 'blurred' : ''}" alt="${modDetails.title}">
-                        <div class="card-body">
-                            <h5 class="card-title">${modDetails.title}</h5>
-                            <p class="card-text">${modDetails.description}</p>
-                            <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
-                            <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
-                            <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
-                            <button class="btn btn-success mt-2" data-mod-id="${modDetails.id}">Download</button>
-                        </div>
+    modDetailsList.forEach(modDetails => {
+        if (modDetails) {
+            const modCard = document.createElement('div');
+            modCard.className = 'card';
+            modCard.style.width = '18rem';
+            modCard.innerHTML = `
+                <div class="card">    
+                    <div class="card-img-top mod-image-container ${modDetails.nsfw ? 'nsfw' : ''}">
+                        <img src="${modDetails.previewImage}" alt="${modDetails.title}" class="mod-image ${modDetails.nsfw && nsfwToggle ? 'blurred' : ''}">
+                        ${modDetails.nsfw ? '<span class="nsfw-label">NSFW</span>' : ''}
                     </div>
-                `;
-                modCard.querySelector('.btn-success').addEventListener('click', () => {
-                    triggerFightPlannerDownload(modDetails.link);
-                });
-            }
-        });
+                    <div class="card-body mod-card">
+                        <h5 class="card-title">${modDetails.title}</h5>
+                        <p class="card-text">${modDetails.description}</p>
+                        <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
+                        <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
+                        <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank"><i class="bi bi-box-arrow-up-left"></i>View on GameBanana</a>
+                        <button class="btn btn-success mt-2" id="downloadGamebanana" data-mod-id="${modDetails.id}"><i class="bi bi-download"></i>Download</button>
+                    </div>
+                </div>
+            `;
+            modsList.appendChild(modCard);
+
+            // Add download button functionality
+            modCard.querySelector('.btn-success').addEventListener('click', () => {
+                triggerFightPlannerDownload(modDetails.link);
+            });
+        }
+    });
 
         currentPage++;
     } catch (error) {
@@ -3622,10 +3631,8 @@ if (modsContainer) {
     modsContainer.addEventListener('scroll', () => {
         const isScrolledToBottom = modsContainer.scrollTop + modsContainer.clientHeight === modsContainer.scrollHeight;
 
-        if (isScrolledToBottom) {
+        if (isScrolledToBottom && !isLoading && hasMoreMods) {
             const selectedCategory = document.querySelector('#gamebananaCategories .btn.active')?.dataset.category;
-            console.log(`Selected Category: ${selectedCategory}`); // Debugging log
-
             if (selectedCategory) {
                 populateMods(selectedCategory);
             }
@@ -3731,8 +3738,8 @@ async function fetchModsForCharacter(categoryId) {
                         <p class="card-text">${modDetails.description}</p>
                         <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
                         <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
-                        <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
-                        <button class="btn btn-success mt-2" data-mod-id="${modDetails.id}">Download</button>
+                        <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank"><i class="bi bi-box-arrow-up-left"></i>View on GameBanana</a>
+                        <button class="btn btn-success mt-2" id="downloadGamebanana" data-mod-id="${modDetails.id}"><i class="bi bi-download"></i>Download</button>
                     </div>
                 </div>
                 `;
@@ -3760,12 +3767,12 @@ const modsContainer = document.getElementById('gamebananaCardBody'); // Replace 
 
 if (modsContainer) {
     modsContainer.addEventListener('scroll', () => {
-        const isScrolledToBottom = modsContainer.scrollTop + modsContainer.clientHeight >= modsContainer.scrollHeight;
+        const isScrolledToBottom = modsContainer.scrollTop + modsContainer.clientHeight === modsContainer.scrollHeight;
 
-        if (isScrolledToBottom) {
-            const selectedCategory = document.querySelector('button.dropdown-item.active')?.dataset.category;
+        if (isScrolledToBottom && !isLoading && hasMoreMods) {
+            const selectedCategory = document.querySelector('#characterDropdown .btn.active')?.dataset.category;
             if (selectedCategory) {
-                fetchModsForCharacter(selectedCategory);
+                populateMods(selectedCategory);
             }
         }
     });
