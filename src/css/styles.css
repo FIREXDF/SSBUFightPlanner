@@ -14,6 +14,11 @@
     visibility: hidden;
 }
 
+#gamebananaCategories .btn {
+    font-size: 0.9rem; /* Reduce font size */
+    padding: 6px 10px; /* Adjust padding */
+}
+
 #gamebananaCardBody {
     display: flex;
     flex-direction: column;
@@ -22,7 +27,7 @@
 
 #gamebananaModsList {
     display: grid; /* Use grid layout */
-    grid-template-columns: repeat(5, minmax(200px, 1fr)); /* Flexible columns */
+    grid-template-columns: repeat(5, minmax(50px, 6fr)); /* Flexible columns */
     gap: 16px; /* Space between cards */
     padding: 16px; /* Optional: Add padding around the grid */
     flex-grow: 1; /* Allow the grid to expand and fill the available space */
@@ -40,6 +45,21 @@
     border: none; /* Remove any border from the card */
     padding: 0; /* Remove any padding from the card */
     box-shadow: #0a0a0a 2px 2px 5px; /* Add a shadow effect */
+    position: relative; /* Ensure stacking context */
+    transition: transform 0.2s ease, z-index 0.2s ease, background-color 0.2s ease; /* Smooth transition */
+}
+
+#gamebananaModsList .card:hover {
+    z-index: 10; /* Bring the hovered card to the top */
+    transform: scale(1.05); /* Slightly enlarge the card */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Add a stronger shadow */
+    background-color: rgba(255, 255, 255, 1); /* Ensure full opacity for the background */
+}
+
+#gamebananaModsList .card:hover .card-body.mod-card {
+    background-color: rgba(136, 92, 126, 0.9);
+    transition-duration: .3s;
+    transition-timing-function: ease-out;
 }
 
 .card-body.mod-card {

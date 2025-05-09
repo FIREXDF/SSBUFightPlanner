@@ -3772,7 +3772,7 @@ if (modsContainer) {
         if (isScrolledToBottom && !isLoading && hasMoreMods) {
             const selectedCategory = document.querySelector('#characterDropdown .btn.active')?.dataset.category;
             if (selectedCategory) {
-                populateMods(selectedCategory);
+                fetchModsForCharacter(selectedCategory);
             }
         }
     });

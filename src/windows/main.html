@@ -187,73 +187,72 @@
         <div class="tab-pane fade h-100" id="gamebanana" role="tabpanel">
             <div class="container-fluid h-100">
                 <div class="row h-100">
-                    <!-- Mods List (Left Side) -->
-                    <div class="col-9 p-3 overflow-auto">
-                        <div class="card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Mods</h5>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="nsfwToggle">
-                                    <label class="form-check-label" for="nsfwToggle">Filter NSFW Content</label>
-                                </div>
-                                <input 
-                                    type="text" 
-                                    id="gamebananaSearchInput" 
-                                    class="form-control form-control-sm" 
-                                    placeholder="Search mods..." 
-                                    style="width: 200px;"
-                                >
-                            </div>
-                            <div class="card-body" id="gamebananaCardBody">
-                                <div id="gamebananaModsList" class="gap-3">
-                                    <!-- Mod cards will be dynamically populated here -->
-                                </div>
-                            </div>
+            <!-- Mods List (Left Side) -->
+            <div class="col-10 p-3 overflow-auto">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Mods</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="nsfwToggle">
+                            <label class="form-check-label" for="nsfwToggle">Filter NSFW Content</label>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="gamebananaSearchInput" 
+                            class="form-control form-control-sm" 
+                            placeholder="Search mods..." 
+                            style="width: 200px;"
+                        >
+                    </div>
+                    <div class="card-body" id="gamebananaCardBody">
+                        <div id="gamebananaModsList" class="flex-wrap gap-3">
+                            <!-- Mod cards will be dynamically populated here -->
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Categories (Right Side) -->
-                    <div class="col-3 p-3">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h5 class="mb-0">Categories</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="gamebananaCategories" class="d-flex flex-column gap-2">
-                                    <!-- Category buttons -->
-                                    <button class="btn btn-outline-primary" data-category="Featured">Featured</button>
-                                    <button class="btn btn-outline-primary" data-category="Skins" id="skinsButton">Skins</button>
-                                    <button 
-                                        class="btn btn-outline-primary dropdown-toggle" 
-                                        type="button" 
-                                        id="characterDropdown" 
-                                        data-bs-toggle="dropdown" 
-                                        aria-expanded="false">
-                                        Characters
-                                    </button>
-                                    <ul class="dropdown-menu" id="characterDropdownMenu">
-                                        <!-- Character options will be dynamically populated -->
-                                    </ul>
-                                    <button class="btn btn-outline-primary" data-category="Movesets">Movesets</button>
-                                    <button class="btn btn-outline-primary" data-category="Stages">Stages</button>
-                                    <button class="btn btn-outline-primary" data-category="Effects">Effects</button>
-                                    <button class="btn btn-outline-primary" data-category="Audio">Audio</button>
-                                    <button class="btn btn-outline-primary" data-category="Other/Misc">Other/Misc</button>
-                                    <button class="btn btn-outline-primary" data-category="UI">UI</button>
-                                    <button class="btn btn-outline-primary" data-category="Final Smash">Final Smash</button>
-                                    <button class="btn btn-outline-primary" data-category="Skyline">Skyline</button>
-                                    <button class="btn btn-outline-primary" data-category="Gameplay">Gameplay</button>
-                                    <button class="btn btn-outline-primary" data-category="Animation">Animation</button>
-                                    <button class="btn btn-outline-primary" data-category="Mod Packs">Mod Packs</button>
-                                    <button class="btn btn-outline-primary" data-category="Music Packs">Music Packs</button>
-                                    <button class="btn btn-outline-primary" data-category="Tools">Tools</button>
-                                </div>
-                            </div>
+            <!-- Categories (Right Side) -->
+            <div class="col-2 p-3">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Categories</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="gamebananaCategories" class="d-flex flex-column gap-2">
+                            <!-- Category buttons -->
+                            <button class="btn btn-outline-primary" data-category="Featured">Featured</button>
+                            <button class="btn btn-outline-primary" data-category="Skins" id="skinsButton">Skins</button>
+                            <button 
+                                class="btn btn-outline-primary dropdown-toggle" 
+                                type="button" 
+                                id="characterDropdown" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                                Characters
+                            </button>
+                            <ul class="dropdown-menu" id="characterDropdownMenu">
+                                <!-- Character options will be dynamically populated -->
+                            </ul>
+                            <button class="btn btn-outline-primary" data-category="Movesets">Movesets</button>
+                            <button class="btn btn-outline-primary" data-category="Stages">Stages</button>
+                            <button class="btn btn-outline-primary" data-category="Effects">Effects</button>
+                            <button class="btn btn-outline-primary" data-category="Audio">Audio</button>
+                            <button class="btn btn-outline-primary" data-category="Other/Misc">Other/Misc</button>
+                            <button class="btn btn-outline-primary" data-category="UI">UI</button>
+                            <button class="btn btn-outline-primary" data-category="Final Smash">Final Smash</button>
+                            <button class="btn btn-outline-primary" data-category="Skyline">Skyline</button>
+                            <button class="btn btn-outline-primary" data-category="Gameplay">Gameplay</button>
+                            <button class="btn btn-outline-primary" data-category="Animation">Animation</button>
+                            <button class="btn btn-outline-primary" data-category="Mod Packs">Mod Packs</button>
+                            <button class="btn btn-outline-primary" data-category="Music Packs">Music Packs</button>
+                            <button class="btn btn-outline-primary" data-category="Tools">Tools</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    
 
         <!-- Plugins Tab -->
         <div class="tab-pane fade h-100" id="plugins" role="tabpanel">
