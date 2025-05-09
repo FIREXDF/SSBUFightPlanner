@@ -3543,8 +3543,6 @@ async function fetchModDetailsFromAPI(modId) {
     }
 }
 
-
-
 // Populate mods dynamically based on category
 let currentPage = 1; // Track the current page
 const modsPerPage = 15; // Number of mods to show per page
@@ -3712,16 +3710,20 @@ async function fetchModsForCharacter(categoryId) {
         }
 
         if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
+            
+        const nsfwToggle = document.getElementById('nsfwToggle').checked;
 
-        // Fetch and append each mod sequentially
         for (const modId of modIds) {
-            const modDetails = await fetchModDetailsFromAPI(modId); // Fetch mod details
+            const modDetails = await fetchModDetailsFromAPI(modId);
             if (modDetails) {
                 const modCard = document.createElement('div');
                 modCard.className = 'card';
                 modCard.style.width = '18rem';
                 modCard.innerHTML = `
-                    <img src="${modDetails.previewImage}" class="card-img-top" alt="${modDetails.title}">
+                    <div class="card-img-top mod-image-container ${modDetails.nsfw ? 'nsfw' : ''}">
+                        <img src="${modDetails.previewImage}" alt="${modDetails.title}" class="mod-image ${modDetails.nsfw && nsfwToggle ? 'blurred' : ''}">
+                        ${modDetails.nsfw ? '<span class="nsfw-label">NSFW</span>' : ''}
+                    </div>
                     <div class="card-body mod-card">
                         <h5 class="card-title">${modDetails.title}</h5>
                         <p class="card-text">${modDetails.description}</p>
@@ -3729,10 +3731,10 @@ async function fetchModsForCharacter(categoryId) {
                         <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
                         <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
                         <button class="btn btn-success mt-2" data-mod-id="${modDetails.id}">Download</button>
-                    </div>`;
+                    </div>
+                `;
                 modsList.appendChild(modCard);
 
-                // Add download button functionality
                 modCard.querySelector('.btn-success').addEventListener('click', () => {
                     triggerFightPlannerDownload(modDetails.link);
                 });

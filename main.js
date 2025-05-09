@@ -1000,9 +1000,7 @@ ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
 });
 
 ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage) => {
-    const offset = (currentPage - 1) * modsPerPage; // Calculate the offset
-    const url = `https://gamebanana.com/mods/cats/${categoryId}?start=${offset}&count=${modsPerPage}`;
-    console.log(`Current page: ${currentPage}, Offset: ${offset}`);
+    const url = `https://gamebanana.com/mods/cats/${categoryId}`;
     console.log(`Fetching mods from: ${url}`);
 
     let browser;
@@ -1018,8 +1016,16 @@ ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage)
         );
 
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-        await page.waitForSelector('div.Record.Flow.ModRecord.HasPreview', { timeout: 60000 });
 
+        // Scroll to the bottom of the page to load all mods
+        let previousHeight;
+        do {
+            previousHeight = await page.evaluate('document.body.scrollHeight');
+            await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for new content to load
+        } while ((await page.evaluate('document.body.scrollHeight')) > previousHeight);
+
+        // Extract mod IDs
         const modIds = await page.evaluate(() => {
             const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
             return Array.from(modElements).map(mod => {
