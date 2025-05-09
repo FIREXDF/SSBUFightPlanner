@@ -999,7 +999,7 @@ ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
     }
 });
 
-ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage) => {
+ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage = 10) => {
     const url = `https://gamebanana.com/mods/cats/${categoryId}`;
     console.log(`Fetching mods from: ${url}`);
 
@@ -1017,27 +1017,42 @@ ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage)
 
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-        // Scroll to the bottom of the page to load all mods
-        let previousHeight;
-        do {
+        // Scroll and fetch mods in batches
+        let mods = [];
+        let previousHeight = 0;
+        let loadedMods = 0;
+
+        while (mods.length < currentPage * modsPerPage) {
+            // Scroll to the bottom of the page
             previousHeight = await page.evaluate('document.body.scrollHeight');
             await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for new content to load
-        } while ((await page.evaluate('document.body.scrollHeight')) > previousHeight);
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for new content to load
 
-        // Extract mod IDs
-        const modIds = await page.evaluate(() => {
-            const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
-            return Array.from(modElements).map(mod => {
-                const linkElement = mod.querySelector('a');
-                const href = linkElement?.getAttribute('href');
-                const match = href?.match(/\/mods\/(\d+)/);
-                return match ? match[1] : null;
-            }).filter(id => id !== null);
-        });
+            // Extract mod IDs
+            const newMods = await page.evaluate(() => {
+                const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
+                return Array.from(modElements).map(mod => {
+                    const linkElement = mod.querySelector('a');
+                    const href = linkElement?.getAttribute('href');
+                    const match = href?.match(/\/mods\/(\d+)/);
+                    return match ? match[1] : null;
+                }).filter(id => id !== null);
+            });
 
-        console.log(`Found ${modIds.length} mods`);
-        return modIds;
+            mods = [...new Set([...mods, ...newMods])]; // Avoid duplicates
+
+            // Stop if no new content is loaded
+            const currentHeight = await page.evaluate('document.body.scrollHeight');
+            if (currentHeight === previousHeight) break;
+        }
+
+        // Return only the mods for the requested page
+        const startIndex = (currentPage - 1) * modsPerPage;
+        const endIndex = startIndex + modsPerPage;
+        const paginatedMods = mods.slice(startIndex, endIndex);
+
+        console.log(`Loaded ${paginatedMods.length} mods for page ${currentPage}`);
+        return paginatedMods;
     } catch (error) {
         console.error(`Error fetching mods:`, error);
         return [];

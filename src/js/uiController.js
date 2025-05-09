@@ -3505,6 +3505,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     async function fetchModsByCategory(categoryId, currentPage, modsPerPage) {
+    
         try {
             const modIds = await window.api.fetchMods(categoryId, currentPage, modsPerPage);
             console.log(`Fetched mod IDs for page ${currentPage}:`, modIds);
@@ -3512,7 +3513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error(`Error fetching mods for category ${categoryId}:`, error);
             return [];
-        }
+        } 
     }
 
 // Fetch mod details from its webpage
@@ -3568,41 +3569,32 @@ async function populateMods(category) {
         const modIds = await fetchModsByCategory(sectionId, currentPage, modsPerPage);
         if (modIds.length === 0) {
             hasMoreMods = false;
-            if (currentPage === 1) modsList.innerHTML = '<p>No mods found for this category.</p>';
+            if (currentPage === 1) modsList.innerHTML = '<p>No mods found.</p>';
             return;
         }
 
-        if (currentPage === 1) modsList.innerHTML = '';
+        if (currentPage === 1) modsList.innerHTML = ''; // Clear list for the first page
 
         const nsfwToggle = document.getElementById('nsfwToggle').checked;
 
-        for (const modId of modIds) {
-            const modDetails = await fetchModDetailsFromAPI(modId);
-            if (modDetails) {
-                const modCard = document.createElement('div');
-                modCard.className = 'card';
-                modCard.style.width = '18rem';
-                modCard.innerHTML = `
-                    <div class="card-img-top mod-image-container ${modDetails.nsfw ? 'nsfw' : ''}">
-                        <img src="${modDetails.previewImage}" alt="${modDetails.title}" class="mod-image ${modDetails.nsfw && nsfwToggle ? 'blurred' : ''}">
-                        ${modDetails.nsfw ? '<span class="nsfw-label">NSFW</span>' : ''}
-                    </div>
-                    <div class="card-body mod-card">
-                        <h5 class="card-title">${modDetails.title}</h5>
-                        <p class="card-text">${modDetails.description}</p>
-                        <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
-                        <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
-                        <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View on GameBanana</a>
-                        <button class="btn btn-success mt-2" data-mod-id="${modDetails.id}">Download</button>
+        // Fetch all mod details in parallel
+        const modDetailsList = await Promise.all(modIds.map(fetchModDetailsFromAPI));
+
+        // Render all mod cards
+        modDetailsList.forEach(modDetails => {
+            if (!modDetails.nsfw || nsfwToggle) {
+                modsList.innerHTML += `
+                    <div class="card mod-card">
+                        <img src="${modDetails.previewImage}" class="card-img-top mod-image ${modDetails.nsfw ? 'blurred' : ''}" alt="${modDetails.title}">
+                        <div class="card-body">
+                            <h5 class="card-title">${modDetails.title}</h5>
+                            <p class="card-text">${modDetails.description}</p>
+                            <a href="${modDetails.link}" class="btn btn-primary" target="_blank">View Mod</a>
+                        </div>
                     </div>
                 `;
-                modsList.appendChild(modCard);
-
-                modCard.querySelector('.btn-success').addEventListener('click', () => {
-                    triggerFightPlannerDownload(modDetails.link);
-                });
             }
-        }
+        });
 
         currentPage++;
     } catch (error) {
