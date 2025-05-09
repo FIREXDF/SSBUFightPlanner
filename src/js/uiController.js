@@ -3517,7 +3517,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Fetch mod details from its webpage
 async function fetchModDetailsFromAPI(modId) {
-    let fields = 'name,description,_sPreview,downloads,Nsfw().bIsNsfw(),likes';
+    let fields = 'name,description,Preview().sSubFeedImageUrl(),downloads,Nsfw().bIsNsfw(),likes';
     const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
     console.log(`Fetching mod details from URL: ${url}`); // Debugging log
     try {
