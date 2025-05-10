@@ -116,6 +116,7 @@
     background: radial-gradient(circle, #32cd32,#1b701b); /* Banana yellow and green gradient */
     color: rgb(255, 243, 198); /* Text color */
     border: none; /* Remove border */
+    width: 100%;    /* Set width to auto */
     padding: 10px 20px; /* Add padding for better spacing */
     border-radius: 8px; /* Rounded corners */
     font-size: 1rem; /* Adjust font size */

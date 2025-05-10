@@ -3516,6 +3516,68 @@ document.addEventListener('DOMContentLoaded', () => {
         } 
     }
 
+async function populateDownloadDropdown(modId, modLink) {
+    console.log(`Populating download dropdown for mod ID: ${modId}`);
+    const dropdownMenu = document.getElementById(`downloadDropdown`);
+    
+    // Check if the dropdownMenu element exists
+    if (!dropdownMenu) {
+        console.warn(`Dropdown menu element not found for mod ID: ${modId}`);
+        return;
+    }
+
+    try {
+        // Fetch mod files using the GameBanana API
+        const fields = encodeURIComponent('Files().aFiles()');
+    const apiUrl = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
+        console.log(`Fetching mod files from URL: ${apiUrl}`); // Debugging log
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`Failed to fetch mod files: ${response.statusText}`);
+        const data = await response.json();
+
+        console.log(`Fetched mod files data:`, data); // Debugging log
+
+        // Extract files and their details
+        const files = data[0]?.Files?.aFiles || [];
+        console.log('Files array:', files);
+        if (files.length === 0) {
+            dropdownMenu.innerHTML = '<li><span class="dropdown-item-text">No files available</span></li>';
+            return;
+        }
+
+        console.log(`Fetched files:`, files); // Debugging log
+
+        // Process files into an array and populate the dropdown
+        dropdownMenu.innerHTML = files.map(file => {
+            const fileData = [
+                `fightplanner://${file._sDownloadUrl}`, // Data 0: Fight Planner link
+                `https://files.gamebanana.com/mods/${file._sFile}`, // Data 1: Direct download link
+                file.description || 'No description' // Data 2: Description
+            ];
+
+            console.log(`File Data:`, fileData);
+
+            return `
+                <li>
+                    <a class="dropdown-item" href="${fileData[0]}" title="${fileData[2]}" target="_blank">
+                        1-Click Install: ${file.name || 'Unnamed File'}
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="${fileData[1]}" title="${fileData[2]}" target="_blank">
+                        Direct Download: ${file.name || 'Unnamed File'}
+                    </a>
+                </li>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error(`Error populating dropdown for mod ${modId}:`, error);
+        dropdownMenu.innerHTML = '<li><span class="dropdown-item-text text-danger">Failed to load files</span></li>';
+    }
+}
+
+window.populateDownloadDropdown = populateDownloadDropdown;
+
 // Fetch mod details from its webpage
 async function fetchModDetailsFromAPI(modId) {
     let fields = 'name,description,Preview().sSubFeedImageUrl(),downloads,Nsfw().bIsNsfw(),likes';
@@ -3597,17 +3659,22 @@ async function populateMods(category) {
                         <p class="card-text">${modDetails.description}</p>
                         <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
                         <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
-                        <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank"><i class="bi bi-box-arrow-up-left"></i>View on GameBanana</a>
-                        <button class="btn btn-success mt-2" id="downloadGamebanana" data-mod-id="${modDetails.id}"><i class="bi bi-download"></i>Download</button>
+                        <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank">
+                            <i class="bi bi-box-arrow-up-left"></i> View on GameBanana
+                        </a>
+                        <div class="dropdown mt-2">
+                            <button class="btn btn-success dropdown-toggle" type="button" id="downloadGamebanana" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-download"></i> Download
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="downloadDropdown" id="downloadDropdown">
+                                <li><span class="dropdown-item-text">Loading files...</span></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             `;
             modsList.appendChild(modCard);
-
-            // Add download button functionality
-            modCard.querySelector('.btn-success').addEventListener('click', () => {
-                triggerFightPlannerDownload(modDetails.link);
-            });
+            populateDownloadDropdown(modDetails.id, modDetails.link);
         }
     });
 
@@ -3738,17 +3805,22 @@ async function fetchModsForCharacter(categoryId) {
                         <p class="card-text">${modDetails.description}</p>
                         <p class="card-text"><strong>Downloads:</strong> ${modDetails.downloadCount}</p>
                         <p class="card-text"><strong>Likes:</strong> ${modDetails.likes}</p>
-                        <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank"><i class="bi bi-box-arrow-up-left"></i>View on GameBanana</a>
-                        <button class="btn btn-success mt-2" id="downloadGamebanana" data-mod-id="${modDetails.id}"><i class="bi bi-download"></i>Download</button>
+                        <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank">
+                            <i class="bi bi-box-arrow-up-left"></i> View on GameBanana
+                        </a>
+                        <div class="dropdown mt-2">
+                            <button class="btn btn-success dropdown-toggle" type="button" id="downloadGamebanana" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-download"></i> Download
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="downloadDropdown-${modDetails.id}" id="downloadDropdown">
+                                <li><span class="dropdown-item-text">Loading files...</span></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-                `;
-                modsList.appendChild(modCard);
-
-                // Add download button functionality
-                modCard.querySelector('.btn-success').addEventListener('click', () => {
-                    triggerFightPlannerDownload(modDetails.link);
-                });
+            `;
+            modsList.appendChild(modCard);
+            populateDownloadDropdown(modDetails.id, modDetails.link);
             }
         });
 
@@ -3762,22 +3834,26 @@ async function fetchModsForCharacter(categoryId) {
     }
 }
 
-// Add infinite scrolling
-const modsContainer = document.getElementById('gamebananaCardBody'); // Replace with the correct container ID or class
+// Infinite scrolling for gamebananaModsList when fetching mods for characters
+const modsListContainer = document.getElementById('gamebananaModsList'); // Replace with the correct container ID or class
 
-if (modsContainer) {
-    modsContainer.addEventListener('scroll', () => {
-        const isScrolledToBottom = modsContainer.scrollTop + modsContainer.clientHeight === modsContainer.scrollHeight;
+if (modsListContainer) {
+    modsListContainer.addEventListener('scroll', async () => {
+        const isScrolledToBottom =
+            modsListContainer.scrollTop + modsListContainer.clientHeight >= modsListContainer.scrollHeight - 10;
 
         if (isScrolledToBottom && !isLoading && hasMoreMods) {
-            const selectedCategory = document.querySelector('#characterDropdown .btn.active')?.dataset.category;
-            if (selectedCategory) {
-                fetchModsForCharacter(selectedCategory);
+            const selectedCharacterCategoryId = document
+                .getElementById('characterDropdown')
+                ?.getAttribute('data-selected-category'); // Get the selected character's category ID
+
+            if (selectedCharacterCategoryId) {
+                await fetchModsForCharacter(selectedCharacterCategoryId); // Fetch the next batch of mods for the character
             }
         }
     });
 } else {
-    console.error('Mods container not found');
+    console.error('Mods list container not found');
 }
 
     async function triggerFightPlannerDownload(modLink) {
