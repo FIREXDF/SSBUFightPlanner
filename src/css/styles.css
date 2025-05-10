@@ -27,7 +27,7 @@
 
 #gamebananaModsList {
     display: grid; /* Use grid layout */
-    grid-template-columns: repeat(5, minmax(50px, 6fr)); /* Flexible columns */
+    grid-template-columns: repeat(5, minmax(50px, 1fr)); /* Shrink column width */
     gap: 16px; /* Space between cards */
     padding: 16px; /* Optional: Add padding around the grid */
     flex-grow: 1; /* Allow the grid to expand and fill the available space */
@@ -87,8 +87,8 @@
 }
 
 #viewGamebanana {
-    background: radial-gradient(circle, #ffe135, #32cd32); /* Banana yellow and green gradient */
-    color: rgb(255, 243, 198); /* Text color */
+    background: linear-gradient(135deg, #4a90e2, #9013fe); /* FightPlanner+ inspired gradient */
+    color: white; /* Text color for better contrast */
     border: none; /* Remove border */
     padding: 10px 20px; /* Add padding for better spacing */
     border-radius: 8px; /* Rounded corners */
@@ -113,8 +113,8 @@
 }
 
 #downloadGamebanana {
-    background: linear-gradient(135deg, #4a90e2, #9013fe); /* FightPlanner+ inspired gradient */
-    color: white; /* Text color for better contrast */
+    background: radial-gradient(circle, #32cd32,#1b701b); /* Banana yellow and green gradient */
+    color: rgb(255, 243, 198); /* Text color */
     border: none; /* Remove border */
     padding: 10px 20px; /* Add padding for better spacing */
     border-radius: 8px; /* Rounded corners */
