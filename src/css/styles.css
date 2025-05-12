@@ -15,45 +15,44 @@
 }
 
 #gamebananaCategories .btn {
-    font-size: 0.9rem; /* Reduce font size */
-    padding: 6px 10px; /* Adjust padding */
+    font-size: 0.9rem;
+    padding: 6px 10px;
 }
 
 #gamebananaCardBody {
     display: flex;
     flex-direction: column;
-    height: 100%; /* Ensure it takes up the full height of its container */
+    height: 100%;
 }
 
 #gamebananaModsList {
-    display: grid; /* Use grid layout */
-    grid-template-columns: repeat(5, minmax(50px, 1fr)); /* Shrink column width */
-    gap: 16px; /* Space between cards */
-    padding: 16px; /* Optional: Add padding around the grid */
-    flex-grow: 1; /* Allow the grid to expand and fill the available space */
-    overflow-y: auto; /* Enable scrolling if content overflows */
+    display: grid;
+    grid-template-columns: repeat(5, minmax(50px, 1fr));
+    gap: 16px;
+    padding: 16px;
+    flex-grow: 1;
+    overflow-y: auto;
 }
 
-/* Mod card styling */
 #gamebananaModsList .card {
-    width: 100%; /* Ensure cards take up full column width */
-    height: 450px; /* Set a uniform height for all cards */
-    box-sizing: border-box; /* Include padding and border in width */
-    display: flex; /* Use flexbox for layout */
-    flex-direction: column; /* Stack content vertically */
-    overflow: hidden; /* Prevent overflow */
-    border: none; /* Remove any border from the card */
-    padding: 0; /* Remove any padding from the card */
-    box-shadow: #0a0a0a 2px 2px 5px; /* Add a shadow effect */
-    position: relative; /* Ensure stacking context */
-    transition: transform 0.2s ease, z-index 0.2s ease, background-color 0.2s ease; /* Smooth transition */
+    width: 100%;
+    height: 450px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: none;
+    padding: 0;
+    box-shadow: #0a0a0a 2px 2px 5px;
+    position: relative;
+    transition: transform 0.2s ease, z-index 0.2s ease, background-color 0.2s ease;
 }
 
 #gamebananaModsList .card:hover {
-    z-index: 10; /* Bring the hovered card to the top */
-    transform: scale(1.05); /* Slightly enlarge the card */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Add a stronger shadow */
-    background-color: rgba(255, 255, 255, 1); /* Ensure full opacity for the background */
+    z-index: 10;
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 1);
 }
 
 #gamebananaModsList .card:hover .card-body.mod-card {
@@ -63,15 +62,15 @@
 }
 
 .card-body.mod-card {
-    flex: 1; /* Make the body take up the remaining space */
-    display: flex; /* Use flexbox for layout */
-    flex-direction: column; /* Stack content vertically */
-    justify-content: space-between; /* Distribute content evenly */
-    padding: 16px; /* Add padding for content spacing */
-    margin: 0; /* Remove any margin */
-    box-sizing: border-box; /* Include padding and border in width/height calculations */
-    border: none; /* Remove any border */
-    overflow: hidden; /* Prevent overflow */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+    margin: 0;
+    box-sizing: border-box;
+    border: none;
+    overflow: hidden;
 }
 
 .card-body.mod-card p,
@@ -81,85 +80,85 @@
 .card-body.mod-card h4,
 .card-body.mod-card h5,
 .card-body.mod-card h6 {
-    line-height: 1.2; /* Reduce the space between lines */
-    margin: 0; /* Remove default margins */
-    padding: 0; /* Remove default padding */
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
 }
 
 #viewGamebanana {
-    background: linear-gradient(135deg, #4a90e2, #9013fe); /* FightPlanner+ inspired gradient */
-    color: white; /* Text color for better contrast */
-    border: none; /* Remove border */
-    padding: 10px 20px; /* Add padding for better spacing */
-    border-radius: 8px; /* Rounded corners */
-    font-size: 1rem; /* Adjust font size */
-    font-weight: bold; /* Make text bold */
-    display: flex; /* Use flexbox for alignment */
-    align-items: center; /* Center content vertically */
-    justify-content: center; /* Center content horizontally */
-    gap: 8px; /* Space between icon and text */
-    cursor: pointer; /* Change cursor to pointer */
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Add hover effects */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add subtle shadow for better readability */
+    background: linear-gradient(135deg, #4a90e2, #9013fe);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 #viewGamebanana:hover {
-    transform: scale(1.05); /* Slightly enlarge on hover */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow on hover */
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 #viewGamebanana i {
-    padding: 3px; /* Adjust icon size */
+    padding: 3px;
 }
 
 #downloadGamebanana {
-    background: radial-gradient(circle, #32cd32,#1b701b); /* Banana yellow and green gradient */
-    color: rgb(255, 243, 198); /* Text color */
-    border: none; /* Remove border */
-    width: 100%;    /* Set width to auto */
-    padding: 10px 20px; /* Add padding for better spacing */
-    border-radius: 8px; /* Rounded corners */
-    font-size: 1rem; /* Adjust font size */
-    font-weight: bold; /* Make text bold */
-    display: flex; /* Use flexbox for alignment */
-    align-items: center; /* Center content vertically */
-    justify-content: center; /* Center content horizontally */
-    gap: 8px; /* Space between icon and text */
-    cursor: pointer; /* Change cursor to pointer */
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Add hover effects */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add subtle shadow for better readability */
+    background: radial-gradient(circle, #32cd32,#1b701b);
+    color: rgb(255, 243, 198);
+    border: none;
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 #downloadGamebanana:hover {
-    transform: scale(1.05); /* Slightly enlarge on hover */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow on hover */
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 #downloadGamebanana i {
-    padding: 3px; /* Adjust icon size */
-    border: #0a0a0a00 3px solid; /* Add border to the icon */
+    padding: 3px;
+    border: #0a0a0a00 3px solid;
 }
 
 .card-img-top {
-    flex: 0 0 auto; /* Allow the height to adjust dynamically */
-    width: 100%; /* Make the image span the full width of the card */
-    height: auto; /* Allow the height to flex based on content */
-    object-fit: cover; /* Ensure the image fills the container without distortion */
-    border-top-left-radius: 0.25rem; /* Match the card's top-left border radius */
-    border-top-right-radius: 0.25rem; /* Match the card's top-right border radius */
-    margin: 0; /* Remove any margin */
-    padding: 0; /* Remove any padding */
-    border: none; /* Remove any border */
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    margin: 0;
+    padding: 0;
+    border: none;
 }
 
 .mod-image {
-    width: 100%; /* Ensure the image fills the width of the card */
-    height: auto; /* Maintain aspect ratio */
-    object-fit: cover; /* Ensure the image covers the container without distortion */
-    border-top-left-radius: 0.25rem; /* Match the card's top-left border radius */
-    border-top-right-radius: 0.25rem; /* Match the card's top-right border radius */
-    border-bottom-left-radius: 0; /* Remove bottom-left border radius */
-    border-bottom-right-radius: 0; /* Remove bottom-right border radius */
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 #characterDropdownMenu {
@@ -168,7 +167,7 @@
 }
 
 #gamebananaCategories .btn.active {
-    background-color: #0d6efd; /* Bootstrap primary color */
+    background-color: #0d6efd;
     color: rgb(202, 201, 113);
     border-color: #0d6efd;
     transition-duration: .3s;
