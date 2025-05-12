@@ -139,6 +139,23 @@
     border: #0a0a0a00 3px solid;
 }
 
+.download-dropdown {
+    width: 100%; /* Make it the width of the card */
+    max-height: 200px; /* Set a maximum height for the dropdown */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    position: absolute; /* Ensure it stays within the card */
+    z-index: 1050; /* Ensure it appears above other elements */
+    background-color: #fff; /* Set background color */
+    border: 1px solid rgba(0, 0, 0, 0.15); /* Add a border */
+    border-radius: 0.25rem; /* Add rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+.dropdown.mt-2:hover .download-dropdown {
+    display: block; /* Show the dropdown on hover */
+}
+
 .card-img-top {
     flex: 0 0 auto;
     width: 100%;

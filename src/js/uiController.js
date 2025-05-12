@@ -3517,73 +3517,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function populateDownloadDropdown(modId) {
-        console.log(`Populating download dropdown for mod ID: ${modId}`);
-        const dropdownMenu = document.getElementById(`downloadDropdown`);
+    console.log(`Populating download dropdown for mod ID: ${modId}`);
+    const dropdownMenu = document.getElementById(`downloadDropdown-${modId}`);
 
-        // Check if the dropdownMenu element exists
-        if (!dropdownMenu) {
-            console.warn(`Dropdown menu element not found for mod ID: ${modId}`);
+    // Check if the dropdownMenu element exists
+    if (!dropdownMenu) {
+        console.warn(`Dropdown menu element not found for mod ID: ${modId}`);
+        return;
+    }
+
+    try {
+        // Fetch mod files using the GameBanana API
+        const fields = encodeURIComponent('Files().aFiles()');
+        const apiUrl = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
+        console.log(`Fetching mod files from URL: ${apiUrl}`);
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`Failed to fetch mod files: ${response.statusText}`);
+        const data = await response.json();
+
+        console.log(`Fetched mod files data for mod ID ${modId}:`, data);
+
+        // Check if data[0] exists and contains the file keys
+        const filesData = data[0];
+        if (!filesData || typeof filesData !== 'object') {
+            throw new Error('Invalid response structure: Expected files under data[0]');
+        }
+
+        // Extract files from data[0]
+        const files = Object.keys(filesData).map(key => {
+            const file = filesData[key];
+            return {
+                id: key,
+                name: file._sFile,
+                description: file._sDescription,
+                downloadUrl: file._sDownloadUrl
+            };
+        });
+
+        if (files.length === 0) {
+            dropdownMenu.innerHTML = '<li><span class="dropdown-item-text">No files available</span></li>';
             return;
         }
 
-        try {
-            // Fetch mod files using the GameBanana API
-            const fields = encodeURIComponent('Files().aFiles()');
-            const apiUrl = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
-            console.log(`Fetching mod files from URL: ${apiUrl}`); // Debugging log
-            const response = await fetch(apiUrl);
-            if (!response.ok) throw new Error(`Failed to fetch mod files: ${response.statusText}`);
-            const data = await response.json();
+        // Populate the dropdown with file links
+        dropdownMenu.innerHTML = files.map(file => {
+            const fightPlannerLink = `fightplanner://${file.downloadUrl}`;
+            const directDownloadLink = `https://files.gamebanana.com/mods/${file.name}`;
+            const description = file.description || 'No description';
 
-            console.log(`Fetched mod files data:`, data); // Debugging log
-
-            // Check if data[0] exists and contains the file keys
-            const filesData = data[0];
-            if (!filesData || typeof filesData !== 'object') {
-                throw new Error('Invalid response structure: Expected files under data[0]');
-            }
-
-            // Extract files from data[0]
-            const files = Object.keys(filesData).map(key => {
-                const file = filesData[key];
-                return {
-                    id: key,
-                    name: file._sFile,
-                    description: file._sDescription,
-                    downloadUrl: file._sDownloadUrl
-                };
-            });
-
-            console.log(files);
-
-            if (files.length === 0) {
-                dropdownMenu.innerHTML = '<li><span class="dropdown-item-text">No files available</span></li>';
-                return;
-            }
-
-            // Process files into an array and populate the dropdown
-            dropdownMenu.innerHTML = files.map(file => {
-                const fightPlannerLink = `fightplanner://${file.downloadUrl}`;
-                const directDownloadLink = `https://files.gamebanana.com/mods/${file.name}`;
-                const description = file.description || 'No description';
-
-                return `
-                    <li>
-                        <a class="dropdown-item" href="${fightPlannerLink}" title="${description}" target="_blank">
-                            1-Click Install: ${file.name}
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="${directDownloadLink}" title="${description}" target="_blank">
-                            Direct Download: ${file.name}
-                        </a>
-                    </li>
-                `;
-            }).join('');
-        } catch (error) {
-            console.error(`Error populating dropdown for mod ${modId}:`, error);
-            dropdownMenu.innerHTML = '<li><span class="dropdown-item-text text-danger">Failed to load files</span></li>';
-        }
+            return `
+                <li>
+                    <a class="dropdown-item" href="${fightPlannerLink}" title="${description}" target="_blank">
+                        1-Click Install: ${file.name}
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="${directDownloadLink}" title="${description}" target="_blank">
+                        Direct Download: ${file.name}
+                    </a>
+                </li>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error(`Error populating dropdown for mod ${modId}:`, error);
+        dropdownMenu.innerHTML = '<li><span class="dropdown-item-text text-danger">Failed to load files</span></li>';
+    }
 }
 
 window.populateDownloadDropdown = populateDownloadDropdown;
@@ -3676,7 +3674,7 @@ async function populateMods(category) {
                             <button class="btn btn-success dropdown-toggle" type="button" id="downloadGamebanana" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-download"></i> Download
                             </button>
-                            <ul class="dropdown-menu" aria-labelledby="downloadDropdown" id="downloadDropdown">
+                            <ul class="dropdown-menu download-dropdown" aria-labelledby="downloadGamebanana-${modDetails.id}" id="downloadDropdown-${modDetails.id}">
                                 <li><span class="dropdown-item-text">Loading files...</span></li>
                             </ul>
                         </div>
@@ -3967,3 +3965,15 @@ if (modsListContainer) {
             }
         });
     });
+
+    document.addEventListener('DOMContentLoaded', () => {
+    const ui = new UIController();
+
+    // Reset currentPage when leaving the Characters tab
+    document.getElementById('characters-tab').addEventListener('hidden.bs.tab', () => {
+        currentPage = 1;
+        hasMoreMods = true;
+    });
+
+    initializeUI();
+});
