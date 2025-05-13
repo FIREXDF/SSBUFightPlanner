@@ -142,9 +142,11 @@
 
 .download-dropdown {
     width: 100%; /* Make it span the width of the card */
+    min-width: auto !important;
     max-height: 200px; /* Set a maximum height for the dropdown */
     overflow-y: auto; /* Enable vertical scrolling if content overflows */
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    white-space: nowrap;
     position: absolute; /* Position it relative to the card */
     z-index: 1050; /* Ensure it appears above other elements */
     background-color: #fff; /* Set background color */
@@ -155,6 +157,13 @@
     left: 0; /* Align it to the left edge of the card */
     padding: 8px; /* Add padding for better spacing */
     scrollbar-gutter: stable; /* Ensure consistent scrollbar spacing */
+    cursor: pointer;
+}
+
+.dropdown-item {
+    display: inline-block; /* or block, depending on your layout */
+    white-space: nowrap;
+    overflow-x: hidden;
 }
 
 .card {
