@@ -164,6 +164,13 @@
     display: inline-block; /* or block, depending on your layout */
     white-space: nowrap;
     overflow-x: hidden;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.download-dropdown-item:hover {
+    background-color: #4545457e;
+    text-decoration: none;
 }
 
 .card {

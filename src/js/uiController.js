@@ -3531,7 +3531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             characterDropdownMenu.innerHTML = characters.map(character => `
                 <li>
-                    <a class="dropdown-item" href="#" data-character="${character.name}" data-url="${character.url}">
+                    <a class="character-dropdown-item" href="#" data-character="${character.name}" data-url="${character.url}">
                         ${character.name}
                     </a>
                 </li>
@@ -3745,23 +3745,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Populate the character dropdown on page load
     await populateCharacterDropdown();
 
-    // Infinite scrolling
-    if (modsContainer) {
+        // Infinite scrolling
+        if (modsContainer) {
         modsContainer.addEventListener('scroll', async () => {
             // Check if the user has scrolled close to the bottom of the container
             const isScrolledToBottom =
-                modsContainer.scrollTop + modsContainer.clientHeight >= modsContainer.scrollHeight - 50;
+                modsContainer.scrollTop + modsContainer.clientHeight >= modsContainer.scrollHeight;
 
             if (isScrolledToBottom && !isLoading && hasMoreMods) {
                 isLoading = true; // Prevent multiple fetches
                 try {
-                    const selectedCategory = document.querySelector('#gamebananaCategories .btn.active')?.dataset.category;
+                    // Determine the active button
+                    const activeButton = document.querySelector('#gamebananaCategories .btn.active');
+                    const selectedCategory = activeButton?.dataset.category;
                     const selectedCharacterCategoryId = document.getElementById('characterDropdown')?.getAttribute('data-selected-category');
 
                     if (selectedCategory) {
-                        await populateMods(selectedCategory); // Fetch mods for the selected category
+                        // Fetch mods for the selected category
+                        await populateMods(selectedCategory);
                     } else if (selectedCharacterCategoryId) {
-                        await fetchModsForCharacter(selectedCharacterCategoryId); // Fetch mods for the selected character
+                        // Fetch mods for the selected character
+                        const selectedCharacterName = document.getElementById('characterDropdown').textContent.trim();
+                        await fetchModsForCharacter(selectedCharacterCategoryId, selectedCharacterName);
+                    } else {
+                        console.warn('No active button or character selected for infinite scrolling.');
                     }
                 } catch (error) {
                     console.error('Error during infinite scrolling:', error);
@@ -3770,13 +3777,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
-    } else {
+    }else {
         console.error('Mods container not found');
     }
 
     // Event listeners for category and character buttons
-    document.querySelectorAll('#gamebananaCategories .btn').forEach(button => {
+        document.querySelectorAll('#gamebananaCategories .btn').forEach(button => {
         button.addEventListener('click', () => {
+            // Remove 'active' class from all buttons
+            document.querySelectorAll('#gamebananaCategories .btn').forEach(btn => btn.classList.remove('active'));
+
+            // Add 'active' class to the clicked button
+            button.classList.add('active');
+
+            // Reset pagination and mods list
             currentPage = 1;
             hasMoreMods = true;
             modsList.innerHTML = '';
@@ -3785,13 +3799,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const dropdownButton = document.getElementById('characterDropdown');
             dropdownButton.textContent = 'Characters';
 
+            // Fetch mods for the selected category
             const category = button.getAttribute('data-category');
             if (category) populateMods(category);
         });
     });
 
     characterDropdownMenu.addEventListener('click', (event) => {
-    if (event.target.classList.contains('dropdown-item')) {
+    if (event.target.classList.contains('character-dropdown-item')) {
+        // Remove 'active' class from all character-dropdown-items
+        document.querySelectorAll('.character-dropdown-item').forEach(item => item.classList.remove('active'));
+
+        // Add 'active' class to the clicked item
+        event.target.classList.add('active');
+
+        // Reset pagination and mods list
         currentPage = 1;
         hasMoreMods = true;
         modsList.innerHTML = '';
