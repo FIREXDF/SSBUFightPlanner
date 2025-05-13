@@ -3675,7 +3675,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <a href="${modDetails.link}" id="viewGamebanana" class="btn btn-primary" target="_blank">
                         <i class="bi bi-box-arrow-up-left"></i> View on GameBanana
                     </a>
-                    <div class="dropdown mt-2">
+                    <div class="download dropdown mt-2">
                         <button class="btn btn-success dropdown-toggle" type="button" id="downloadGamebanana" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-download"></i> Download
                         </button>
@@ -3726,12 +3726,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             dropdownMenu.innerHTML = files.map(file => `
                 <li>
-                    <a class="dropdown-item" href="fightplanner:https://gamebanana.com/mmdl/${file.id},Mod,${modId},${file.format}" title="${file.description || 'No description'}" target="_blank">
+                    <a class="download-dropdown-item" href="fightplanner:https://gamebanana.com/mmdl/${file.id},Mod,${modId},${file.format}" title="${file.description || 'No description'}" target="_blank">
                         1-Click Install: ${file.name}
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="${file.downloadUrl}" title="${file.description || 'No description'}" target="_blank">
+                    <a class="download-dropdown-item" href="${file.downloadUrl}" title="${file.description || 'No description'}" target="_blank">
                         Direct Download: ${file.name}
                     </a>
                 </li>
@@ -3834,7 +3834,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Dropdown hover functionality for horizontal scrolling
         document.addEventListener('mouseover', (event) => {
-        const target = event.target.closest('.dropdown-item');
+        const target = event.target.closest('download-dropdown-item');
         if (target && target.scrollWidth > target.clientWidth) {
             target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
         }
@@ -3844,7 +3844,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let lastScrollTop = null;
 
     document.addEventListener('mouseover', (event) => {
-        const target = event.target.closest('.dropdown-item');
+        const target = event.target.closest('download-dropdown-item');
         const container = target?.closest('.download-dropdown');
 
         if (target && container && target.scrollWidth > target.clientWidth) {
@@ -3857,7 +3857,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.addEventListener('mouseout', (event) => {
-        const target = event.target.closest('.dropdown-item');
+        const target = event.target.closest('download-dropdown-item');
         const container = target?.closest('.download-dropdown');
 
         if (target && container && lastScrollTop !== null) {

@@ -160,7 +160,7 @@
     cursor: pointer;
 }
 
-.dropdown-item {
+.download-dropdown-item {
     display: inline-block; /* or block, depending on your layout */
     white-space: nowrap;
     overflow-x: hidden;
@@ -171,7 +171,7 @@
     overflow: visible; /* Allow the dropdown to extend outside the card if necessary */
 }
 
-.dropdown.mt-2:hover .download-dropdown {
+.download.dropdown.mt-2:hover .download-dropdown {
     display: block; /* Show the dropdown on hover */
 }
 
