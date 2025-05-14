@@ -28,10 +28,11 @@
 #gamebananaModsList {
     display: grid;
     grid-template-columns: repeat(5, minmax(50px, 1fr));
-    gap: 16px;
-    padding: 16px;
-    flex-grow: 1;
+    gap: 20px;
+    padding: 5px;
+    flex-grow: 40;
     overflow-y: auto;
+    overflow-x: auto;
 }
 
 #gamebananaModsList .card {
@@ -161,7 +162,7 @@
 }
 
 .download-dropdown-item {
-    display: inline-block; /* or block, depending on your layout */
+    display: block; /* or block, depending on your layout */
     white-space: nowrap;
     overflow-x: hidden;
     text-decoration: none;
@@ -169,6 +170,19 @@
 }
 
 .download-dropdown-item:hover {
+    background-color: #4545457e;
+    text-decoration: none;
+}
+
+.character-dropdown-item {
+    display: block; /* or block, depending on your layout */
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.character-dropdown-item:hover {
     background-color: #4545457e;
     text-decoration: none;
 }

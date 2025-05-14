@@ -3613,6 +3613,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    window.fetchModsForCharacter = fetchModsForCharacter; // Expose the function for external use
+
     async function populateMods(category) {
         if (isLoading || !hasMoreMods) return;
         isLoading = true;
@@ -3656,6 +3658,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             isLoading = false;
         }
     }
+
+    window.populateMods = populateMods; // Expose the function for external use
 
     function createModCard(modDetails, nsfwToggle) {
         const modCard = document.createElement('div');
@@ -3745,47 +3749,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Populate the character dropdown on page load
     await populateCharacterDropdown();
 
-        // Infinite scrolling
-        if (modsContainer) {
-        modsContainer.addEventListener('scroll', async () => {
-            // Check if the user has scrolled close to the bottom of the container
-            const isScrolledToBottom =
-                modsContainer.scrollTop + modsContainer.clientHeight >= modsContainer.scrollHeight;
+        // Add event listener for the "Load More Mods" button
+    document.getElementById('loadMoreModsButton').addEventListener('click', async () => {
+        const loadMoreButton = document.getElementById('loadMoreModsButton');
+        const loadMoreContainer = document.getElementById('loadMoreContainer');
 
-            if (isScrolledToBottom && !isLoading && hasMoreMods) {
-                isLoading = true; // Prevent multiple fetches
-                try {
-                    // Determine the active button
-                    const activeButton = document.querySelector('#gamebananaCategories .btn.active');
-                    const selectedCategory = activeButton?.dataset.category;
-                    const selectedCharacterCategoryId = document.getElementById('characterDropdown')?.getAttribute('data-selected-category');
+        console.log('Load More Mods button clicked');
 
-                    if (selectedCategory) {
-                        // Fetch mods for the selected category
-                        await populateMods(selectedCategory);
-                    } else if (selectedCharacterCategoryId) {
-                        // Fetch mods for the selected character
-                        const selectedCharacterName = document.getElementById('characterDropdown').textContent.trim();
-                        await fetchModsForCharacter(selectedCharacterCategoryId, selectedCharacterName);
-                    } else {
-                        console.warn('No active button or character selected for infinite scrolling.');
-                    }
-                } catch (error) {
-                    console.error('Error during infinite scrolling:', error);
-                } finally {
-                    isLoading = false; // Allow further fetches
+        try {
+            if (isLoading || !hasMoreMods) return;
+            isLoading = true;
+
+            // Determine the active category or character
+            const activeButton = document.querySelector('#gamebananaCategories .btn.active');
+            const activeDropdownItem = document.querySelector('.character-dropdown-item.active');
+
+            if (activeButton) {
+                console.log('Active button found:', activeButton);
+                const selectedCategory = activeButton.dataset.category;
+                if (selectedCategory) {
+                    await populateMods(selectedCategory);
                 }
+            } else if (activeDropdownItem) {
+                const selectedCharacterCategoryId = new URL(activeDropdownItem.getAttribute('data-url')).pathname.split('/').pop();
+                const selectedCharacterName = activeDropdownItem.textContent.trim();
+                await fetchModsForCharacter(selectedCharacterCategoryId, selectedCharacterName);
+            } else {
+                console.warn('No active button or character selected for loading more mods.');
             }
-        });
-    }else {
-        console.error('Mods container not found');
-    }
+
+            // If there are no more mods, hide the container
+            if (!hasMoreMods) {
+                loadMoreContainer.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading more mods:', error);
+        } finally {
+            isLoading = false;
+
+            // Show the button again if there are more mods
+            if (hasMoreMods) {
+                loadMoreButton.style.display = 'block';
+            }
+        }
+    });
 
     // Event listeners for category and character buttons
         document.querySelectorAll('#gamebananaCategories .btn').forEach(button => {
         button.addEventListener('click', () => {
             // Remove 'active' class from all buttons
             document.querySelectorAll('#gamebananaCategories .btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.character-dropdown-item').forEach(item => item.classList.remove('active'));
 
             // Add 'active' class to the clicked button
             button.classList.add('active');
