@@ -1173,8 +1173,6 @@ provideInstallationFeedback(results) {
             }
         }
     }
-
-
     
     async handleOpenFolder() {
         try {
@@ -3484,9 +3482,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ui = new UIController();
     await initializeUI();
 
+    document.getElementById('loadMoreContainer').style.display = 'none'; // Hide initially
+
     // Initialize variables
     let currentPage = 1;
     const modsPerPage = 15;
+    let cModsIsLoading = false;
+    let pModsIsLoading = false;
     let isLoading = false;
     let hasMoreMods = true;
 
@@ -3541,6 +3543,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Populate the character dropdown on page load
+    await populateCharacterDropdown();
+
     async function fetchModsByCategory(categoryId, currentPage, modsPerPage) {
         try {
             const modIds = await window.api.fetchMods(categoryId, currentPage, modsPerPage);
@@ -3578,9 +3583,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function fetchModsForCharacter(categoryId, selectedCharacterName) {
-        if (isLoading || !hasMoreMods) return;
-        isLoading = true;
-        window.uiController.showLoading(`Loading mods for ${selectedCharacterName}...`); // Show loading screen with a message
+        if (cModsIsLoading || !hasMoreMods) return;
+        cModsIsLoading = true;
+        await this.showLoading(`Loading mods for ${selectedCharacterName}...`); // Show loading screen with a message
         try {
             if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
 
@@ -3603,22 +3608,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     populateDownloadDropdown(modDetails.id);
                 }
             });
+            document.getElementById('loadMoreContainer').style.display = 'block'; // Show the load more button
             currentPage++;
         } catch (error) {
             console.error('Error fetching mods for character:', error);
             if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
         } finally {
-            window.uiController.hideLoading(); // Hide loading screen
-            isLoading = false;
+            this.hideLoading(); // Hide loading screen
+            cModsIsLoading = false;
         }
     }
 
     window.fetchModsForCharacter = fetchModsForCharacter; // Expose the function for external use
 
     async function populateMods(category) {
-        if (isLoading || !hasMoreMods) return;
-        isLoading = true;
-        window.uiController.showLoading(`Loading mods from ${category} category...`); // Use the instance method
+        if (pModsIsLoading || !hasMoreMods) return;
+        pModsIsLoading = true;
+        await this.showLoading(`Loading mods from ${category} category...`); // Use the instance method
         try {
             if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
 
@@ -3629,7 +3635,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 isLoading = false;
                 return;
             }
-
+            console.log(`Fetching mods for section ID: ${sectionId}, page: ${currentPage}`);
             const modIds = await fetchModsByCategory(sectionId, currentPage, modsPerPage);
             if (modIds.length === 0) {
                 hasMoreMods = false;
@@ -3649,13 +3655,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                     populateDownloadDropdown(modDetails.id);
                 }
             });
+            document.getElementById('loadMoreContainer').style.display = 'block'; // Show the load more button
             currentPage++;
+            console.log(`Current page after population: ${currentPage}`);
         } catch (error) {
             console.error('Error populating mods:', error);
             if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
         } finally {
-            window.uiController.hideLoading(); // Use the instance method
-            isLoading = false;
+            this.hideLoading(); // Use the instance method
+            pModsIsLoading = false;
         }
     }
 
@@ -3746,15 +3754,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Populate the character dropdown on page load
-    await populateCharacterDropdown();
-
-        // Add event listener for the "Load More Mods" button
+// Add event listener for the "Load More Mods" button
     document.getElementById('loadMoreModsButton').addEventListener('click', async () => {
         const loadMoreButton = document.getElementById('loadMoreModsButton');
         const loadMoreContainer = document.getElementById('loadMoreContainer');
-
-        console.log('Load More Mods button clicked');
 
         try {
             if (isLoading || !hasMoreMods) return;
@@ -3768,12 +3771,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('Active button found:', activeButton);
                 const selectedCategory = activeButton.dataset.category;
                 if (selectedCategory) {
-                    await populateMods(selectedCategory);
+                    try {
+                        await populateMods(selectedCategory);
+                        console.log('Mods populated for category:', selectedCategory);
+                    }
+                    catch (error) {
+                        console.error('Error fetching mods for category:', error);
+                    }
                 }
             } else if (activeDropdownItem) {
                 const selectedCharacterCategoryId = new URL(activeDropdownItem.getAttribute('data-url')).pathname.split('/').pop();
                 const selectedCharacterName = activeDropdownItem.textContent.trim();
-                await fetchModsForCharacter(selectedCharacterCategoryId, selectedCharacterName);
+                try {
+                    await fetchModsForCharacter(selectedCharacterCategoryId, selectedCharacterName);
+                } catch (error) {
+                    console.error('Error fetching mods for character:', error);
+                } 
             } else {
                 console.warn('No active button or character selected for loading more mods.');
             }
