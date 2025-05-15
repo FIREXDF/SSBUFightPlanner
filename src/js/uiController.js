@@ -3585,11 +3585,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function fetchModsForCharacter(categoryId, selectedCharacterName) {
         if (cModsIsLoading || !hasMoreMods) return;
         cModsIsLoading = true;
-        await this.showLoading(`Loading mods for ${selectedCharacterName}...`); // Show loading screen with a message
+
         try {
+            await uiController.showLoading(`Loading mods for ${selectedCharacterName}...`);
+
             if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
 
             const modIds = await window.api.fetchMods(categoryId, currentPage, modsPerPage);
+
             if (!modIds || modIds.length === 0) {
                 hasMoreMods = false;
                 if (currentPage === 1) modsList.innerHTML = '<p>No mods found for this character.</p>';
@@ -3608,13 +3611,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     populateDownloadDropdown(modDetails.id);
                 }
             });
+
             document.getElementById('loadMoreContainer').style.display = 'block'; // Show the load more button
             currentPage++;
         } catch (error) {
             console.error('Error fetching mods for character:', error);
             if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
         } finally {
-            this.hideLoading(); // Hide loading screen
+            await uiController.hideLoading();
             cModsIsLoading = false;
         }
     }
@@ -3624,19 +3628,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function populateMods(category) {
         if (pModsIsLoading || !hasMoreMods) return;
         pModsIsLoading = true;
-        await this.showLoading(`Loading mods from ${category} category...`); // Use the instance method
+
         try {
+            await uiController.showLoading(`Loading mods from ${category} category...`);
+
             if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
 
             const sectionId = categoryToSectionId[category];
             if (!sectionId) {
                 console.error(`No section ID found for category: ${category}`);
                 modsList.innerHTML = '<p>No mods available for this category.</p>';
-                isLoading = false;
+                hasMoreMods = false;
                 return;
             }
+
             console.log(`Fetching mods for section ID: ${sectionId}, page: ${currentPage}`);
             const modIds = await fetchModsByCategory(sectionId, currentPage, modsPerPage);
+
             if (modIds.length === 0) {
                 hasMoreMods = false;
                 if (currentPage === 1) modsList.innerHTML = '<p>No mods found.</p>';
@@ -3655,6 +3663,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     populateDownloadDropdown(modDetails.id);
                 }
             });
+
             document.getElementById('loadMoreContainer').style.display = 'block'; // Show the load more button
             currentPage++;
             console.log(`Current page after population: ${currentPage}`);
@@ -3662,7 +3671,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error populating mods:', error);
             if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
         } finally {
-            this.hideLoading(); // Use the instance method
+            await uiController.hideLoading();
             pModsIsLoading = false;
         }
     }
