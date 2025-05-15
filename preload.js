@@ -1,5 +1,4 @@
 const { contextBridge, ipcRenderer } = require('electron');
-
 // Global error handler to ignore specific errors
 window.addEventListener('error', (event) => {
     const errorMessage = event.message || '';
@@ -14,6 +13,14 @@ contextBridge.exposeInMainWorld('electron', {
         send: (channel, data) => ipcRenderer.send(channel, data),
         on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
       },
+      getModInfo: async (modPath) => {
+        try {
+            return await ipcRenderer.invoke('get-mod-info', modPath);
+        } catch (error) {
+            console.error('Error getting mod info:', error);
+            throw error;
+        }
+    },
     downloadMod: async (url) => {
         try {
             return await ipcRenderer.invoke('download-mod', url);
@@ -52,6 +59,8 @@ contextBridge.exposeInMainWorld('electron', {
 });
 
 contextBridge.exposeInMainWorld('api', {
+    fetchMods: (categoryId, currentPage, modsPerPage) => ipcRenderer.invoke('fetch-mods', categoryId, currentPage, modsPerPage),
+    fetchCharacters: () => ipcRenderer.invoke('fetch-characters'),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     tutorial: {
         finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
@@ -72,6 +81,9 @@ contextBridge.exposeInMainWorld('api', {
             ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
         deleteModFile: (modPath, filePath) => ipcRenderer.invoke('delete-mod-file', { modPath, filePath }),
         writeModFile: (filePath, content) => ipcRenderer.invoke('write-mod-file', { filePath, content })
+    },
+    gamebanana: {
+        fetchGameBananaInfo: (url) => ipcRenderer.invoke('fetch-gamebanana-mod-info', url)
     },
     pluginOperations: {
         loadPlugins: () => ipcRenderer.invoke('load-plugins'),

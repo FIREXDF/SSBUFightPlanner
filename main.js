@@ -17,7 +17,7 @@ const { createFPP } = require('./src/js/createFPP');
 const { extractFPP } = require('./src/js/extractFPP');
 const { ca } = require('date-fns/locale');
 const { init, main } = require('./src/js/createnewjson');
-
+const puppeteer = require('puppeteer');
 log.transports.file.level = 'info';
 log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
 
@@ -959,16 +959,154 @@ ipcMain.handle('get-mod-preview', async (event, modPath) => {
 });
 
 ipcMain.handle('get-mod-info', async (event, modPath) => {
-    try {
-        const infoPath = path.join(modPath, 'info.toml');
-        if (await fse.pathExists(infoPath)) {
+    const infoPath = path.join(modPath, 'info.toml');
+    if (await fse.pathExists(infoPath)) {
+        try {
             const infoContent = await fs.readFile(infoPath, 'utf8');
             return toml.parse(infoContent);
+        } catch {
+            return null; // Return null silently if parsing fails
         }
-        return null;
+    }
+    return null; // Return null silently if file doesn't exist
+});
+
+// New IPC handler for fetching GameBanana mod info
+ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
+    const fields = [
+        'name',
+        'description',
+        'screenshots'
+    ].join(',');
+
+    const url = `https://api.gamebanana.com/Core/Item/Data?itemtype=Mod&itemid=${modId}&fields=${fields}`;
+    console.log('Fetching mod info from:', url);
+    try {
+        const response = await axios.get(url);
+        if (response.status !== 200 || !response.data) {
+            throw new Error('Failed to fetch mod info');
+        }
+
+        const data = response.data;
+        return {
+            id: modId,
+            title: data.name,
+            description: data.description,
+            previewImage: data.screenshots?.[0]?.url || 'https://gamebanana.com/themes/gamebanana/images/defaults/defaultheader.png',
+            link: `https://gamebanana.com/mods/${modId}`
+        };
     } catch (error) {
-        console.error('Error getting mod info:', error);
+        console.error(`Error fetching mod info for ${modId}:`, error);
         return null;
+    }
+});
+
+ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage = 15) => {
+    const url = `https://gamebanana.com/mods/cats/${categoryId}`;
+    console.log(`Fetching mods from: ${url}`);
+
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        );
+
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        // Scroll and fetch mods in batches
+        let mods = [];
+        let previousHeight = 0;
+        let loadedMods = 0;
+
+        while (mods.length < currentPage * modsPerPage) {
+            // Scroll to the bottom of the page
+            previousHeight = await page.evaluate('document.body.scrollHeight');
+            await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for new content to load
+
+            // Extract mod IDs
+            const newMods = await page.evaluate(() => {
+                const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
+                return Array.from(modElements).map(mod => {
+                    const linkElement = mod.querySelector('a');
+                    const href = linkElement?.getAttribute('href');
+                    const match = href?.match(/\/mods\/(\d+)/);
+                    return match ? match[1] : null;
+                }).filter(id => id !== null);
+            });
+
+            mods = [...new Set([...mods, ...newMods])]; // Avoid duplicates
+
+            // Stop if no new content is loaded
+            const currentHeight = await page.evaluate('document.body.scrollHeight');
+            if (currentHeight === previousHeight) break;
+        }
+
+        // Return only the mods for the requested page
+        const startIndex = (currentPage - 1) * modsPerPage;
+        const endIndex = startIndex + modsPerPage;
+        const paginatedMods = mods.slice(startIndex, endIndex);
+
+        console.log(`Loaded ${paginatedMods.length} mods for page ${currentPage}`);
+        return paginatedMods;
+    } catch (error) {
+        console.error(`Error fetching mods:`, error);
+        return [];
+    } finally {
+        if (browser) await browser.close();
+    }
+});
+
+ipcMain.handle('fetch-characters', async () => {
+    const url = 'https://gamebanana.com/mods/cats/3330';
+    console.log(`Fetching characters from: ${url}`);
+
+    let browser;
+    try {
+        // Launch Puppeteer
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+
+        // Set a user agent to mimic a real browser
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        );
+
+        // Navigate to the URL
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        // Wait for the required selector to appear
+        await page.waitForSelector('#SubcategoriesListModule records record recordcell.Info a', { timeout: 60000 });
+
+        // Extract character names and URLs
+        const characters = await page.evaluate(() => {
+            const links = document.querySelectorAll('#SubcategoriesListModule records record recordcell.Info a');
+            return Array.from(links).map(link => ({
+                name: link.textContent.trim(),
+                url: link.href
+            }));
+        });
+
+        console.log(`Found ${characters.length} characters`);
+        return characters;
+    } catch (error) {
+        console.error(`Error fetching characters:`, error);
+        return [];
+    } finally {
+        // Ensure the browser is closed to free resources
+        if (browser) {
+            await browser.close();
+        }
     }
 });
 
@@ -2527,3 +2665,13 @@ ipcMain.handle('get-mod-hash', async (event, modName) => {
     return getHash(modName);
 });
 
+ipcMain.on('play-loading-audio', () => {
+    hiddenWindow.webContents.executeJavaScript('playLoading()').catch(console.error);
+  });
+  ipcMain.on('play-conflict-audio', () => {
+    hiddenWindow.webContents.executeJavaScript('playConflict()').catch(console.error);
+  });
+ipcMain.on('stop-loading-audio', () => {
+    hiddenWindow.webContents.executeJavaScript('stopLoading()').catch(console.error);  
+});
+module.exports.hiddenWindow = hiddenWindow;
