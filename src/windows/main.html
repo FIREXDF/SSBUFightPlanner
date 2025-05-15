@@ -60,12 +60,6 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
-                    data-bs-target="#settings" type="button" role="tab">
-                <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
             <button class="nav-link" id="echo-fighter-tab" data-bs-toggle="pill" 
                     data-bs-target="#echoFighter" type="button" role="tab">
                 <i class="bi bi-person-add me-2"></i><span data-i18n="nav.echo">Echo Fighter</span>
@@ -75,6 +69,12 @@
             <button class="nav-link" id="gamebanana-tab" data-bs-toggle="pill" 
                     data-bs-target="#gamebanana" type="button" role="tab">
                 <i class="bi bi-cloud-download me-2"></i><span>GameBanana</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
+                    data-bs-target="#settings" type="button" role="tab">
+                <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
             </button>
         </li>
         <li class="nav-item ms-auto me-3">
@@ -509,75 +509,77 @@
         <div class="tab-pane fade h-100" id="gamebanana" role="tabpanel">
             <div class="container-fluid h-100">
                 <div class="row h-100">
-            <!-- Mods List (Left Side) -->
-            <div class="col-10 p-3 overflow-auto">
-                <div class="card h-100">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Mods</h5>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="nsfwToggle">
-                            <label class="form-check-label" for="nsfwToggle">Filter NSFW Content</label>
+                    <!-- Mods List (Left Side) -->
+                    <div class="col-10 p-3 overflow-auto">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Mods</h5>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="nsfwToggle">
+                                    <label class="form-check-label" for="nsfwToggle">Filter NSFW Content</label>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="gamebananaSearchInput" 
+                                    class="form-control form-control-sm" 
+                                    placeholder="Search mods..." 
+                                    style="width: 200px;"
+                                >
+                            </div>
+                            <div class="card-body" id="gamebananaCardBody">
+                                <div id="gamebananaModsList" class="gap-3">
+                                    <!-- Mod cards will be dynamically populated here -->
+                                </div>
+                            </div>
                         </div>
-                        <input 
-                            type="text" 
-                            id="gamebananaSearchInput" 
-                            class="form-control form-control-sm" 
-                            placeholder="Search mods..." 
-                            style="width: 200px;"
-                        >
                     </div>
-                    <div class="card-body" id="gamebananaCardBody">
-                        <div id="gamebananaModsList" class="gap-3">
-                            <!-- Mod cards will be dynamically populated here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Categories (Right Side) -->
-            <div class="col-2 p-3">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">Categories</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="gamebananaCategories" class="d-flex flex-column gap-2">
-                            <!-- Category buttons -->
-                            <button class="btn btn-outline-primary" data-category="Featured">Featured</button>
-                            <button class="btn btn-outline-primary" data-category="Skins" id="skinsButton">Skins</button>
-                            <button 
-                                class="btn btn-outline-primary dropdown-toggle" 
-                                type="button" 
-                                id="characterDropdown" 
-                                data-bs-toggle="dropdown" 
-                                aria-expanded="false">
-                                Characters
-                            </button>
-                            <ul class="dropdown-menu" id="characterDropdownMenu">
-                                <!-- Character options will be dynamically populated -->
-                            </ul>
-                            <button class="btn btn-outline-primary" data-category="Movesets">Movesets</button>
-                            <button class="btn btn-outline-primary" data-category="Stages">Stages</button>
-                            <button class="btn btn-outline-primary" data-category="Effects">Effects</button>
-                            <button class="btn btn-outline-primary" data-category="Audio">Audio</button>
-                            <button class="btn btn-outline-primary" data-category="Other/Misc">Other/Misc</button>
-                            <button class="btn btn-outline-primary" data-category="UI">UI</button>
-                            <button class="btn btn-outline-primary" data-category="Final Smash">Final Smash</button>
-                            <button class="btn btn-outline-primary" data-category="Skyline">Skyline</button>
-                            <button class="btn btn-outline-primary" data-category="Gameplay">Gameplay</button>
-                            <button class="btn btn-outline-primary" data-category="Animation">Animation</button>
-                            <button class="btn btn-outline-primary" data-category="Mod Packs">Mod Packs</button>
-                            <button class="btn btn-outline-primary" data-category="Music Packs">Music Packs</button>
-                            <button class="btn btn-outline-primary" data-category="Tools">Tools</button>
+                    <!-- Categories (Right Side) -->
+                    <div class="col-2 p-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Categories</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="gamebananaCategories" class="d-flex flex-column gap-2">
+                                    <!-- Category buttons -->
+                                    <button class="btn btn-outline-primary" data-category="Featured">Featured</button>
+                                    <button class="btn btn-outline-primary" data-category="Skins" id="skinsButton">Skins</button>
+                                    <button 
+                                        class="btn btn-outline-primary dropdown-toggle" 
+                                        type="button" 
+                                        id="characterDropdown" 
+                                        data-bs-toggle="dropdown" 
+                                        aria-expanded="false">
+                                        Characters
+                                    </button>
+                                    <ul class="dropdown-menu" id="characterDropdownMenu">
+                                        <!-- Character options will be dynamically populated -->
+                                    </ul>
+                                    <button class="btn btn-outline-primary" data-category="Movesets">Movesets</button>
+                                    <button class="btn btn-outline-primary" data-category="Stages">Stages</button>
+                                    <button class="btn btn-outline-primary" data-category="Effects">Effects</button>
+                                    <button class="btn btn-outline-primary" data-category="Audio">Audio</button>
+                                    <button class="btn btn-outline-primary" data-category="Other/Misc">Other/Misc</button>
+                                    <button class="btn btn-outline-primary" data-category="UI">UI</button>
+                                    <button class="btn btn-outline-primary" data-category="Final Smash">Final Smash</button>
+                                    <button class="btn btn-outline-primary" data-category="Skyline">Skyline</button>
+                                    <button class="btn btn-outline-primary" data-category="Gameplay">Gameplay</button>
+                                    <button class="btn btn-outline-primary" data-category="Animation">Animation</button>
+                                    <button class="btn btn-outline-primary" data-category="Mod Packs">Mod Packs</button>
+                                    <button class="btn btn-outline-primary" data-category="Music Packs">Music Packs</button>
+                                    <button class="btn btn-outline-primary" data-category="Tools">Tools</button>
+                                </div>
+                                <div id="loadMoreContainer" class="text-center mt-3">
+                                    <button id="loadMoreModsButton" class="btn btn-outline-primary">Load More Mods</button>
+                                </div>
+                            </div>
                         </div>
-                    <div id="loadMoreContainer" class="text-center mt-3">
-                        <button id="loadMoreModsButton" class="btn btn-outline-primary">Load More Mods</button>
-                    </div>
                     </div>
                 </div>
             </div>
         </div>
-    
+            
         <!-- Echo Fighter Tab -->
         <div class="tab-pane fade h-100" id="echoFighter" role="tabpanel">
             <div class="container-fluid h-100 overflow-auto">
@@ -589,80 +591,87 @@
                             <input type="text" class="form-control" id="echoModPath" readonly>
                             <button class="btn btn-outline-primary" id="selectEchoModFolder">
                                 <i class="bi bi-folder2-open"></i>
-                            </button>                            
-                    </div> 
-                    </div>                    
-                    <div class="card flex-grow-1 mb-3">
-                        <div class="card-header flex-grow-1 d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Echo Mod Details</h5>
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <div class="mod-preview mb-3">
-                                <img id="echoModImage" src="" alt="No image" class="img-fluid rounded" style="max-height: 300px; max-width: 300px;">
+                    </div>
+                    <!-- Wrap this card in a column -->
+                    <div class="col-12">
+                        <div class="card flex-grow-1 mb-3">
+                            <div class="card-header flex-grow-1 d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Echo Mod Details</h5>
                             </div>
-                            <div class="mod-metadata overflow-auto" id="echoModMetadata" style="max-height: 340px;">
-                                <div class="echo-metadata-content">
-                                    Select a mod to view details
+                            <div class="card-body">
+                                <div class="mod-preview mb-3">
+                                    <img id="echoModImage" src="" alt="No image" class="img-fluid rounded" style="max-height: 300px; max-width: 300px;">
+                                </div>
+                                <div class="mod-metadata overflow-auto" id="echoModMetadata" style="max-height: 340px;">
+                                    <div class="echo-metadata-content">
+                                        Select a mod to view details
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <!-- The rest of your fields, each in their own col-12 -->
                     <div class="col-12 p-3 position-relative" id="numColorSlots" name="color-start-dropdown">
                         <label for="echoSlotNumber">Number of Color Slots: </label>
                         <input type="text" class="form-control relative" id="echoColorNumber" readonly>
+                    </div>
                     <div class="col-12 p-3 position-relative">
-                            <label class="form-label" data-i18n="echo.fighter.name">Enter New Fighter Name: </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="newEchoName" placeholder="New Fighter Name">                                                        
-                            </div> 
+                        <label class="form-label" data-i18n="echo.fighter.name">Enter New Fighter Name: </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="newEchoName" placeholder="New Fighter Name">
+                        </div>
                     </div>
                     <div class="col-12 p-3 position-relative">
                         <label class="form-label" data-i18n="echo.fighter.id">Enter New Fighter ID: </label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="newEchoID" placeholder="New Fighter ID">                                                        
-                        </div> 
+                            <input type="text" class="form-control" id="newEchoID" placeholder="New Fighter ID">
+                        </div>
                     </div>
-                    <br>
-                    <div class="color-slots selection drop-down" id="colorStartSelect">
-                        <label for="colorStart">Choose Echo Slot Start: </label>
-                        <select name="colorStart" id="echoColorStart">
-                            <option value="08">08</option>
-                            <option value="16">16</option>
-                            <option value="24">24</option>
-                            <option value="32">32</option>
-                            <option value="40">40</option>
-                            <option value="48">48</option>
-                            <option value="56">56</option>
-                            <option value="64">64</option>
-                            <option value="72">72</option>
-                            <option value="80">80</option>
-                            <option value="88">88</option>
-                            <option value="96">96</option>
-                        </select>
-                        <br><br>
-                        <label for="baseSlot">Choose Echo Base Slot: </label>
-                        <select name="baseSlot" id="baseEchoSlot">
-                            <option value="00">00</option>
-                            <option value="01">01</option>
-                            <option value="02">02</option>
-                            <option value="03">03</option>
-                            <option value="04">04</option>
-                            <option value="05">05</option>
-                            <option value="06">06</option>
-                            <option value="07">07</option>
-                        </select>
-                        <br><br>
-                        <div class="btn-echo" id="createEcho">
-                            <button type="submit" class="btn btn-primary" id="createEcho">Create Echo Fighter
-                                <i class="bi bi-person-add"></i>
-                            </button>
-                        <br><br><br>
+                    <div class="col-12">
+                        <div class="color-slots selection drop-down" id="colorStartSelect">
+                            <label for="colorStart">Choose Echo Slot Start: </label>
+                            <select name="colorStart" id="echoColorStart">
+                                <option value="08">08</option>
+                                <option value="16">16</option>
+                                <option value="24">24</option>
+                                <option value="32">32</option>
+                                <option value="40">40</option>
+                                <option value="48">48</option>
+                                <option value="56">56</option>
+                                <option value="64">64</option>
+                                <option value="72">72</option>
+                                <option value="80">80</option>
+                                <option value="88">88</option>
+                                <option value="96">96</option>
+                            </select>
+                            <br><br>
+                            <label for="baseSlot">Choose Echo Base Slot: </label>
+                            <select name="baseSlot" id="baseEchoSlot">
+                                <option value="00">00</option>
+                                <option value="01">01</option>
+                                <option value="02">02</option>
+                                <option value="03">03</option>
+                                <option value="04">04</option>
+                                <option value="05">05</option>
+                                <option value="06">06</option>
+                                <option value="07">07</option>
+                            </select>
+                            <br><br>
+                            <div class="btn-echo" id="createEcho">
+                                <button type="submit" class="btn btn-primary" id="createEchoButton">Create Echo Fighter
+                                    <i class="bi bi-person-add"></i>
+                                </button>
+                                <br><br><br>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    
+    </div>
+</div>
 
     <!-- Context Menu -->
     <div class="dropdown-menu" id="contextMenu">
@@ -683,7 +692,7 @@
             <i class="bi bi-trash me-2"></i>Uninstall
         </a>
     </div>
-
+    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>

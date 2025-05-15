@@ -4047,15 +4047,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             fetchModsForCharacter(ui, categoryId, selectedCharacterName);
         }
     });
-
-    // Reset the dropdown button text when another tab is clicked
-    document.querySelectorAll('.nav-link').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const dropdownButton = document.getElementById('characterDropdown');
-            dropdownButton.textContent = 'Characters';
-        });
-    });
-
+    
     // Search functionality
     document.getElementById('gamebananaSearchInput').addEventListener('input', () => {
         const searchText = document.getElementById('gamebananaSearchInput').value.toLowerCase();
