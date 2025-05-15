@@ -1001,6 +1001,376 @@ ipcMain.handle('fetch-gamebanana-mod-info', async (event, modId) => {
     }
 });
 
+ipcMain.handle('fetch-mods', async (event, categoryId, currentPage, modsPerPage = 15) => {
+    const url = `https://gamebanana.com/mods/cats/${categoryId}`;
+    console.log(`Fetching mods from: ${url}`);
+
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        );
+
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        // Scroll and fetch mods in batches
+        let mods = [];
+        let previousHeight = 0;
+        let loadedMods = 0;
+
+        while (mods.length < currentPage * modsPerPage) {
+            // Scroll to the bottom of the page
+            previousHeight = await page.evaluate('document.body.scrollHeight');
+            await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for new content to load
+
+            // Extract mod IDs
+            const newMods = await page.evaluate(() => {
+                const modElements = document.querySelectorAll('div.Record.Flow.ModRecord.HasPreview');
+                return Array.from(modElements).map(mod => {
+                    const linkElement = mod.querySelector('a');
+                    const href = linkElement?.getAttribute('href');
+                    const match = href?.match(/\/mods\/(\d+)/);
+                    return match ? match[1] : null;
+                }).filter(id => id !== null);
+            });
+
+            mods = [...new Set([...mods, ...newMods])]; // Avoid duplicates
+
+            // Stop if no new content is loaded
+            const currentHeight = await page.evaluate('document.body.scrollHeight');
+            if (currentHeight === previousHeight) break;
+        }
+
+        // Return only the mods for the requested page
+        const startIndex = (currentPage - 1) * modsPerPage;
+        const endIndex = startIndex + modsPerPage;
+        const paginatedMods = mods.slice(startIndex, endIndex);
+
+        console.log(`Loaded ${paginatedMods.length} mods for page ${currentPage}`);
+        return paginatedMods;
+    } catch (error) {
+        console.error(`Error fetching mods:`, error);
+        return [];
+    } finally {
+        if (browser) await browser.close();
+    }
+});
+
+ipcMain.handle('fetch-characters', async () => {
+    const url = 'https://gamebanana.com/mods/cats/3330';
+    console.log(`Fetching characters from: ${url}`);
+
+    let browser;
+    try {
+        // Launch Puppeteer
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+
+        const page = await browser.newPage();
+
+        // Set a user agent to mimic a real browser
+        await page.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        );
+
+        // Navigate to the URL
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+        // Wait for the required selector to appear
+        await page.waitForSelector('#SubcategoriesListModule records record recordcell.Info a', { timeout: 60000 });
+
+        // Extract character names and URLs
+        const characters = await page.evaluate(() => {
+            const links = document.querySelectorAll('#SubcategoriesListModule records record recordcell.Info a');
+            return Array.from(links).map(link => ({
+                name: link.textContent.trim(),
+                url: link.href
+            }));
+        });
+
+        console.log(`Found ${characters.length} characters`);
+        return characters;
+    } catch (error) {
+        console.error(`Error fetching characters:`, error);
+        return [];
+    } finally {
+        // Ensure the browser is closed to free resources
+        if (browser) {
+            await browser.close();
+        }
+    }
+});
+
+// Handle Echo Mod Info
+ipcMain.handle('get-echo-mod-preview', async (event, echoModPath) => {
+    try {
+        const normalizedPath = path.normalize(echoModPath);
+        const previewPath = path.join(normalizedPath, 'preview.webp');
+        if (await fse.pathExists(previewPath)) {
+            return previewPath;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting mod preview:', error);
+        return null;
+    }
+});
+
+ipcMain.handle('get-echo-mod-info', async (event, echoModPath) => {
+    try {
+        const infoPath = path.join(echoModPath, 'info.toml');
+        let modInfo = {};
+
+        if (await fse.pathExists(infoPath)) {
+            const infoContent = await fs.readFile(infoPath, 'utf8');
+            modInfo = toml.parse(infoContent);
+        }
+
+        // If the mod name is not defined, use the folder name as the mod name
+        if (!modInfo.name) {
+            modInfo.name = path.basename(echoModPath); // Extract folder name
+        }
+        modInfo.folder_name = path.basename(echoModPath);
+        return modInfo;
+    } catch (error) {
+        console.error('Error getting mod info:', error);
+        return { name: path.basename(echoModPath) }; // Return folder name as fallback
+    }
+});
+
+ipcMain.handle('get-num-color-slots', async (event, echoModPath) => {
+    try {
+        
+        console.log('Echo mod path:', echoModPath);
+        
+        let totalColorSlots = 0;
+        
+        // Read the mods folder to find all fighter directories
+        const fighterFolders = await fs.readdir(echoModPath, { withFileTypes: true });
+        console.log('Fighter folders:', fighterFolders);
+
+        // Iterate through each fighter folder
+        for (const fighterFolder of fighterFolders) {
+            if (!fighterFolder.isDirectory()) continue; // Skip non-directories
+
+            const fighterPath = path.join(echoModPath, fighterFolder.name);
+            
+            const bodyFolderPath = await getDynamicBodyFolderPath(fighterPath);
+
+            async function getDynamicBodyFolderPath(fighterPath) {
+                try {
+                    // Read the contents of the fighter folder
+                    const subFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+
+                    // Find the first subdirectory
+                    const dynamicFolder = subFolders.find((entry) => entry.isDirectory())?.name;
+
+                    if (!dynamicFolder) {
+                        throw new Error(`No subdirectory found in ${fighterPath}`);
+                    }
+
+                    // Construct the full path to the body folder
+                    return path.join(fighterPath, dynamicFolder, 'model', 'body');
+                } catch (error) {
+                    console.error('Error determining dynamic folder:', error);
+                    throw error;
+                }
+            }
+
+            // Check if the body folder exists
+            if (await fse.pathExists(bodyFolderPath)) {
+                console.log(`Body folder found for fighter: ${fighterFolder.name}`);
+
+                // Read the contents of the body folder
+                const files = await fs.readdir(bodyFolderPath, { withFileTypes: true });
+
+                // Filter for folders that start with 'c' (e.g., c00, c01, etc.)
+                const colorFolders = files.filter(file => file.isDirectory());
+
+                // Add the count of color folders to the total
+                totalColorSlots += colorFolders.length;
+            }
+        }
+
+        if (totalColorSlots === 0) {
+            console.error('No body folder found for any fighter.');
+        }
+
+        return totalColorSlots; // Return the total count of color slots
+    } catch (error) {
+        console.error('Error getting number of color slots:', error);
+        return 0; // Return 0 in case of an error
+    }
+});
+
+ipcMain.handle('rename-c-folders', async (event, echoModPath, echoColorStart) => {
+    try {
+        const fighterFolders = await fs.readdir(echoModPath, { withFileTypes: true });
+        const initialColorSlot = parseInt(echoColorStart, 10); // Store the initial echoColorStart value
+
+        for (const fighterFolder of fighterFolders) {
+            if (!fighterFolder.isDirectory()) continue; // Skip non-directories
+
+            const fighterPath = path.join(echoModPath, fighterFolder.name);
+
+            // Dynamically find the intermediate folder (e.g., murabito)
+            const dynamicFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+            const dynamicFolder = dynamicFolders.find((folder) => folder.isDirectory());
+            if (!dynamicFolder) {
+                console.warn(`No dynamic folder found in ${fighterPath}`);
+                continue;
+            }
+
+            const dynamicFolderPath = path.join(fighterPath, dynamicFolder.name);
+            const targetFolders = ['model', 'motion'];
+
+            for (const targetFolder of targetFolders) {
+                const targetFolderPath = path.join(dynamicFolderPath, targetFolder);
+
+                if (await fse.pathExists(targetFolderPath)) {
+                    const subFolders = await fs.readdir(targetFolderPath, { withFileTypes: true });
+
+                    for (const subFolder of subFolders) {
+                        if (subFolder.isDirectory()) {
+                            const subFolderPath = path.join(targetFolderPath, subFolder.name);
+
+                            // Reset the color slot for each subfolder
+                            let currentColorSlot = initialColorSlot;
+
+                            const cFolders = await fs.readdir(subFolderPath, { withFileTypes: true });
+                            for (const cFolder of cFolders) {
+                                if (cFolder.isDirectory() && /^c\d+$/.test(cFolder.name)) {
+                                    const oldPath = path.join(subFolderPath, cFolder.name);
+                                    const newName = `c${currentColorSlot.toString().padStart(2, '0')}`; // Format as cXX
+                                    const newPath = path.join(subFolderPath, newName);
+
+                                    await fs.rename(oldPath, newPath);
+                                    console.log(`Renamed: ${oldPath} -> ${newPath}`);
+
+                                    currentColorSlot++; // Increment the color slot for the next folder
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Handle effect files under echoModPath/effect/fighter/fighterName
+            const effectPath = path.join(echoModPath, 'effect', 'fighter', fighterFolder.name);
+            if (await fse.pathExists(effectPath)) {
+                const effectFiles = await fs.readdir(effectPath, { withFileTypes: true });
+
+                let currentColorSlot = initialColorSlot; // Reset color slot for effect files
+                for (const effectFile of effectFiles) {
+                    if (effectFile.isFile() && /c\d{2,3}/.test(effectFile.name)) {
+                        const oldPath = path.join(effectPath, effectFile.name);
+                        const newName = effectFile.name.replace(/c\d{2,3}/, `c${currentColorSlot.toString().padStart(2, '0')}`);
+                        const newPath = path.join(effectPath, newName);
+
+                        await fs.rename(oldPath, newPath);
+                        console.log(`Renamed effect file: ${oldPath} -> ${newPath}`);
+
+                        currentColorSlot++; // Increment the color slot for the next file
+                    }
+                }
+            }
+        }
+
+        return { success: true, message: 'Folders and effect files renamed successfully' };
+    } catch (error) {
+        console.error('Error renaming c-folders and effect files:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('rename-chara-files', async (event, echoModPath, newEchoID) => {
+    try {
+        const charaPath = path.join(echoModPath, 'ui', 'replace', 'chara');
+        const charaFolders = await fs.readdir(charaPath, { withFileTypes: true });
+
+        for (const folder of charaFolders) {
+            if (folder.isDirectory()) {
+                const folderPath = path.join(charaPath, folder.name);
+                const files = await fs.readdir(folderPath);
+
+                let counter = 0;
+                for (const file of files) {
+                    const filePath = path.join(folderPath, file);
+
+                    // Extract the folder name (e.g., chara_00)
+                    const folderName = folder.name;
+
+                    // Rename the file to include the folder name, newEchoID, and counter
+                    const newFileName = `${folderName}_${newEchoID}_${counter.toString().padStart(2, '0')}${path.extname(file)}`;
+                    const newFilePath = path.join(folderPath, newFileName);
+
+                    await fs.rename(filePath, newFilePath);
+                    console.log(`Renamed: ${filePath} -> ${newFilePath}`);
+
+                    counter++;
+                }
+            }
+        }
+
+        return { success: true, message: 'Chara files renamed successfully' };
+    } catch (error) {
+        console.error('Error renaming chara files:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('create-new-json', async (event, echoModPath, echoColorStart, numColorSlots, baseEchoSlot) => {
+    console.log('Creating new JSON for Echo Mod:', echoModPath, echoColorStart, numColorSlots);
+
+    try {
+        // Ensure namesData is loaded
+        if (!globalThis.namesData) {
+            const namesFilePath = path.join(__dirname, 'Files', 'names.data');
+            const namesFileContent = await fs.readFile(namesFilePath, 'utf8');
+            globalThis.namesData = namesFileContent.split('\n').map(name => name.trim()).filter(name => name);
+        }
+
+        // Dynamically find the original fighter folder under echoModPath/Fighter
+        const fighterPath = path.join(echoModPath, 'Fighter');
+        const fighterFolders = await fs.readdir(fighterPath, { withFileTypes: true });
+        const originalFighterFolder = fighterFolders.find(folder => folder.isDirectory());
+
+        if (!originalFighterFolder) {
+            throw new Error(`No original fighter folder found under: ${fighterPath}`);
+        }
+
+        const fighterName = originalFighterFolder.name; // Use the folder name as the fighter name
+        console.log(`Original fighter name determined: ${fighterName}`);
+
+        // Define paths and parameters
+        const hashesFile = path.join(__dirname, 'Files', 'Hashes_all.txt'); // Adjust the path as needed
+        const currentAlt = `c00`; // Starting alt
+        const outDir = echoModPath; // Output directory is the same as echoModPath
+
+        // Initialize the environment using init from createnewjson.js
+        init(hashesFile, echoModPath, false, fighterName); // Pass fighterName here
+
+        // Call the main function from createnewjson.js
+        main(echoModPath, hashesFile, fighterName, currentAlt, '', '', outDir, echoColorStart, numColorSlots, baseEchoSlot);
+
+        console.log(`JSON creation completed successfully. Config saved at: ${path.join(outDir, 'config.json')}`);
+
+        return { success: true, message: 'JSON created successfully', path: path.join(outDir, 'config.json') };
+    } catch (error) {
+        console.error('Error creating new JSON:', error);
+        return { success: false, error: error.message };
+    }
+});
+
 ipcMain.handle('save-mod-info', async (event, modPath, info) => {
     try {
         const infoPath = path.join(modPath, 'info.toml');
