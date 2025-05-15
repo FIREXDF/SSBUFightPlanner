@@ -3479,7 +3479,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Populate GameBanana Mods
 document.addEventListener('DOMContentLoaded', async () => {
-    const ui = new UIController();
+    const ui = window.uiController;
     await initializeUI();
 
     document.getElementById('loadMoreContainer').style.display = 'none'; // Hide initially
@@ -3582,12 +3582,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function fetchModsForCharacter(categoryId, selectedCharacterName) {
+    async function fetchModsForCharacter(ui, categoryId, selectedCharacterName) {
         if (cModsIsLoading || !hasMoreMods) return;
         cModsIsLoading = true;
 
         try {
-            await uiController.showLoading(`Loading mods for ${selectedCharacterName}...`);
+            await ui.showLoading(`Loading mods for ${selectedCharacterName}...`);
 
             if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
 
@@ -3618,19 +3618,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error fetching mods for character:', error);
             if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
         } finally {
-            await uiController.hideLoading();
+            ui.hideLoading();
             cModsIsLoading = false;
         }
     }
 
     window.fetchModsForCharacter = fetchModsForCharacter; // Expose the function for external use
 
-    async function populateMods(category) {
+    async function populateMods(ui, category) {
         if (pModsIsLoading || !hasMoreMods) return;
         pModsIsLoading = true;
 
         try {
-            await uiController.showLoading(`Loading mods from ${category} category...`);
+            await ui.showLoading(`Loading mods from ${category} category...`);
 
             if (currentPage === 1) modsList.innerHTML = '<p>Loading mods...</p>';
 
@@ -3671,7 +3671,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error populating mods:', error);
             if (currentPage === 1) modsList.innerHTML = '<p>Failed to load mods.</p>';
         } finally {
-            await uiController.hideLoading();
+            ui.hideLoading();
             pModsIsLoading = false;
         }
     }
@@ -3781,7 +3781,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const selectedCategory = activeButton.dataset.category;
                 if (selectedCategory) {
                     try {
-                        await populateMods(selectedCategory);
+                        await populateMods(ui, selectedCategory);
                         console.log('Mods populated for category:', selectedCategory);
                     }
                     catch (error) {
@@ -3792,7 +3792,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const selectedCharacterCategoryId = new URL(activeDropdownItem.getAttribute('data-url')).pathname.split('/').pop();
                 const selectedCharacterName = activeDropdownItem.textContent.trim();
                 try {
-                    await fetchModsForCharacter(selectedCharacterCategoryId, selectedCharacterName);
+                    await fetchModsForCharacter(ui, selectedCharacterCategoryId, selectedCharacterName);
                 } catch (error) {
                     console.error('Error fetching mods for character:', error);
                 } 
@@ -3819,11 +3819,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Event listeners for category and character buttons
         document.querySelectorAll('#gamebananaCategories .btn').forEach(button => {
         button.addEventListener('click', () => {
-            // Remove 'active' class from all buttons
+            // Remove 'active' from all category buttons and character dropdown items
             document.querySelectorAll('#gamebananaCategories .btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.character-dropdown-item').forEach(item => item.classList.remove('active'));
 
-            // Add 'active' class to the clicked button
+            // Add 'active' only to the clicked category button
             button.classList.add('active');
 
             // Reset pagination and mods list
@@ -3837,32 +3837,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Fetch mods for the selected category
             const category = button.getAttribute('data-category');
-            if (category) populateMods(category);
+            if (category) populateMods(ui, category);
         });
     });
 
+    // Character dropdown item click
     characterDropdownMenu.addEventListener('click', (event) => {
-    if (event.target.classList.contains('character-dropdown-item')) {
-        // Remove 'active' class from all character-dropdown-items
-        document.querySelectorAll('.character-dropdown-item').forEach(item => item.classList.remove('active'));
+        if (event.target.classList.contains('character-dropdown-item')) {
+            // Remove 'active' from all character-dropdown-items and category buttons
+            document.querySelectorAll('.character-dropdown-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('#gamebananaCategories .btn').forEach(btn => btn.classList.remove('active'));
 
-        // Add 'active' class to the clicked item
-        event.target.classList.add('active');
+            // Add 'active' only to the clicked character item
+            event.target.classList.add('active');
 
-        // Reset pagination and mods list
-        currentPage = 1;
-        hasMoreMods = true;
-        modsList.innerHTML = '';
-        const categoryId = new URL(event.target.getAttribute('data-url')).pathname.split('/').pop();
-        
-        // Update the dropdown button text to include the selected character's name
-        const selectedCharacterName = event.target.textContent.trim();
-        const dropdownButton = document.getElementById('characterDropdown');
-        dropdownButton.textContent = `(${selectedCharacterName})`;
+            // Reset pagination and mods list
+            currentPage = 1;
+            hasMoreMods = true;
+            modsList.innerHTML = '';
+            const categoryId = new URL(event.target.getAttribute('data-url')).pathname.split('/').pop();
 
-        fetchModsForCharacter(categoryId, selectedCharacterName);
-    }
-});
+            // Update the dropdown button text to include the selected character's name
+            const selectedCharacterName = event.target.textContent.trim();
+            const dropdownButton = document.getElementById('characterDropdown');
+            dropdownButton.textContent = `(${selectedCharacterName})`;
+
+            fetchModsForCharacter(ui, categoryId, selectedCharacterName);
+        }
+    });
 
     // Reset the dropdown button text when another tab is clicked
     document.querySelectorAll('.nav-link').forEach(tab => {

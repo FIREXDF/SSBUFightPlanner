@@ -259,12 +259,6 @@
     transition-duration: .3s;
 }
 
-
-#loadMoreModsButton {
-    justify-content: center;
-    transform: translateY(-20px);
-}
-
 /* End Gamebanana specific styles */
 
 .loading-overlay.minimized {
