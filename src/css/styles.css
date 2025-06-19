@@ -14,6 +14,253 @@
     visibility: hidden;
 }
 
+#gamebananaCategories .btn {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+}
+
+#gamebananaCardBody {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#gamebananaModsList {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(50px, 1fr));
+    gap: 20px;
+    padding: 5px;
+    flex-grow: 40;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+#gamebananaModsList .card {
+    width: 100%;
+    height: 450px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: none;
+    padding: 0;
+    box-shadow: #0a0a0a 2px 2px 5px;
+    position: relative;
+    transition: transform 0.2s ease, z-index 0.2s ease, background-color 0.2s ease;
+}
+
+#gamebananaModsList .card:hover {
+    z-index: 10;
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 1);
+}
+
+#gamebananaModsList .card:hover .card-body.mod-card {
+    background-color: rgba(136, 92, 126, 0.9);
+    transition-duration: .3s;
+    transition-timing-function: ease-out;
+}
+
+.card-body.mod-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+    height: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    border: none;
+    overflow: visible;
+}
+
+.card-body.mod-card p,
+.card-body.mod-card h1,
+.card-body.mod-card h2,
+.card-body.mod-card h3,
+.card-body.mod-card h4,
+.card-body.mod-card h5,
+.card-body.mod-card h6 {
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+}
+
+#viewGamebanana {
+    background: linear-gradient(135deg, #4a90e2, #9013fe);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+#viewGamebanana:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#viewGamebanana i {
+    padding: 3px;
+}
+
+#downloadGamebanana {
+    background: radial-gradient(circle, #32cd32,#1b701b);
+    color: rgb(255, 243, 198);
+    border: none;
+    width: 100%;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+#downloadGamebanana:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#downloadGamebanana i {
+    padding: 3px;
+    border: #0a0a0a00 3px solid;
+}
+
+.download-dropdown {
+    width: 100%; /* Make it span the width of the card */
+    min-width: auto !important;
+    max-height: 200px; /* Set a maximum height for the dropdown */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    white-space: nowrap;
+    position: absolute; /* Position it relative to the card */
+    z-index: 1050; /* Ensure it appears above other elements */
+    background-color: #fff; /* Set background color */
+    border: 1px solid rgba(0, 0, 0, 0.15); /* Add a border */
+    border-radius: 0.25rem; /* Add rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    bottom: 60px; /* Position it above the button (adjust as needed) */
+    left: 0; /* Align it to the left edge of the card */
+    padding: 8px; /* Add padding for better spacing */
+    scrollbar-gutter: stable; /* Ensure consistent scrollbar spacing */
+    cursor: pointer;
+}
+
+.download-dropdown-item {
+    display: block; /* or block, depending on your layout */
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.download-dropdown-item:hover {
+    background-color: #4545457e;
+    text-decoration: none;
+}
+
+.character-dropdown-item {
+    display: block; /* or block, depending on your layout */
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.character-dropdown-item:hover {
+    background-color: #4545457e;
+    text-decoration: none;
+}
+
+.card {
+    position: relative; /* Ensure the dropdown is positioned relative to the card */
+    overflow: visible; /* Allow the dropdown to extend outside the card if necessary */
+}
+
+.download.dropdown.mt-2:hover .download-dropdown {
+    display: block; /* Show the dropdown on hover */
+}
+
+.download-dropdown {
+    scroll-behavior: smooth; /* Enable smooth scrolling */
+}
+
+.card-img-top {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.mod-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#characterDropdownMenu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#gamebananaCategories .btn.active {
+    background-color: #0d6efd;
+    color: rgb(202, 201, 113);
+    border-color: #0d6efd;
+    transition-duration: .3s;
+}
+
+.mod-image-container {
+    position: relative;
+}
+
+.mod-image.blurred {
+    filter: blur(15px);
+}
+
+.nsfw-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: red;
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 5px;
+    z-index: 10;
+}
+
+#nsfwToggle {
+    transition-duration: .3s;
+}
+
+/* End Gamebanana specific styles */
+
 .loading-overlay.minimized {
     opacity: 0;
     pointer-events: none;
