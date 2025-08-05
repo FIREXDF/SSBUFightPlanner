@@ -1,0 +1,25 @@
+Added:
+.fpt (FightPlanener Tree) new file format for make sure your mods are oraganize how it should be.
+Sound added to conflict mods
+Button to open again the modal of conflict.
+You can now change c07+ slots !
+
+Improvements:
+Better logs
+A new state in the mod list to show mods in conflict
+Animation added to the notification, context menu
+Added 2 states in characters tab Disabled mod in red and in conflict in Yellow
+
+BugFix:
+Spinner in characters tab reset his animation
+Fixed error : TypeError: downloadLink.match is not a function
+Fixed context menu does not disapear on some buttons
+Context menu being cut because of the window size
+Fixed error with download "Cannot redefine existing key 'category'"
+Ui files are now being rename on reslot
+
+BETA CHANGELOG :
+Make the c07+ function modify the ui_chara_db.prcxml
+Fixed Error: spawn D:\FightPlanner with Electron\FightPlanner (FINAL) Prototype 4\src\resources\bin\7z.exe (should be fixed now)
+Fixed most of error of directories (should be)
+Fixed ui not working on c07+ (Not confirmed need to be tested)
