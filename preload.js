@@ -66,7 +66,6 @@ contextBridge.exposeInMainWorld('api', {
         openModsFolder: () => ipcRenderer.invoke('open-mods-folder'),
         loadMods: () => ipcRenderer.invoke('load-mods'),
         getModFiles: (modPath) => ipcRenderer.invoke('get-mod-files', modPath),
-        getEchoModFiles: (echoModPath) => ipcRenderer.invoke('get-echo-mod-files', echoModPath),
         checkConflicts: () => ipcRenderer.invoke('check-mod-conflicts'),
         renameModFile: (modPath, oldPath, newPath) => 
             ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
@@ -88,22 +87,14 @@ contextBridge.exposeInMainWorld('api', {
     },
     modDetails: {
         getPreview: (modPath) => ipcRenderer.invoke('get-mod-preview', modPath),
-        getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath),
-        getEchoPreview: (echoModPath) => ipcRenderer.invoke('get-echo-mod-preview', echoModPath),
-        getEchoInfo: (echoModPath) => ipcRenderer.invoke('get-echo-mod-info', echoModPath),
-        getNumColorSlots: (echoModPath) => ipcRenderer.invoke('get-num-color-slots', echoModPath),
-        renameCFolders: (echoModPath, echoColorStart) => ipcRenderer.invoke('rename-c-folders', echoModPath, echoColorStart),
-        renameCharaFiles: (echoModPath, newEchoID) => ipcRenderer.invoke('rename-chara-files', echoModPath, newEchoID),
-        createNewJson: (echoModPath, echoColorStart, numColorSlots, baseEchoSlot) => ipcRenderer.invoke('create-new-json', echoModPath, echoColorStart, numColorSlots, baseEchoSlot),
+        getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath)
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),
-        getEchoModsPath: () => ipcRenderer.invoke('get-echo-mods-path'),
         setModsPath: (path) => ipcRenderer.invoke('set-mods-path', path),
         setDarkMode: (enabled) => ipcRenderer.invoke('set-dark-mode', enabled),
         getDarkMode: () => ipcRenderer.invoke('get-dark-mode'),
         getCustomCssPath: () => ipcRenderer.invoke('get-custom-css-path'),
-        restartApp: () => ipcRenderer.invoke('restart-app'),
         getPluginsPath: () => ipcRenderer.invoke('get-plugins-path'),
         setCustomCssPath: (path) => ipcRenderer.invoke('set-custom-css-path', path),
         setPluginsPath: (path) => ipcRenderer.invoke('set-plugins-path', path),
