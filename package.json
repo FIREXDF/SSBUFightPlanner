@@ -26,6 +26,7 @@
     "dependencies": {
         "adm-zip": "^0.5.16",
         "axios": "^1.7.7",
+        "cheerio": "^1.0.0",
         "date-fns": "^4.1.0",
         "discord-rpc": "^4.0.1",
         "electron-log": "^5.2.2",
@@ -33,6 +34,7 @@
         "electron-updater": "^6.3.9",
         "fs-extra": "^10.1.0",
         "original-fs": "^1.2.0",
+        "puppeteer": "^24.8.2",
         "toml": "^3.0.0"
     },
     "devDependencies": {
