@@ -10,10 +10,6 @@ window.addEventListener('error', (event) => {
 });
 
 contextBridge.exposeInMainWorld('electron', {
-    ipcRenderer: {
-        send: (channel, data) => ipcRenderer.send(channel, data),
-        on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
-      },
     downloadMod: async (url) => {
         try {
             return await ipcRenderer.invoke('download-mod', url);
@@ -21,6 +17,7 @@ contextBridge.exposeInMainWorld('electron', {
             console.error('Download mod error:', error);
             throw error;
         }
+        
     },
     onDownloadConfirmation: (callback) => {
         try {
@@ -48,11 +45,16 @@ contextBridge.exposeInMainWorld('electron', {
         }
     },
     togglePauseDownload: (id) => ipcRenderer.invoke('toggle-pause-download', id),
-    getActiveDownload: (id) => ipcRenderer.invoke('get-active-download', id)
+    getActiveDownload: (id) => ipcRenderer.invoke('get-active-download', id),
+    ipcRenderer: {
+        send: (channel, data) => ipcRenderer.send(channel, data),
+        on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
+      },
 });
 
 contextBridge.exposeInMainWorld('api', {
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    openTutorial: () => ipcRenderer.invoke('open-tutorial-window'),
     tutorial: {
         finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
         initializeConfigurations: () => ipcRenderer.invoke('initialize-configurations')
@@ -66,12 +68,16 @@ contextBridge.exposeInMainWorld('api', {
         openModsFolder: () => ipcRenderer.invoke('open-mods-folder'),
         loadMods: () => ipcRenderer.invoke('load-mods'),
         getModFiles: (modPath) => ipcRenderer.invoke('get-mod-files', modPath),
-        getEchoModFiles: (echoModPath) => ipcRenderer.invoke('get-echo-mod-files', echoModPath),
         checkConflicts: () => ipcRenderer.invoke('check-mod-conflicts'),
+        createDirectory: (path) => ipcRenderer.invoke('mod:createDirectory', path),
         renameModFile: (modPath, oldPath, newPath) => 
-            ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
+        ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
         deleteModFile: (modPath, filePath) => ipcRenderer.invoke('delete-mod-file', { modPath, filePath }),
-        writeModFile: (filePath, content) => ipcRenderer.invoke('write-mod-file', { filePath, content })
+        writeModFile: (filePath, content) => ipcRenderer.invoke('write-mod-file', { filePath, content }),
+        fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),
+        readModFile: (filePath) => ipcRenderer.invoke('read-mod-file', filePath),
+        enableAllMods: () => ipcRenderer.invoke('enable-all-mods'),
+        disableAllMods: () => ipcRenderer.invoke('disable-all-mods')
     },
     pluginOperations: {
         loadPlugins: () => ipcRenderer.invoke('load-plugins'),
@@ -88,22 +94,14 @@ contextBridge.exposeInMainWorld('api', {
     },
     modDetails: {
         getPreview: (modPath) => ipcRenderer.invoke('get-mod-preview', modPath),
-        getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath),
-        getEchoPreview: (echoModPath) => ipcRenderer.invoke('get-echo-mod-preview', echoModPath),
-        getEchoInfo: (echoModPath) => ipcRenderer.invoke('get-echo-mod-info', echoModPath),
-        getNumColorSlots: (echoModPath) => ipcRenderer.invoke('get-num-color-slots', echoModPath),
-        renameCFolders: (echoModPath, echoColorStart) => ipcRenderer.invoke('rename-c-folders', echoModPath, echoColorStart),
-        renameCharaFiles: (echoModPath, newEchoID) => ipcRenderer.invoke('rename-chara-files', echoModPath, newEchoID),
-        createNewJson: (echoModPath, echoColorStart, numColorSlots, baseEchoSlot) => ipcRenderer.invoke('create-new-json', echoModPath, echoColorStart, numColorSlots, baseEchoSlot),
+        getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath)
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),
-        getEchoModsPath: () => ipcRenderer.invoke('get-echo-mods-path'),
         setModsPath: (path) => ipcRenderer.invoke('set-mods-path', path),
         setDarkMode: (enabled) => ipcRenderer.invoke('set-dark-mode', enabled),
         getDarkMode: () => ipcRenderer.invoke('get-dark-mode'),
         getCustomCssPath: () => ipcRenderer.invoke('get-custom-css-path'),
-        restartApp: () => ipcRenderer.invoke('restart-app'),
         getPluginsPath: () => ipcRenderer.invoke('get-plugins-path'),
         setCustomCssPath: (path) => ipcRenderer.invoke('set-custom-css-path', path),
         setPluginsPath: (path) => ipcRenderer.invoke('set-plugins-path', path),
@@ -174,7 +172,8 @@ contextBridge.exposeInMainWorld('api', {
         importFpp: (filePath) => ipcRenderer.invoke('import-fpp', filePath),
     },
     getModInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath),
-    saveModInfo: (modPath, info) => ipcRenderer.invoke('save-mod-info', modPath, info)
+    saveModInfo: (modPath, info) => ipcRenderer.invoke('save-mod-info', modPath, info),
+    resourcesPath: process.resourcesPath,
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {

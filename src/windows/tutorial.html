@@ -6,22 +6,93 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
+                /* DARK MODE OVERRIDES */
+        body.dark-mode {
+            background-color: #181a1b;
+        }
+        body.dark-mode .tutorial-container {
+            background-color: #23272b;
+            color: #f1f1f1;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+        }
+        body.dark-mode h2, body.dark-mode h3, body.dark-mode .theme-label {
+            color: #e9ecef;
+        }
+        body.dark-mode .progress {
+            background-color: #23272b;
+        }
+        body.dark-mode .progress-bar {
+            background-color: #0099ff;
+        }
+        body.dark-mode .tutorial-gif {
+            background: #23272b;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.35);
+        }
+        body.dark-mode .feature-list li i {
+            color: #66bfff;
+        }
+        body.dark-mode .btn-primary {
+            background: linear-gradient(135deg, #0099ff, #0d6efd);
+        }
+        body.dark-mode .btn-secondary {
+            background: linear-gradient(135deg, #495057, #343a40);
+        }
+        body.dark-mode .btn-success {
+            background: linear-gradient(135deg, #20c997, #198754);
+        }
+        body.dark-mode .theme-option {
+            background: #23272b;
+        }
+        body.dark-mode .theme-option.active {
+            background: #1a222b;
+            border-color: #0099ff;
+        }
+        body.dark-mode .theme-image {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        }
+        body.dark-mode .warning-box {
+            background-color: #2d2f36;
+            border-left: 4px solid #ffc107;
+            color: #ffe082;
+        }
+        body.dark-mode .step-dot {
+            background-color: #343a40;
+        }
+        body.dark-mode .step-dot.active {
+            background-color: #0099ff;
+        }
+        body.dark-mode .navigation-buttons .btn {
+            color: #fff;
+        }
+        html, body {
+            height: 100%;
+            min-height: 100%;
+        }
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .tutorial-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
+            max-width: 1100px;
+            width: 100%;
+            min-width: 900px;
+            max-height: 700px;
+            min-height: 600px;
+            margin: 0 auto;
+            padding: 2.5rem 2.5rem 1.5rem 2.5rem;
             background-color: white;
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-            transform: translateY(0);
-            transition: transform 0.3s ease-in-out;
-        }
-        .tutorial-container:hover {
-            transform: translateY(-5px);
+            border-radius: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.13);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
         .progress-bar-container {
             margin-bottom: 2rem;
@@ -47,21 +118,23 @@
         }
         .tutorial-gif {
             width: 100%;
-            height: 300px;
+            max-width: 700px;
+            height: 320px;
+            max-height: 320px;
+            min-height: 200px;
             border-radius: 15px;
             overflow: hidden;
-            margin: 1.5rem 0;
+            margin: 1.5rem auto;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transform: scale(1);
-            transition: transform 0.3s ease;
-        }
-        .tutorial-gif:hover {
-            transform: scale(1.02);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .tutorial-gif video {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            background: #222;
         }
         .navigation-buttons {
             display: flex;
@@ -70,9 +143,10 @@
             gap: 1rem;
         }
         .btn {
-            padding: 0.8rem 1.5rem;
-            border-radius: 12px;
-            font-weight: 500;
+            padding: 1rem 2.2rem;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1.15rem;
             transition: all 0.3s ease;
         }
         .btn:hover {
@@ -121,7 +195,8 @@
         h2, h3 {
             color: #2b2d42;
             margin-bottom: 1.5rem;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 2.1rem;
         }
         .warning-box {
             background-color: #fff3cd;
@@ -143,10 +218,32 @@
         .feature-list li i {
             color: #0d6efd;
         }
+        .theme-option {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            opacity: 0.7;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 6px;
+            background: #f4f4f4;
+        }
+        .theme-option:hover {
+            transform: translateY(-2px) scale(1.04);
+            opacity: 1;
+        }
+        .theme-option.active {
+            opacity: 1;
+            border-color: #0d6efd;
+            background: #e9f2ff;
+        }
+        .theme-image {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+        }
     </style>
 </head>
 <body>
-    <div class="container py-5">
+    <div class="container-fluid p-0" style="height:100vh;display:flex;align-items:center;justify-content:center;">
         <div class="tutorial-container">
             <div id="progressIndicator" class="mb-3 text-center">
                 <span id="currentStep">1</span> / <span id="totalSteps">4</span>
@@ -154,11 +251,25 @@
 
             <!-- Step 1: Welcome -->
             <div class="tutorial-step active" data-step="1">
-                <h2 class="text-center mb-4">Welcome to the new FightPlanner</h2>
-                <div class="">
-                    <video  src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo.webm?raw=true" autoplay loop class="img-fluid rounded-video"></video>
+                <h2 class="text-center mb-4">Welcome on FightPlanner</h2>
+                <div class="mb-4">
+                    <video src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/logo.webm?raw=true" autoplay loop class="img-fluid rounded-video tutorial-video"></video>
                 </div>
-                <p class="text-center">The new FightPlanner is here for manage your mods on SSBU !</p>
+                <p class="text-center">FightPlanner is a Mod Manager (not a mod loader) that will help you organize your mods!</p>
+                
+                <div class="theme-section mt-4">
+                    <h5 class="text-center mb-3">Choose Your Theme</h5>
+                    <div class="theme-selector d-flex justify-content-center gap-4 flex-wrap">
+                        <div class="theme-option" data-theme="light">
+                            <img src="img/light.png" alt="Light theme" class="theme-preview theme-image" width="320" height="180">
+                            <div class="theme-label text-center mt-2">Light</div>
+                        </div>
+                        <div class="theme-option" data-theme="dark">
+                            <img src="img/dark.png" alt="Dark theme" class="theme-preview theme-image" width="320" height="180">
+                            <div class="theme-label text-center mt-2">Dark</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Step 2: Set Mods Path -->
@@ -203,19 +314,18 @@
                 </ul>
             </div>
 
-            <!-- Step 5: Link Warning -->
+
+            <!-- Step 6: Link Warning -->
             <div class="tutorial-step" data-step="5">
-                <h3>⚠️ Link Warning ⚠️</h3>
+                <h3>⚠️ Warning ⚠️</h3>
                 <div class="warning-box">
-                    <p>When you are downloading a mod using the download button for GameBanana, it can have an error.</p>
-                    <p>So verify that the link is like this screenshot :</p>
-                    <img id="media5" src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link.png?raw=true" alt="Link" class="img-fluid">
-                    <p>Or (if you gameBanana is different)</p>
-                    <img id="media6" src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/img/fp/link2.png?raw=true" alt="Link" class="img-fluid">
+                    <p>Remember that FightPlanner will not be fully compatible with movesets and you may need to install them manually.</p>
+                    <p>FightPlanner is not a mod loader it's a mod manager, you will need arcropolis for running mods.</p>
+                    <p>You can see the official guide on GameBanana made by FIREXDF (the developer of FightPlanner) that is made for emulator.</p>
                 </div>
             </div>
 
-            <!-- Step 6: Warning -->
+            <!-- Step 7: Warning -->
             <div class="tutorial-step" data-step="6">
                 <h3>⚠️ Warning ⚠️</h3>
                 <div class="warning-box">
@@ -234,8 +344,8 @@
 
             <!-- Navigation Buttons -->
             <div class="navigation-buttons">
-                <button id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
-                <button id="nextBtn" class="btn btn-primary">Next</button>
+                <button id="prevBtn" class="btn btn-secondary" disabled style="min-width:160px;">Previous</button>
+                <button id="nextBtn" class="btn btn-primary" style="min-width:160px;">Next</button>
             </div>
 
             <!-- Finish Button (Hidden initially) -->

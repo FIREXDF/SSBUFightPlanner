@@ -1,0 +1,14 @@
+[
+  {
+    "id": "nro-hook-plugin",
+    "name": "NRO Hook Plugin",
+  "repo": "ultimate-research/nro-hook-plugin",
+  "assetPattern": "libnro_hook.*\\.nro"
+  },
+  {
+    "id": "arcropolis",
+    "name": "ARCropolis",
+    "repo": "Raytwo/ARCropolis",
+    "assetPattern": "lib_arcropolis.*\\.nro"
+  }
+]

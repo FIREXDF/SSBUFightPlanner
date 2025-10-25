@@ -1,0 +1,3 @@
+BugFix :
+param Folder getting move into the root than staying in his own place
+render_param.prc & desktop.ini no longer getting detected in conflicts detector

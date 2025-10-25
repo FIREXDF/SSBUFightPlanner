@@ -108,6 +108,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Theme selection handling
+    const themeOptions = document.querySelectorAll('.theme-option');
+    themeOptions.forEach(option => {
+        option.addEventListener('click', async () => {
+            // Remove active class from all options
+            themeOptions.forEach(opt => opt.classList.remove('active'));
+            
+            // Add active class to selected option
+            option.classList.add('active');
+            
+            // Get the theme value
+            const isDark = option.dataset.theme === 'dark';
+            
+            try {
+                // Save theme preference
+                await window.api.settings.setDarkMode(isDark);
+                
+                // Apply theme immediately
+                document.body.classList.toggle('dark-mode', isDark);
+            } catch (error) {
+                console.error('Error setting theme:', error);
+            }
+        });
+    });
+
+    // Load current theme setting
+    window.api.settings.getDarkMode().then(isDark => {
+        const activeTheme = isDark ? 'dark' : 'light';
+        themeOptions.forEach(option => {
+            option.classList.toggle('active', option.dataset.theme === activeTheme);
+        });
+        document.body.classList.toggle('dark-mode', isDark);
+    });
+
     // Set initial state
     updateStep(0);
     totalStepsEl.textContent = steps.length;

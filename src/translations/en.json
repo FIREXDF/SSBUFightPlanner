@@ -3,8 +3,7 @@
         "mods": "Mods",
         "plugins": "Plugins",
         "settings": "Settings",
-        "characters": "Characters",
-        "echo": "Echo Fighter"
+        "characters": "Characters"
     },
     "mods": {
         "title": "Mod List",
@@ -43,16 +42,6 @@
             "openFolder": "Open Plugins Folder"
         }
     },
-    "echo": {
-            "mod": {
-                "select": "Select Echo Mod"
-            },
-            "fighter": {
-                "name": "New Echo Fighter Name",
-                "id": "New Echo Fighter ID"
-            }
-        },
-    
     "settings": {
         "discordRpc": "Discord Rich Presence",
         "paths": {
@@ -131,7 +120,8 @@
             "misc": "Miscellaneous",
             "fighter": "Fighter",
             "skins": "Skins",
-            "movesets": "Movesets"
+            "movesets": "Movesets",
+            "effects": "Effects"
         }
     }
 }
