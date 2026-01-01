@@ -97,23 +97,24 @@ class ModConflictDetector {
         this.conflicts.clear();
         const fileMap = new Map(); // Maps file paths to mod names
 
-        for (const mod of mods) {
+        await Promise.all(mods.map(async (mod) => {
             // Skip disabled mods
-            if (!mod.enabled) continue;
+            if (!mod.enabled) return;
 
             try {
                 // Notify progress caller which mod is being analyzed
                 if (typeof onProgress === 'function') {
                     try { onProgress(mod.name, mod); } catch (_) {}
                 }
+
                 const files = await this.getModFiles(mod.path);
                 
                 for (const file of files) {
                     // Skip if the path has no extension (likely a directory)
-                    if (!file.includes('.')) continue;
+                    if (!file.includes('.')) return;
 
                     // Skip ignored files
-                    if (this.isFileIgnored(file)) continue;
+                    if (this.isFileIgnored(file)) return;
 
                     // Normalize the file path for comparison
                     const normalizedPath = file.toLowerCase();
@@ -135,7 +136,7 @@ class ModConflictDetector {
             } catch (error) {
                 console.error(`Error analyzing mod ${mod.name}:`, error);
             }
-        }
+        }));
 
         return this.conflicts;
     }

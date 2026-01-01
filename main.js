@@ -1814,7 +1814,7 @@ ipcMain.handle("open-plugins-folder", async () => {
 async function getAllFiles(dirPath, arrayOfFiles = []) {
   const files = await fsp.readdir(dirPath);
 
-  for (const file of files) {
+  await Promise.all(files.map(async (file) => {
     const filePath = path.join(dirPath, file);
     const stat = await fsp.stat(filePath);
 
@@ -1824,7 +1824,7 @@ async function getAllFiles(dirPath, arrayOfFiles = []) {
     } else {
       arrayOfFiles.push(filePath);
     }
-  }
+  }));
 
   return arrayOfFiles;
 }
@@ -1843,6 +1843,7 @@ function isPathInModsDirectory(targetPath, modsPath) {
 ipcMain.handle("get-mod-files", async (event, modPath) => {
   try {
     const modsPath = store.get("modsPath");
+
     if (!modsPath) {
       throw new Error("Mods directory not set");
     }
