@@ -1,71 +1,71 @@
 export class ChangeSlots {
-static async scanForSlots(modPath) {
-    try {
-        const files = await window.api.modOperations.getModFiles(modPath);
-        console.log('[scanForSlots] Tous les fichiers trouvés:', files);
-const slotFiles = files.filter(file => {
-    const pathParts = file.split(/[/\\]/);
-    const fileName = pathParts[pathParts.length - 1];
+    static async scanForSlots(modPath) {
+        try {
+            const files = await window.api.modOperations.getModFiles(modPath);
+            console.log('[scanForSlots] Tous les fichiers trouvés:', files);
+            const slotFiles = files.filter(file => {
+                const pathParts = file.split(/[/\\]/);
+                const fileName = pathParts[pathParts.length - 1];
 
-    // Si on est dans fighter, on ne garde que les dossiers slot
-    if (pathParts.includes('fighter')) {
-        const isFighterSlotFolder =
-            pathParts.length >= 2 &&
-            /^c\d/i.test(fileName) &&
-            !fileName.includes('.'); // évite les fichiers
-        if (isFighterSlotFolder) return true;
-        // Sinon, on ignore tout le reste dans fighter
-        return false;
-    }
+                // Si on est dans fighter, on ne garde que les dossiers slot
+                if (pathParts.includes('fighter')) {
+                    const isFighterSlotFolder =
+                        pathParts.length >= 2 &&
+                        /^c\d/i.test(fileName) &&
+                        !fileName.includes('.'); // évite les fichiers
+                    if (isFighterSlotFolder) return true;
+                    // Sinon, on ignore tout le reste dans fighter
+                    return false;
+                }
 
-    // Sinon (hors fighter), on garde les fichiers qui matchent 0X, 0XX, 0XXX
-    return /0\d{1,3}/.test(fileName) || /\d{2,3}(?=\.[^.]+$)/.test(fileName);
-});
+                // Sinon (hors fighter), on garde les fichiers qui matchent 0X, 0XX, 0XXX
+                return /0\d{1,3}/.test(fileName) || /\d{2,3}(?=\.[^.]+$)/.test(fileName);
+            });
 
-console.log('[scanForSlots] Fichiers slots détectés:', slotFiles);
+            console.log('[scanForSlots] Fichiers slots détectés:', slotFiles);
 
             const slots = new Set();
-slotFiles.forEach(file => {
-    const pathParts = file.split(/[/\\]/);
-    const part = pathParts[pathParts.length - 1];
+            slotFiles.forEach(file => {
+                const pathParts = file.split(/[/\\]/);
+                const part = pathParts[pathParts.length - 1];
 
-    // Dossier slot : cXX, cXXX, etc.
-    const cMatch = part.match(/^c\d{2,3}$/i);
-    if (cMatch) {
-        slots.add(cMatch[0].toLowerCase());
-    } else {
-        // Fichier slot : 0XX, 0XXX, etc.
-        const zeroMatch = part.match(/0\d{2,3}/);
-        if (zeroMatch) {
-            slots.add('c' + zeroMatch[0].slice(1)); // <-- toujours stocker en cXX
-        }
-        // Fichier slot : XX, XXX (sans 0 devant, ni c)
-        const numMatch = part.match(/(?<!\d)\d{2,3}(?=\.[^.]+$)/);
-        if (numMatch) {
-            let num = numMatch[0];
-            if (num.length === 1) num = '0' + num;
-            slots.add('c' + num);
+                // Dossier slot : cXX, cXXX, etc.
+                const cMatch = part.match(/^c\d{2,3}$/i);
+                if (cMatch) {
+                    slots.add(cMatch[0].toLowerCase());
+                } else {
+                    // Fichier slot : 0XX, 0XXX, etc.
+                    const zeroMatch = part.match(/0\d{2,3}/);
+                    if (zeroMatch) {
+                        slots.add('c' + zeroMatch[0].slice(1)); // <-- toujours stocker en cXX
+                    }
+                    // Fichier slot : XX, XXX (sans 0 devant, ni c)
+                    const numMatch = part.match(/(?<!\d)\d{2,3}(?=\.[^.]+$)/);
+                    if (numMatch) {
+                        let num = numMatch[0];
+                        if (num.length === 1) num = '0' + num;
+                        slots.add('c' + num);
+                    }
+                }
+            });
+
+            const sortedSlots = Array.from(slots).sort((a, b) => {
+                const numA = parseInt(a.replace('c', ''));
+                const numB = parseInt(b.replace('c', ''));
+                return numA - numB;
+            });
+
+            console.log('[scanForSlots] Slots détectés:', sortedSlots);
+
+            return {
+                currentSlots: sortedSlots,
+                affectedFiles: slotFiles
+            };
+        } catch (error) {
+            console.error('Error scanning for slots:', error);
+            throw error;
         }
     }
-});
-
-const sortedSlots = Array.from(slots).sort((a, b) => {
-    const numA = parseInt(a.replace('c', ''));
-    const numB = parseInt(b.replace('c', ''));
-    return numA - numB;
-});
-
-console.log('[scanForSlots] Slots détectés:', sortedSlots);
-
-        return {
-            currentSlots: sortedSlots,
-            affectedFiles: slotFiles
-        };
-    } catch (error) {
-        console.error('Error scanning for slots:', error);
-        throw error;
-    }
-}
 
     static async processSlots(modPath, slotChanges, slotsToRemove, files) {
         let deletedFilesCount = 0;
@@ -89,79 +89,79 @@ console.log('[scanForSlots] Slots détectés:', sortedSlots);
         };
     }
 
-static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) {
-    const configPath = `${modPath}\\config.json`;
-    let configContent = '{}';
-    let config = {
-        "new-dir-infos": [],
-        "new-dir-infos-base": {},
-        "share-to-vanilla": {},
-        "new-dir-files": {},
-        "share-to-added": {}
-    };
+    static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) {
+        const configPath = `${modPath}\\config.json`;
+        let configContent = '{}';
+        let config = {
+            "new-dir-infos": [],
+            "new-dir-infos-base": {},
+            "share-to-vanilla": {},
+            "new-dir-files": {},
+            "share-to-added": {}
+        };
 
-    // Lire le config existant si présent
-    try {
-        if (await window.api.modOperations.fileExists(configPath)) {
-            configContent = await window.api.modOperations.readModFile(configPath);
-            config = JSON.parse(configContent);
+        // Lire le config existant si présent
+        try {
+            if (await window.api.modOperations.fileExists(configPath)) {
+                configContent = await window.api.modOperations.readModFile(configPath);
+                config = JSON.parse(configContent);
+            }
+        } catch (e) {
+            console.warn('Could not read config.json, using empty config.');
         }
-    } catch (e) {
-        console.warn('Could not read config.json, using empty config.');
-    }
 
-    // Préparer les chemins
-    const newDirInfo = `fighter/${fighterName}/${targetAlt}`;
-    const cameraDirInfo = `fighter/${fighterName}/${targetAlt}/camera`;
-    const transplantDirInfo = `fighter/${fighterName}/cmn`;
-    const oldCameraDir = `fighter/${fighterName}/camera/${targetAlt}`;
+        // Préparer les chemins
+        const newDirInfo = `fighter/${fighterName}/${targetAlt}`;
+        const cameraDirInfo = `fighter/${fighterName}/${targetAlt}/camera`;
+        const transplantDirInfo = `fighter/${fighterName}/cmn`;
+        const oldCameraDir = `fighter/${fighterName}/camera/${targetAlt}`;
 
-    // Initialiser les sections si besoin
-    if (!config["new-dir-files"][newDirInfo]) config["new-dir-files"][newDirInfo] = [];
-    if (!config["new-dir-files"][cameraDirInfo]) config["new-dir-files"][cameraDirInfo] = [];
-    if (!config["new-dir-files"][transplantDirInfo]) config["new-dir-files"][transplantDirInfo] = [];
-    if (config["new-dir-files"][oldCameraDir]) delete config["new-dir-files"][oldCameraDir];
+        // Initialiser les sections si besoin
+        if (!config["new-dir-files"][newDirInfo]) config["new-dir-files"][newDirInfo] = [];
+        if (!config["new-dir-files"][cameraDirInfo]) config["new-dir-files"][cameraDirInfo] = [];
+        if (!config["new-dir-files"][transplantDirInfo]) config["new-dir-files"][transplantDirInfo] = [];
+        if (config["new-dir-files"][oldCameraDir]) delete config["new-dir-files"][oldCameraDir];
 
-    // Extensions custom
-    const customExtensions = [
-        '.nuanmb', '.marker', '.bin', '.tonelabel', '.numatb', '.numdlb', '.nutexb',
-        '.numshb', '.numshexb', '.nus3audio', '.nus3bank', '.nuhlpb', '.numdlb', '.xmb', '.kime', '.eff'
-    ];
+        // Extensions custom
+        const customExtensions = [
+            '.nuanmb', '.marker', '.bin', '.tonelabel', '.numatb', '.numdlb', '.nutexb',
+            '.numshb', '.numshexb', '.nus3audio', '.nus3bank', '.nuhlpb', '.numdlb', '.xmb', '.kime', '.eff'
+        ];
 
-    // Parcours des fichiers
-    for (const file of allFiles) {
-        // Effets transplantés
-        if (file.includes(`effect/fighter/${fighterName}/transplant/`)) {
-            if (!config["new-dir-files"][transplantDirInfo].includes(file))
-                config["new-dir-files"][transplantDirInfo].push(file);
-            continue;
-        }
-        // Effets spécifiques au slot
-        if (file.includes(`effect/fighter/${fighterName}/ef_${fighterName}_${targetAlt}`)) {
-            if (!config["new-dir-files"][newDirInfo].includes(file))
-                config["new-dir-files"][newDirInfo].push(file);
-            continue;
-        }
-        // Caméra
-        if (file.startsWith(`camera/fighter/${fighterName}/${targetAlt}/`) && file.endsWith('.nuanmb')) {
-            if (!config["new-dir-files"][cameraDirInfo].includes(file))
-                config["new-dir-files"][cameraDirInfo].push(file);
-            continue;
-        }
-        // Fichiers custom dans le slot cible
-        if (file.includes(`/${targetAlt}/`) || file.endsWith(`/${targetAlt}`)) {
-            const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
-            const isCustom = customExtensions.includes(ext) ||
-                ['body', 'face', 'hair', 'eye', 'brs_', 'bust_', 'hand_'].some(marker => file.toLowerCase().includes(marker));
-            if (isCustom && !config["new-dir-files"][newDirInfo].includes(file)) {
-                config["new-dir-files"][newDirInfo].push(file);
+        // Parcours des fichiers
+        for (const file of allFiles) {
+            // Effets transplantés
+            if (file.includes(`effect/fighter/${fighterName}/transplant/`)) {
+                if (!config["new-dir-files"][transplantDirInfo].includes(file))
+                    config["new-dir-files"][transplantDirInfo].push(file);
+                continue;
+            }
+            // Effets spécifiques au slot
+            if (file.includes(`effect/fighter/${fighterName}/ef_${fighterName}_${targetAlt}`)) {
+                if (!config["new-dir-files"][newDirInfo].includes(file))
+                    config["new-dir-files"][newDirInfo].push(file);
+                continue;
+            }
+            // Caméra
+            if (file.startsWith(`camera/fighter/${fighterName}/${targetAlt}/`) && file.endsWith('.nuanmb')) {
+                if (!config["new-dir-files"][cameraDirInfo].includes(file))
+                    config["new-dir-files"][cameraDirInfo].push(file);
+                continue;
+            }
+            // Fichiers custom dans le slot cible
+            if (file.includes(`/${targetAlt}/`) || file.endsWith(`/${targetAlt}`)) {
+                const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
+                const isCustom = customExtensions.includes(ext) ||
+                    ['body', 'face', 'hair', 'eye', 'brs_', 'bust_', 'hand_'].some(marker => file.toLowerCase().includes(marker));
+                if (isCustom && !config["new-dir-files"][newDirInfo].includes(file)) {
+                    config["new-dir-files"][newDirInfo].push(file);
+                }
             }
         }
-    }
 
-    // Réécrire le config.json
-    await window.api.modOperations.writeModFile(configPath, JSON.stringify(config, null, 4));
-}
+        // Réécrire le config.json
+        await window.api.modOperations.writeModFile(configPath, JSON.stringify(config, null, 4));
+    }
 
     static async changeSlots(modPath, slotChanges, files) {
         const changedFiles = [];
@@ -169,8 +169,9 @@ static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) 
         // Filter out config.json from files to rename
         const filesToRename = files.filter(file => !file.endsWith('config.json'));
 
-        // Then handle regular files with two-pass renaming
-        // First pass: rename to temporary names with dots (but not for folders)
+        // Step 1: Move all files to temporary paths first
+        const tempMappings = []; // { originalPath, tempPath, finalPath }
+
         for (const file of filesToRename) {
             // Découpe le chemin
             const pathParts = file.split(/[/\\]/);
@@ -201,55 +202,100 @@ static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) 
                 }
                 console.log('[changeSlots] Fichier:', file);
                 console.log('[changeSlots] Slot extrait:', currentSlot);
-                try {
-                    const newSlot = slotChanges[currentSlot];
-                    let newFilePath;
-                    if (isFighterSlotFolder) {
-                        // Renommer le dossier slot (remplace tout le slot, ex: c01, c11, c123)
-                        newFilePath = file.replace(new RegExp(`\\b${currentSlot}\\b`), newSlot);
-                        console.log('[changeSlots] Dossier slot:', file, '->', newFilePath, '| Regex utilisée: /c\\d{1,3}/i | newSlot:', newSlot);
-                    } else {
-                        // Renommer le fichier slot (hors fighter)
-                        let oldNum = currentSlot.replace('c', '');
-                        let newNum = newSlot.replace('c', '');
-                        if (oldNum.length === 1) oldNum = '0' + oldNum;
-                        if (newNum.length === 1) newNum = '0' + newNum;
-                        let tempFilePath = file;
-                        let regex = new RegExp(`_${oldNum}(?=\\.[^.]+$)`);
+
+                const newSlot = slotChanges[currentSlot];
+
+                let newFilePath;
+
+                if (isFighterSlotFolder) {
+                    // Renommer le dossier slot (remplace tout le slot, ex: c01, c11, c123)
+                    newFilePath = file.replace(new RegExp(`\\b${currentSlot}\\b`), newSlot);
+                    console.log('[changeSlots] Dossier slot:', file, '->', newFilePath, '| Regex utilisée: /c\\d{1,3}/i | newSlot:', newSlot);
+                } else {
+                    // Renommer le fichier slot (hors fighter)
+                    let oldNum = currentSlot.replace('c', '');
+                    let newNum = newSlot.replace('c', '');
+
+                    if (oldNum.length === 1) oldNum = '0' + oldNum;
+                    if (newNum.length === 1) newNum = '0' + newNum;
+
+                    let tempFilePath = file;
+                    let regex = new RegExp(`_${oldNum}(?=\\.[^.]+$)`);
+
+                    if (regex.test(tempFilePath)) {
+                        tempFilePath = tempFilePath.replace(regex, `_${newNum}`);
+                    }
+
+                    if (tempFilePath === file) {
+                        regex = new RegExp(`${oldNum}(?=\\.[^.]+$)`);
                         if (regex.test(tempFilePath)) {
-                            tempFilePath = tempFilePath.replace(regex, `_${newNum}`);
-                        }
-                        if (tempFilePath === file) {
-                            regex = new RegExp(`${oldNum}(?=\\.[^.]+$)`);
-                            if (regex.test(tempFilePath)) {
-                                tempFilePath = tempFilePath.replace(regex, newNum);
-                            }
-                        }
-                        if (tempFilePath === file) {
-                            regex = new RegExp(`c${oldNum}(?=\\.[^.]+$)`, 'i');
-                            if (regex.test(tempFilePath)) {
-                                tempFilePath = tempFilePath.replace(regex, `c${newNum}`);
-                            }
-                        }
-                        newFilePath = tempFilePath;
-                        // Sécurité : si newFilePath est undefined ou vide, skip
-                        if (!newFilePath) {
-                            console.warn(`[changeSlots] newFilePath is undefined for file: ${file}, skip.`);
-                            continue;
+                            tempFilePath = tempFilePath.replace(regex, newNum);
                         }
                     }
-                    await window.api.modOperations.renameModFile(
-                        modPath,
-                        file.replace(/\\/g, '/'),
-                        newFilePath.replace(/\\/g, '/')
-                    );
-                    changedFiles.push(newFilePath);
-                } catch (error) {
-                    console.error(`Error renaming file ${file}:`, error);
-                    throw new Error(`Failed to rename file ${file}: ${error.message}`);
+
+                    if (tempFilePath === file) {
+                        regex = new RegExp(`c${oldNum}(?=\\.[^.]+$)`, 'i');
+                        if (regex.test(tempFilePath)) {
+                            tempFilePath = tempFilePath.replace(regex, `c${newNum}`);
+                        }
+                    }
+
+                    newFilePath = tempFilePath;
+                    
+                    // Sécurité : si newFilePath est undefined ou vide, skip
+                    if (!newFilePath) {
+                        console.warn(`[changeSlots] newFilePath is undefined for file: ${file}, skip.`);
+                        continue;
+                    }
                 }
+
+                // Create temporary path by adding .temp_ prefix to the last path component
+                const tempPathParts = file.split(/[/\\]/);
+                tempPathParts[tempPathParts.length - 1] = '.temp_' + tempPathParts[tempPathParts.length - 1];
+                const tempPath = tempPathParts.join('/');
+
+                tempMappings.push({
+                    originalPath: file,
+                    tempPath: tempPath,
+                    finalPath: newFilePath
+                });
             }
         }
+
+        // Step 2: Move all files to temp paths
+        console.log('[changeSlots] Moving files to temporary paths...');
+        for (const mapping of tempMappings) {
+            try {
+                await window.api.modOperations.renameModFile(
+                    modPath,
+                    mapping.originalPath.replace(/\\/g, '/'),
+                    mapping.tempPath.replace(/\\/g, '/')
+                );
+                console.log(`[changeSlots] Moved to temp: ${mapping.originalPath} -> ${mapping.tempPath}`);
+            } catch (error) {
+                console.error(`Error moving file to temp ${mapping.originalPath}:`, error);
+                throw new Error(`Failed to move file to temp ${mapping.originalPath}: ${error.message}`);
+            }
+        }
+
+        // Step 3: Move all files from temp paths to final paths
+        console.log('[changeSlots] Moving files from temporary to final paths...');
+        for (const mapping of tempMappings) {
+            try {
+                await window.api.modOperations.renameModFile(
+                    modPath,
+                    mapping.tempPath.replace(/\\/g, '/'),
+                    mapping.finalPath.replace(/\\/g, '/')
+                );
+                console.log(`[changeSlots] Moved to final: ${mapping.tempPath} -> ${mapping.finalPath}`);
+                changedFiles.push(mapping.finalPath);
+            } catch (error) {
+                console.error(`Error moving file from temp ${mapping.tempPath}:`, error);
+                throw new Error(`Failed to move file from temp ${mapping.tempPath}: ${error.message}`);
+            }
+        }
+
+        // Handle Max Slots configuration if needed
         const requestedSlots = Object.values(slotChanges);
         const slotAboveC07 = requestedSlots.find(slot => parseInt(slot.replace('c', '')) > 7);
         if (slotAboveC07) {
@@ -272,7 +318,7 @@ static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) 
                     const fighterName = fighterDir;
 
                     // 2. Read ui_chara_db.txt
-                    const uiCharaDbTxtPath = 'resources/src/resources/reslot/ui_chara_db.txt';
+                    const uiCharaDbTxtPath = 'src/resources/reslot/ui_chara_db.txt';
                     const uiCharaDbTxt = await window.api.modOperations.readModFile(uiCharaDbTxtPath);
 
                     // 3. Find the line with the fighter name and get the number at the start of the line
@@ -307,41 +353,29 @@ static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) 
                 throw new Error(`Error editing ui_chara_db.prcxml: ${error.message}`);
             }
         }
-for (const tempFile of changedFiles) {
-    try {
-        const finalPath = tempFile.replace(/_\.?(\d+)\.bntx/g, '_$1.bntx');
-        console.log(`Finalizing rename: ${tempFile} -> ${finalPath}`);
-        await window.api.modOperations.renameModFile(
-            modPath,
-            tempFile.replace(/\\/g, '/'),
-            finalPath.replace(/\\/g, '/')
-        );
-    } catch (error) {
-        console.error(`Error in final rename of ${tempFile}:`, error);
-        throw new Error(`Failed to complete rename of ${tempFile}: ${error.message}`);
-    }
-    if (changedFiles.length > 0) {
-        // Vérifie l'existence du dossier fighter AVANT d'appeler getModFiles
-        const fighterPath = modPath + '/fighter';
-        let fighterExists = false;
-        try {
-            fighterExists = await window.api.modOperations.fileExists(fighterPath);
-        } catch (e) {
-            fighterExists = false;
-        }
-        if (fighterExists) {
-            const fighterDirList = await window.api.modOperations.getModFiles(fighterPath);
-            const fighterDir = fighterDirList.find(f => !f.includes('/') && !f.includes('\\'));
-            const fighterName = fighterDir;
-            for (const newSlot of Object.values(slotChanges)) {
-                await ChangeSlots.addMissingFilesToConfig(modPath, fighterName, newSlot, files);
+
+        // Update config.json after renaming
+        if (changedFiles.length > 0) {
+            // Vérifie l'existence du dossier fighter AVANT d'appeler getModFiles
+            const fighterPath = modPath + '/fighter';
+            let fighterExists = false;
+            try {
+                fighterExists = await window.api.modOperations.fileExists(fighterPath);
+            } catch (e) {
+                fighterExists = false;
             }
-        } else {
-            console.log('[changeSlots] Dossier fighter non trouvé, skip addMissingFilesToConfig.');
+            if (fighterExists) {
+                const fighterDirList = await window.api.modOperations.getModFiles(fighterPath);
+                const fighterDir = fighterDirList.find(f => !f.includes('/') && !f.includes('\\'));
+                const fighterName = fighterDir;
+                for (const newSlot of Object.values(slotChanges)) {
+                    await ChangeSlots.addMissingFilesToConfig(modPath, fighterName, newSlot, files);
+                }
+            } else {
+                console.log('[changeSlots] Dossier fighter non trouvé, skip addMissingFilesToConfig.');
+            }
         }
-    }
-}
-        
+
         // Après tous les renommages, mettre à jour share-to-vanilla et new-dir-infos dans config.json
         if (changedFiles.length > 0) {
             await ChangeSlots.updateShareToVanilla(modPath, slotChanges);
@@ -372,7 +406,7 @@ for (const tempFile of changedFiles) {
             const fighterNames = fighterDirs.filter(f => !f.includes('/') && !f.includes('\\'));
 
             // Charger vanilla.json
-            const vanillaJsonPath = 'resources/src/resources/reslot/vanilla.json';
+            const vanillaJsonPath = 'src/resources/reslot/vanilla.json';
             const vanillaExists = await window.api.modOperations.fileExists(vanillaJsonPath);
             if (!vanillaExists) {
                 console.warn('[updateShareToVanilla] vanilla.json not found:', vanillaJsonPath);
@@ -571,7 +605,7 @@ for (const tempFile of changedFiles) {
             if (fighterNames.length === 0) return;
 
             // Charger vanilla.json
-            const vanillaJsonPath = 'resources/src/resources/reslot/vanilla.json';
+            const vanillaJsonPath = 'src/resources/reslot/vanilla.json';
             const vanillaExists = await window.api.modOperations.fileExists(vanillaJsonPath);
             if (!vanillaExists) {
                 console.warn('[updateNewDirFiles] vanilla.json not found:', vanillaJsonPath);
@@ -831,7 +865,7 @@ for (const tempFile of changedFiles) {
             if (fighterNames.length === 0) return;
 
             // Charger vanilla.json
-            const vanillaJsonPath = 'resources/src/resources/reslot/vanilla.json';
+            const vanillaJsonPath = 'src/resources/reslot/vanilla.json';
             const vanillaExists = await window.api.modOperations.fileExists(vanillaJsonPath);
             if (!vanillaExists) {
                 console.warn('[updateShareToAdded] vanilla.json not found:', vanillaJsonPath);

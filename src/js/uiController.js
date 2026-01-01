@@ -148,6 +148,7 @@ class UIController {
       errorToast = document.createElement("div");
       errorToast.id = "error-toast";
       errorToast.className = "toast align-items-center text-bg-danger border-0";
+      
       errorToast.setAttribute("role", "alert");
       errorToast.setAttribute("aria-live", "assertive");
       errorToast.setAttribute("aria-atomic", "true");
@@ -1689,7 +1690,7 @@ class UIController {
 
     // Automatically remove the toast after a certain time
     setTimeout(() => {
-      toast.remove();
+    toast.remove();
     }, 5000); // 5 seconds
   }
 
@@ -2983,11 +2984,14 @@ class UIController {
       const confirmBtn = document.getElementById("confirmChangeSlots");
       confirmBtn.onclick = async () => {
         try {
+          const slotMap = new Map();
           const slotChanges = {};
           const slotsToRemove = [];
+
           document.querySelectorAll(".target-slot").forEach((select) => {
             const currentSlot = select.getAttribute("data-current-slot");
             let targetSlot = select.value.trim();
+
             if (targetSlot === "custom") {
               const customInput =
                 select.parentElement.querySelector(".custom-slot-input");
@@ -2997,15 +3001,29 @@ class UIController {
                 targetSlot = "";
               }
             }
+
             if (targetSlot) {
               slotChanges[currentSlot] = targetSlot;
             }
+
+            slotMap.set(currentSlot, targetSlot || currentSlot);
           });
 
           document.querySelectorAll(".slot-group.removed").forEach((group) => {
             const slot = group.getAttribute("data-slot");
             slotsToRemove.push(slot);
+            slotMap.delete(slot);
           });
+
+          // Validate that no two different skins are assigned to the same slot
+          const duplicateSlots = Array.from(slotMap.values()).filter(
+            (slot, _, arr) => arr.indexOf(slot) !== arr.lastIndexOf(slot)
+          );
+
+          if (duplicateSlots.length > 0) {
+            const uniqueDuplicates = [...new Set(duplicateSlots)];
+            throw new Error(`Cannot assign multiple skins to the same slot: ${uniqueDuplicates.join(', ')}`);
+          }
 
           await Promise.all(
             modDetails.map(({ mod, affectedFiles }) =>

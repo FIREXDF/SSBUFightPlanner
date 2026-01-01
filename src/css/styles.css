@@ -500,7 +500,7 @@ body.dark-mode {
         display: block;
     }
     .toast-container {
-        z-index: 1050;
+        z-index: 1060;
     }
 }
 
