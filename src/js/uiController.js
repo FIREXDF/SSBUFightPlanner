@@ -3102,7 +3102,7 @@ class UIController {
       const confirmBtn = document.getElementById("confirmChangeSlots");
       confirmBtn.onclick = async () => {
         try {
-          const slotMap = new Map();
+          const allSlots = {};
           const slotChanges = {};
           const slotsToRemove = [];
 
@@ -3124,17 +3124,17 @@ class UIController {
               slotChanges[currentSlot] = targetSlot;
             }
 
-            slotMap.set(currentSlot, targetSlot || currentSlot);
+            allSlots[currentSlot] = targetSlot || currentSlot;
           });
 
           document.querySelectorAll(".slot-group.removed").forEach((group) => {
             const slot = group.getAttribute("data-slot");
             slotsToRemove.push(slot);
-            slotMap.delete(slot);
+            delete allSlots[slot];
           });
 
           // Validate that no two different skins are assigned to the same slot
-          const duplicateSlots = Array.from(slotMap.values()).filter(
+          const duplicateSlots = Object.values(allSlots).filter(
             (slot, _, arr) => arr.indexOf(slot) !== arr.lastIndexOf(slot)
           );
 
@@ -3149,7 +3149,8 @@ class UIController {
                 mod.path,
                 slotChanges,
                 slotsToRemove,
-                affectedFiles
+                allSlots,
+                affectedFiles,
               )
             )
           );
@@ -3173,14 +3174,15 @@ class UIController {
     }
   }
 
-  async handleChangeSlots(modPath, slotChanges, slotsToRemove, files) {
+  async handleChangeSlots(modPath, slotChanges, slotsToRemove, allSlots, files) {
     try {
       this.showLoading("Changing character slots...");
 
       const changedFiles = await ChangeSlots.changeSlots(
         modPath,
         slotChanges,
-        files
+        allSlots,
+        files,
       );
 
       let deletedFiles = 0;

@@ -1,3 +1,5 @@
+import { getInternalFighterName, getNonCopyFighterNames } from "./fighterNames.js";
+
 export class ChangeSlots {
     static async scanForSlots(modPath) {
         try {
@@ -67,31 +69,9 @@ export class ChangeSlots {
         }
     }
 
-    static async processSlots(modPath, slotChanges, slotsToRemove, files) {
-        let deletedFilesCount = 0;
-        let changedFilesCount = 0;
-
-        // First, handle slot removal if requested
-        if (slotsToRemove && slotsToRemove.length > 0) {
-            for (const slot of slotsToRemove) {
-                deletedFilesCount += await this.removeSlot(modPath, slot, files);
-            }
-        }
-
-        // Then handle slot changes if requested
-        if (slotChanges && Object.keys(slotChanges).length > 0) {
-            changedFilesCount = await this.changeSlots(modPath, slotChanges, files);
-        }
-
-        return {
-            deletedFilesCount,
-            changedFilesCount
-        };
-    }
-
     static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) {
         const configPath = `${modPath}\\config.json`;
-        let configContent = '{}';
+
         let config = {
             "new-dir-infos": [],
             "new-dir-infos-base": {},
@@ -99,16 +79,6 @@ export class ChangeSlots {
             "new-dir-files": {},
             "share-to-added": {}
         };
-
-        // Lire le config existant si présent
-        try {
-            if (await window.api.modOperations.fileExists(configPath)) {
-                configContent = await window.api.modOperations.readModFile(configPath);
-                config = JSON.parse(configContent);
-            }
-        } catch (e) {
-            console.warn('Could not read config.json, using empty config.');
-        }
 
         // Préparer les chemins
         const newDirInfo = `fighter/${fighterName}/${targetAlt}`;
@@ -163,7 +133,7 @@ export class ChangeSlots {
         await window.api.modOperations.writeModFile(configPath, JSON.stringify(config, null, 4));
     }
 
-    static async changeSlots(modPath, slotChanges, files) {
+    static async changeSlots(modPath, slotChanges, allSlots, files) {
         const changedFiles = [];
 
         // Filter out config.json from files to rename
@@ -241,7 +211,7 @@ export class ChangeSlots {
                     }
 
                     newFilePath = tempFilePath;
-                    
+
                     // Sécurité : si newFilePath est undefined ou vide, skip
                     if (!newFilePath) {
                         console.warn(`[changeSlots] newFilePath is undefined for file: ${file}, skip.`);
@@ -296,48 +266,41 @@ export class ChangeSlots {
         }
 
         // Handle Max Slots configuration if needed
-        const requestedSlots = Object.values(slotChanges);
-        const slotAboveC07 = requestedSlots.find(slot => parseInt(slot.replace('c', '')) > 7);
-        if (slotAboveC07) {
+        const finalSlots = Object.values(allSlots);
+        const hasAnySlotAboveC07 = finalSlots.find(slot => parseInt(slot.replace('c', '')) > 7);
+
+        if (hasAnySlotAboveC07) {
             try {
-                // Vérifie si le dossier fighter existe avant de continuer
-                const fighterPath = modPath + '/fighter';
-                let fighterExists = false;
-                try {
-                    fighterExists = await window.api.modOperations.fileExists(fighterPath);
-                } catch (e) {
-                    fighterExists = false;
-                }
-                if (!fighterExists) {
+                // 1. Get the fighter folder name
+                const fighterNameInternal = await getInternalFighterName(modPath);
+
+                if (!fighterNameInternal) {
                     console.log('[changeSlots] Dossier fighter non trouvé, skip la partie Max Slots.');
                     // On skip, pas d'erreur bloquante
                 } else {
-                    // 1. Get the fighter folder name
-                    const fighterDirList = await window.api.modOperations.getModFiles(fighterPath);
-                    const fighterDir = fighterDirList.find(f => !f.includes('/') && !f.includes('\\'));
-                    const fighterName = fighterDir;
-
                     // 2. Read ui_chara_db.txt
                     const uiCharaDbTxtPath = 'src/resources/reslot/ui_chara_db.txt';
                     const uiCharaDbTxt = await window.api.modOperations.readModFile(uiCharaDbTxtPath);
 
                     // 3. Find the line with the fighter name and get the number at the start of the line
                     const lines = uiCharaDbTxt.split(/\r?\n/);
-                    const fighterIndex = lines.findIndex(line => line.trim().toLowerCase() === fighterName.trim().toLowerCase());
-                    if (fighterIndex === -1) throw new Error(`Fighter name "${fighterName}" not found in ui_chara_db.txt`);
+                    const fighterIndex = lines.findIndex(line => line.trim().toLowerCase() === fighterNameInternal.trim().toLowerCase());
+                    if (fighterIndex === -1) throw new Error(`Fighter name "${fighterNameInternal}" not found in ui_chara_db.txt`);
 
                     // 4. Edit ui_chara_db.prcxml
                     const pathParts = modPath.replace(/\\/g, '/').split('/');
                     pathParts.pop();
-                    const modsFolder = pathParts.join('/');
-                    const prcxmlPath = `${modsFolder}/Max Slots/ui/param/database/ui_chara_db.prcxml`;
-                    let prcxmlContent = await window.api.modOperations.readModFile(prcxmlPath);
 
-                    for (const slot of requestedSlots) {
+                    const prcxmlTemplatePath = `src/resources/reslot/ui_chara_db.prcxml`;
+                    let prcxmlContent = await window.api.modOperations.readModFile(prcxmlTemplatePath);
+
+                    for (const slot of finalSlots) {
                         const slotNum = parseInt(slot.replace('c', ''));
+
                         if (slotNum > 7) {
                             const colorNum = slotNum + 1;
                             const hashLine = new RegExp(`<hash40 index="${fighterIndex}">dummy<\\/hash40>`, 'g');
+
                             prcxmlContent = prcxmlContent.replace(
                                 hashLine,
                                 `<struct index="${fighterIndex}"><byte hash="color_num">${colorNum}</byte></struct>`
@@ -345,8 +308,14 @@ export class ChangeSlots {
                         }
                     }
 
-                    // Write the modified file back
-                    await window.api.modOperations.writeModFile(prcxmlPath, prcxmlContent);
+                    // Ensure the directory exists before writing the file
+                    const outputDir = `${modPath}/ui/param/database`;
+                    if (!(await window.api.modOperations.fileExists(outputDir))) {
+                        await window.api.modOperations.createDirectory(outputDir);
+                    }
+
+                    // Write the modified file to the mod folder
+                    await window.api.modOperations.writeModFile(`${modPath}/ui/param/database/ui_chara_db.prcxml`, prcxmlContent);
                 }
             } catch (error) {
                 console.error('Error editing ui_chara_db.prcxml:', error);
@@ -355,35 +324,24 @@ export class ChangeSlots {
         }
 
         // Update config.json after renaming
-        if (changedFiles.length > 0) {
-            // Vérifie l'existence du dossier fighter AVANT d'appeler getModFiles
-            const fighterPath = modPath + '/fighter';
-            let fighterExists = false;
-            try {
-                fighterExists = await window.api.modOperations.fileExists(fighterPath);
-            } catch (e) {
-                fighterExists = false;
+        const fighterName = await getInternalFighterName(modPath);
+
+        if (fighterName) {
+            for (const newSlot of Object.values(finalSlots)) {
+                await ChangeSlots.addMissingFilesToConfig(modPath, fighterName, newSlot, files);
             }
-            if (fighterExists) {
-                const fighterDirList = await window.api.modOperations.getModFiles(fighterPath);
-                const fighterDir = fighterDirList.find(f => !f.includes('/') && !f.includes('\\'));
-                const fighterName = fighterDir;
-                for (const newSlot of Object.values(slotChanges)) {
-                    await ChangeSlots.addMissingFilesToConfig(modPath, fighterName, newSlot, files);
-                }
-            } else {
-                console.log('[changeSlots] Dossier fighter non trouvé, skip addMissingFilesToConfig.');
-            }
+        } else {
+            console.log('[changeSlots] Dossier fighter non trouvé, skip addMissingFilesToConfig.');
         }
 
         // Après tous les renommages, mettre à jour share-to-vanilla et new-dir-infos dans config.json
         if (changedFiles.length > 0) {
-            await ChangeSlots.updateShareToVanilla(modPath, slotChanges);
-            await ChangeSlots.updateNewDirInfos(modPath, slotChanges);
-            await ChangeSlots.updateNewDirFiles(modPath, slotChanges);
-            await ChangeSlots.updateNewDirInfosBase(modPath, slotChanges);
+            await ChangeSlots.updateShareToVanilla(modPath, finalSlots);
+            await ChangeSlots.updateNewDirInfos(modPath, finalSlots);
+            await ChangeSlots.updateNewDirFiles(modPath, finalSlots);
+            await ChangeSlots.updateNewDirInfosBase(modPath, finalSlots);
             // Appel de updateShareToAdded ici
-            await ChangeSlots.updateShareToAdded(modPath, slotChanges);
+            await ChangeSlots.updateShareToAdded(modPath, finalSlots);
         }
 
         return changedFiles.length;
@@ -392,18 +350,19 @@ export class ChangeSlots {
     /**
      * Met à jour la section "share-to-vanilla" du config.json à la racine du mod.
      * @param {string} modPath
-     * @param {Object} slotChanges - ex: { c34: c255 }
+     * @param {Object} finalSlots - ex: { c34: c255 }
      */
-    static async updateShareToVanilla(modPath, slotChanges) {
+    static async updateShareToVanilla(modPath, finalSlots) {
         try {
             console.log('[updateShareToVanilla] called');
+
             const fighterRoot = `${modPath}/fighter`;
             if (!(await window.api.modOperations.fileExists(fighterRoot))) {
                 console.warn('[updateShareToVanilla] fighter folder not found:', fighterRoot);
                 return;
             }
-            const fighterDirs = await window.api.modOperations.getModFiles(fighterRoot);
-            const fighterNames = fighterDirs.filter(f => !f.includes('/') && !f.includes('\\'));
+
+            const fighterNames = await getNonCopyFighterNames(modPath);
 
             // Charger vanilla.json
             const vanillaJsonPath = 'src/resources/reslot/vanilla.json';
@@ -445,7 +404,8 @@ export class ChangeSlots {
 
             let keyOrder = [];
             let vanillaSet = new Set();
-            for (const [oldSlot, newSlot] of Object.entries(slotChanges)) {
+
+            for (const [oldSlot, newSlot] of Object.entries(finalSlots)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
                 if (newSlotNum < 7) continue; // Ignore slots below c07
 
@@ -458,7 +418,7 @@ export class ChangeSlots {
                         ) {
                             // Récupère le sous-dossier (ex: bow, bowarrow, navy, parasail)
                             const match = vanillaPath.match(new RegExp(`^fighter/${fighterName}/model/([^/]+)/c00/`));
-                            if (match && allowedSubfolders.includes(match[1])) {
+                            if (match) {
                                 matchFighter = true;
                                 break;
                             }
@@ -497,12 +457,18 @@ export class ChangeSlots {
                         .replace(/\/c00\//g, `/${newSlot}/`)
                         .replace(/\/c00$/g, `/${newSlot}`)
                         .replace(/_c00/g, `_${newSlot}`);
+
                     if (customPath !== vanillaPath) {
                         if (!vanillaSet.has(vanillaPath)) {
                             keyOrder.push(vanillaPath);
                             vanillaSet.add(vanillaPath);
                         }
-                        config["share-to-vanilla"][vanillaPath] = [customPath];
+
+                        if (!config["share-to-vanilla"][vanillaPath]) {
+                            config["share-to-vanilla"][vanillaPath] = [];
+                        }
+
+                        config["share-to-vanilla"][vanillaPath].push(customPath);
                     }
                 }
             }
@@ -528,15 +494,12 @@ export class ChangeSlots {
     static async updateNewDirInfos(modPath, slotChanges) {
         try {
             // Cherche le(s) nom(s) du fighter
-            let fighterNames = [];
-            const fighterRoot = `${modPath}/fighter`;
-            if (await window.api.modOperations.fileExists(fighterRoot)) {
-                const fighterDirs = await window.api.modOperations.getModFiles(fighterRoot);
-                fighterNames = fighterDirs.filter(f => !f.includes('/') && !f.includes('\\'));
-            }
+            const fighterNames = await getNonCopyFighterNames(modPath);
+
             // Si pas trouvé, tente de déduire le nom du fighter depuis le chemin ou fallback "link"
             if (fighterNames.length === 0) {
                 const match = modPath.replace(/\\/g, '/').match(/fighter\/([^/]+)/i);
+
                 if (match) {
                     fighterNames = [match[1]];
                 } else {
@@ -545,7 +508,9 @@ export class ChangeSlots {
             }
 
             const configPath = `${modPath}/config.json`;
+
             let config = {};
+
             if (await window.api.modOperations.fileExists(configPath)) {
                 try {
                     config = JSON.parse(await window.api.modOperations.readModFile(configPath));
@@ -562,7 +527,9 @@ export class ChangeSlots {
                 "fighter/{fighter}/movie/{slot}",
                 "fighter/{fighter}/result/{slot}"
             ];
+
             let keyOrder = [];
+
             for (const fighterName of fighterNames) {
                 for (const [oldSlot, newSlot] of Object.entries(slotChanges)) {
                     const newSlotNum = parseInt(newSlot.replace('c', ''));
@@ -574,6 +541,7 @@ export class ChangeSlots {
                     }
                 }
             }
+
             config["new-dir-infos"] = keyOrder;
 
             await ChangeSlots.writeOrderedConfig(configPath, config);
@@ -600,8 +568,8 @@ export class ChangeSlots {
                 console.warn('[updateNewDirFiles] fighter folder not found:', fighterRoot);
                 return;
             }
-            const fighterDirs = await window.api.modOperations.getModFiles(fighterRoot);
-            const fighterNames = fighterDirs.filter(f => !f.includes('/') && !f.includes('\\'));
+
+            const fighterNames = await getNonCopyFighterNames(modPath);
             if (fighterNames.length === 0) return;
 
             // Charger vanilla.json
@@ -751,8 +719,8 @@ export class ChangeSlots {
                 console.warn('[updateNewDirInfosBase] fighter folder not found:', fighterRoot);
                 return;
             }
-            const fighterDirs = await window.api.modOperations.getModFiles(fighterRoot);
-            const fighterNames = fighterDirs.filter(f => !f.includes('/') && !f.includes('\\'));
+
+            const fighterNames = await getNonCopyFighterNames(modPath);
             if (fighterNames.length === 0) return;
 
             const configPath = `${modPath}/config.json`;
@@ -856,12 +824,13 @@ export class ChangeSlots {
         try {
             console.log('[updateShareToAdded] called');
             const fighterRoot = `${modPath}/fighter`;
+
             if (!(await window.api.modOperations.fileExists(fighterRoot))) {
                 console.warn('[updateShareToAdded] fighter folder not found:', fighterRoot);
                 return;
             }
-            const fighterDirs = await window.api.modOperations.getModFiles(fighterRoot);
-            const fighterNames = fighterDirs.filter(f => !f.includes('/') && !f.includes('\\'));
+
+            const fighterNames = await getNonCopyFighterNames(modPath);
             if (fighterNames.length === 0) return;
 
             // Charger vanilla.json
