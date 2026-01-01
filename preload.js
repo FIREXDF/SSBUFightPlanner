@@ -119,6 +119,8 @@ contextBridge.exposeInMainWorld('api', {
         }),
         getConflictCheckEnabled: () => ipcRenderer.invoke('get-conflict-check-enabled'),
         setConflictCheckEnabled: (enabled) => ipcRenderer.invoke('set-conflict-check-enabled', enabled),
+        getAutoPrefixRename: () => ipcRenderer.invoke('get-auto-prefix-rename'),
+        setAutoPrefixRename: (enabled) => ipcRenderer.invoke('set-auto-prefix-rename', enabled),
         getDiscordRpcEnabled: () => ipcRenderer.invoke('get-discord-rpc-enabled'),
         setDiscordRpcEnabled: (enabled) => ipcRenderer.invoke('set-discord-rpc-enabled', enabled),
         getSendVersionEnabled: () => ipcRenderer.invoke('get-send-version-enabled'),

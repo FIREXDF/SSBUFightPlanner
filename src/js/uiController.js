@@ -5,6 +5,7 @@ import { languageService } from "./services/languageService.js";
 import { ChangeSlots } from "./changeSlots.js";
 import { CharacterScanner } from "./scanallfoldercharacter.js";
 import { AnnouncementModal } from './announcementModal.js';
+import { getInternalFighterName } from "./fighterNames.js";
 
 class UIController {
   constructor() {
@@ -148,7 +149,7 @@ class UIController {
       errorToast = document.createElement("div");
       errorToast.id = "error-toast";
       errorToast.className = "toast align-items-center text-bg-danger border-0";
-      
+
       errorToast.setAttribute("role", "alert");
       errorToast.setAttribute("aria-live", "assertive");
       errorToast.setAttribute("aria-atomic", "true");
@@ -490,9 +491,8 @@ class UIController {
     // Set mod details
     modElement.innerHTML = `
             <span class="mod-name">${mod.name}</span>
-            <span class="mod-status">${
-              mod.enabled ? "Enabled" : "Disabled"
-            }</span>
+            <span class="mod-status">${mod.enabled ? "Enabled" : "Disabled"
+      }</span>
             <!-- Add more mod details as needed -->
         `;
 
@@ -753,9 +753,8 @@ class UIController {
           iconHtml = `<i class="bi bi-x-circle-fill text-danger"></i>`;
         }
         return `
-            <div class="mod-item ${
-              mod.enabled ? "enabled" : "disabled"
-            }" data-mod-id="${mod.id}">
+            <div class="mod-item ${mod.enabled ? "enabled" : "disabled"
+          }" data-mod-id="${mod.id}">
                 <div class="mod-status me-3">
                     ${iconHtml}
                 </div>
@@ -1390,6 +1389,97 @@ class UIController {
     }
   }
 
+  async generateModPrefix(modPath) {
+    try {
+      // Scan for slots in the mod
+      const { currentSlots } = await ChangeSlots.scanForSlots(modPath);
+
+      if (!currentSlots || currentSlots.length === 0) {
+        return null;
+      }
+
+      const fighterNameInternal = await getInternalFighterName(modPath);
+
+      if (!fighterNameInternal) {
+        return null;
+      }
+
+      // Map internal names to display names
+      const characterNames = {
+        'mario': 'Mario', 'donkey': 'Donkey Kong', 'link': 'Link', 'samus': 'Samus',
+        'samusd': 'Dark Samus', 'yoshi': 'Yoshi', 'kirby': 'Kirby', 'fox': 'Fox',
+        'pikachu': 'Pikachu', 'luigi': 'Luigi', 'ness': 'Ness', 'captain': 'Captain Falcon',
+        'purin': 'Jigglypuff', 'peach': 'Peach', 'daisy': 'Daisy', 'koopa': 'Bowser',
+        'ice_climber': 'Ice Climbers', 'sheik': 'Sheik', 'zelda': 'Zelda', 'mariod': 'Dr. Mario',
+        'pichu': 'Pichu', 'falco': 'Falco', 'marth': 'Marth', 'lucina': 'Lucina',
+        'younglink': 'Young Link', 'ganon': 'Ganondorf', 'mewtwo': 'Mewtwo', 'roy': 'Roy',
+        'chrom': 'Chrom', 'gamewatch': 'Mr. Game & Watch', 'metaknight': 'Meta Knight',
+        'pit': 'Pit', 'pitb': 'Dark Pit', 'szerosuit': 'Zero Suit Samus', 'wario': 'Wario',
+        'snake': 'Snake', 'ike': 'Ike', 'ptrainer': 'Pokémon Trainer', 'diddy': 'Diddy Kong',
+        'lucas': 'Lucas', 'sonic': 'Sonic', 'dedede': 'King Dedede', 'pikmin': 'Olimar',
+        'lucario': 'Lucario', 'robot': 'R.O.B.', 'toonlink': 'Toon Link', 'wolf': 'Wolf',
+        'murabito': 'Villager', 'rockman': 'Mega Man', 'wiifit': 'Wii Fit Trainer',
+        'rosetta': 'Rosalina & Luma', 'littlemac': 'Little Mac', 'gekkouga': 'Greninja',
+        'miifighter': 'Mii Brawler', 'miiswordsman': 'Mii Swordfighter', 'miigunner': 'Mii Gunner',
+        'palutena': 'Palutena', 'pacman': 'Pac-Man', 'reflet': 'Robin', 'shulk': 'Shulk',
+        'koopajr': 'Bowser Jr.', 'duckhunt': 'Duck Hunt', 'ryu': 'Ryu', 'ken': 'Ken',
+        'cloud': 'Cloud', 'kamui': 'Corrin', 'bayonetta': 'Bayonetta', 'inkling': 'Inkling',
+        'ridley': 'Ridley', 'simon': 'Simon', 'richter': 'Richter', 'krool': 'King K. Rool',
+        'shizue': 'Isabelle', 'gaogaen': 'Incineroar', 'packun': 'Piranha Plant',
+        'jack': 'Joker', 'brave': 'Hero', 'buddy': 'Banjo & Kazooie', 'dolly': 'Terry',
+        'master': 'Byleth', 'tantan': 'Min Min', 'pickel': 'Steve', 'edge': 'Sephiroth',
+        'eflame': 'Pyra', 'elight': 'Mythra', 'demon': 'Kazuya', 'trail': 'Sora'
+      };
+
+      const characterName = characterNames[fighterNameInternal.toLowerCase()] || fighterNameInternal;
+
+      // Format slots with ranges for consecutive slots
+      const formatSlots = (slots) => {
+        if (!slots || slots.length === 0) return '';
+
+        // Sort slots by their numeric value
+        const sorted = [...slots].sort((a, b) => {
+          const numA = parseInt(a.replace('c', ''));
+          const numB = parseInt(b.replace('c', ''));
+          return numA - numB;
+        });
+
+        const ranges = [];
+        let rangeStart = 0;
+
+        for (let i = 0; i < sorted.length; i++) {
+          const currentNum = parseInt(sorted[i].replace('c', ''));
+          const nextNum = i < sorted.length - 1 ? parseInt(sorted[i + 1].replace('c', '')) : null;
+
+          // Check if next slot is consecutive
+          if (nextNum !== currentNum + 1) {
+            // End of range or single slot
+            if (i === rangeStart) {
+              // Single slot
+              ranges.push(sorted[i]);
+            } else if (i === rangeStart + 1) {
+              // Just two slots, don't make a range
+              ranges.push(sorted[rangeStart], sorted[i]);
+            } else {
+              // Range of 3 or more
+              ranges.push(`${sorted[rangeStart]}-${sorted[i]}`);
+            }
+            rangeStart = i + 1;
+          }
+        }
+
+        return ranges.join(', ');
+      };
+
+      const slotsStr = formatSlots(currentSlots);
+
+      return `[${characterName}] (${slotsStr})`;
+    } catch (error) {
+      console.error('Error generating mod prefix:', error);
+      return null;
+    }
+  }
+
   async handleRenameMod() {
     if (this.isDialogOpen) return;
 
@@ -1402,11 +1492,40 @@ class UIController {
       this.isDialogOpen = true;
 
       const currentName = this.selectedMod;
+      let defaultName = currentName;
+
+      // Check if auto-prefix setting is enabled
+      const autoPrefixEnabled = await window.api.settings.getAutoPrefixRename();
+
+      if (autoPrefixEnabled) {
+        try {
+          const mod = await this.modManager.getMod(this.selectedMod);
+          const prefix = await this.generateModPrefix(mod.path);
+
+          if (prefix) {
+            // Regex to match existing prefix format: [Character] (slots with ranges...)
+            // Matches patterns like: [Mario] (c00-c03, c05) or [Link] (c00, c02)
+            const prefixRegex = /^\[([^\]]+)\]\s*\((c\d+(?:-c\d+)?(?:,\s*c\d+(?:-c\d+)?)*)\)\s*/;
+            const match = currentName.match(prefixRegex);
+
+            if (match) {
+              // Replace existing prefix with new one
+              defaultName = currentName.replace(prefixRegex, `${prefix} `);
+            } else {
+              // No existing prefix, add new one
+              defaultName = `${prefix} ${currentName}`;
+            }
+          }
+        } catch (error) {
+          console.error("Error generating prefix:", error);
+          // Continue with original name if prefix generation fails
+        }
+      }
 
       const newName = await this.promptDialog(
         "Rename Mod",
         "Enter a new name for the mod:",
-        currentName
+        defaultName
       );
 
       this.isDialogOpen = false;
@@ -1483,9 +1602,8 @@ class UIController {
                     </div>
                     <div class="modal-body">
                         <p>${message}</p>
-                        <input type="text" class="form-control" value="${
-                          defaultValue || ""
-                        }">
+                        <input type="text" class="form-control" value="${defaultValue || ""
+        }">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -1690,7 +1808,7 @@ class UIController {
 
     // Automatically remove the toast after a certain time
     setTimeout(() => {
-    toast.remove();
+      toast.remove();
     }, 5000); // 5 seconds
   }
 
@@ -1831,12 +1949,12 @@ class UIController {
           metadataContent.innerHTML = `
                     <div class="alert alert-warning">
                         <p>${await languageService.translate(
-                          "mods.details.title"
-                        )}:</p>
+            "mods.details.title"
+          )}:</p>
                         <h5>${this.escapeHtml(mod.name)}</h5>
                         <p class="text-muted">${await languageService.translate(
-                          "metadata.description.empty"
-                        )}</p>
+            "metadata.description.empty"
+          )}</p>
                     </div>
                 `;
           return;
@@ -1845,74 +1963,67 @@ class UIController {
         // Build metadata HTML with translations
         const metadataHtml = `
                 <h5>${this.escapeHtml(
-                  modInfo?.display_name || modInfo?.mod_name || mod.name
-                )}</h5>
-                ${
-                  modInfo?.version
-                    ? `
+          modInfo?.display_name || modInfo?.mod_name || mod.name
+        )}</h5>
+                ${modInfo?.version
+            ? `
                     <p><strong>${await languageService.translate(
-                      "metadata.version.label"
-                    )}:</strong> 
+              "metadata.version.label"
+            )}:</strong> 
                     ${this.escapeHtml(modInfo.version)}</p>`
-                    : ""
-                }
-                ${
-                  modInfo?.authors
-                    ? `
+            : ""
+          }
+                ${modInfo?.authors
+            ? `
                     <p><strong>${await languageService.translate(
-                      "metadata.author.name"
-                    )}:</strong> 
+              "metadata.author.name"
+            )}:</strong> 
                     ${this.escapeHtml(modInfo.authors)}</p>`
-                    : ""
-                }
-                ${
-                  modInfo?.category
-                    ? `
+            : ""
+          }
+                ${modInfo?.category
+            ? `
                     <p><strong>${await languageService.translate(
-                      "metadata.category.label"
-                    )}:</strong> 
-                    ${
-                      (await languageService.translate(
-                        `metadata.category.${modInfo.category.toLowerCase()}`
-                      )) || this.escapeHtml(modInfo.category)
-                    }</p>`
-                    : ""
-                }
-                ${
-                  typeof modInfo?.wifi_safe !== "undefined"
-                    ? `
+              "metadata.category.label"
+            )}:</strong> 
+                    ${(await languageService.translate(
+              `metadata.category.${modInfo.category.toLowerCase()}`
+            )) || this.escapeHtml(modInfo.category)
+            }</p>`
+            : ""
+          }
+                ${typeof modInfo?.wifi_safe !== "undefined"
+            ? `
                     <p><strong>${await languageService.translate(
-                      "mods.details.wifiSafe"
-                    )}:</strong> 
+              "mods.details.wifiSafe"
+            )}:</strong> 
                     ${modInfo.wifi_safe ? "✔️" : "❌"}</p>`
-                    : ""
-                }
-                ${
-                  modInfo?.description
-                    ? `
+            : ""
+          }
+                ${modInfo?.description
+            ? `
                     <div class="description-section">
                         <strong>${await languageService.translate(
-                          "metadata.description.title"
-                        )}:</strong>
+              "metadata.description.title"
+            )}:</strong>
                         <p class="description-text">
                             ${this.escapeHtml(modInfo.description)}
                         </p>
                     </div>`
-                    : ""
-                }
-                ${
-                  modInfo?.url
-                    ? `
+            : ""
+          }
+                ${modInfo?.url
+            ? `
                     <p><strong>${await languageService.translate(
-                      "metadata.author.website"
-                    )}:</strong> 
+              "metadata.author.website"
+            )}:</strong> 
                     <a href="#" onclick="window.api.openExternal('${this.escapeHtml(
-                      modInfo.url
-                    )}'); return false;">
+              modInfo.url
+            )}'); return false;">
                         ${this.escapeHtml(modInfo.url)}
                     </a></p>`
-                    : ""
-                }
+            : ""
+          }
             `;
 
         metadataContent.innerHTML = metadataHtml;
@@ -1937,12 +2048,12 @@ class UIController {
         metadataContent.innerHTML = `
                 <div class="alert alert-warning">
                     <p>${await languageService.translate(
-                      "mods.details.title"
-                    )}:</p>
+          "mods.details.title"
+        )}:</p>
                     <h5>${this.escapeHtml(mod.name)}</h5>
                     <p class="text-muted">${await languageService.translate(
-                      "metadata.description.empty"
-                    )}</p>
+          "metadata.description.empty"
+        )}</p>
                 </div>
             `;
       }
@@ -2164,15 +2275,12 @@ class UIController {
                     <strong>${this.escapeHtml(plugin.name)}</strong>
                 </div>
                 <div class="plugin-actions">
-                    <button class="btn btn-sm btn-outline-secondary me-1 toggle-plugin" data-plugin-id="${
-                      plugin.id
-                    }">
-                        <i class="bi bi-${
-                          plugin.enabled ? "toggle-on" : "toggle-off"
-                        }"></i>
-                    <button class="btn btn-sm btn-outline-danger me-1 delete-plugin" data-plugin-id="${
-                      plugin.id
-                    }">
+                    <button class="btn btn-sm btn-outline-secondary me-1 toggle-plugin" data-plugin-id="${plugin.id
+        }">
+                        <i class="bi bi-${plugin.enabled ? "toggle-on" : "toggle-off"
+        }"></i>
+                    <button class="btn btn-sm btn-outline-danger me-1 delete-plugin" data-plugin-id="${plugin.id
+        }">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
@@ -2392,6 +2500,7 @@ class UIController {
       .addEventListener("click", this.handleRemoveCustomCssFile);
     this.initializeDarkMode();
     this.initializeConflictCheckToggle();
+    this.initializeAutoPrefixRenameToggle();
     this.initializeDiscordRpcToggle();
     this.initializeEmulatorSettings();
     this.initializeLegacyModDiscoveryToggle();
@@ -2535,6 +2644,20 @@ class UIController {
       const enabled = e.target.checked;
       window.api.settings.setConflictCheckEnabled(enabled);
     });
+  }
+
+  initializeAutoPrefixRenameToggle() {
+    const autoPrefixRenameToggle = document.getElementById("autoPrefixRenameToggle");
+    if (autoPrefixRenameToggle) {
+      window.api.settings.getAutoPrefixRename().then((enabled) => {
+        autoPrefixRenameToggle.checked = enabled;
+      });
+
+      autoPrefixRenameToggle.addEventListener("change", (e) => {
+        const enabled = e.target.checked;
+        window.api.settings.setAutoPrefixRename(enabled);
+      });
+    }
   }
 
   handleRemoveCustomCssFile() {
@@ -2692,18 +2815,15 @@ class UIController {
     const modalHtml = `
     <div class="modal fade" id="conflictsModal" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content border-warning shadow ${
-              isDark ? "bg-dark text-black" : ""
-            }">
+            <div class="modal-content border-warning shadow ${isDark ? "bg-dark text-black" : ""
+      }">
                 <div class="modal-header bg-warning bg-gradient">
                     <h5 class="modal-title d-flex align-items-center">
                         <i class="bi bi-exclamation-triangle-fill me-2 text-danger fs-3"></i>
                         Mod Conflicts Detected
-                        <span class="badge bg-danger ms-3">${
-                          descriptions.length
-                        } files in conflict${
-      descriptions.length > 1 ? "s" : ""
-    }</span>
+                        <span class="badge bg-danger ms-3">${descriptions.length
+      } files in conflict${descriptions.length > 1 ? "s" : ""
+      }</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -2712,9 +2832,8 @@ class UIController {
                         <strong>The following conflicts were found between mods:</strong>
                     </p>
                     <div class="table-responsive">
-                        <table class="table table-bordered align-middle table-hover ${
-                          isDark ? "table-dark" : ""
-                        }">
+                        <table class="table table-bordered align-middle table-hover ${isDark ? "table-dark" : ""
+      }">
                             <thead class="table-warning">
                                 <tr>
                                     <th scope="col"><i class="bi bi-file-earmark"></i> File</th>
@@ -2723,30 +2842,29 @@ class UIController {
                             </thead>
                             <tbody>
                                 ${descriptions
-                                  .map(
-                                    (conflict) => `
+        .map(
+          (conflict) => `
                                     <tr>
-                                        <td class="fw-bold text-break" style="min-width:180px">${
-                                          conflict.file
-                                        }</td>
+                                        <td class="fw-bold text-break" style="min-width:180px">${conflict.file
+            }</td>
                                         <td>
                                             <ul class="list-unstyled mb-0">
                                                 ${conflict.mods
-                                                  .map(
-                                                    (mod) => `
+              .map(
+                (mod) => `
                                                     <li class="d-flex align-items-center mb-1">
                                                         <i class="bi bi-exclamation-circle-fill text-warning me-2"></i>
                                                         <span>${mod}</span>
                                                     </li>
                                                 `
-                                                  )
-                                                  .join("")}
+              )
+              .join("")}
                                             </ul>
                                         </td>
                                     </tr>
                                 `
-                                  )
-                                  .join("")}
+        )
+        .join("")}
                             </tbody>
                         </table>
                     </div>
@@ -2809,14 +2927,14 @@ class UIController {
                             <p>Select the mod you want to change slots for:</p>
                             <div class="list-group">
                                 ${Array.from(uniqueMods)
-                                  .map(
-                                    (mod) => `
+        .map(
+          (mod) => `
                                     <button type="button" class="list-group-item list-group-item-action mod-button" data-mod-id="${mod}">
                                         ${mod}
                                     </button>
                                 `
-                                  )
-                                  .join("")}
+        )
+        .join("")}
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -2888,21 +3006,21 @@ class UIController {
             <div class="mb-3">
                 <strong>${mod.name} - Current slots found:</strong> 
                 ${currentSlots
-                  .map(
-                    (slot) => `
+              .map(
+                (slot) => `
                     <div class="input-group mb-2 slot-group" data-slot="${slot}">
                         <span class="input-group-text">${slot}</span>
                         <div style="flex:1;">
                             <select class="form-select target-slot" data-current-slot="${slot}">
                                 <option value="">Select new slot</option>
                                 ${allSlots
-                                  .filter((s) => s !== slot)
-                                  .map(
-                                    (newSlot) => `
+                    .filter((s) => s !== slot)
+                    .map(
+                      (newSlot) => `
                                     <option value="${newSlot}">${newSlot}</option>
                                 `
-                                  )
-                                  .join("")}
+                    )
+                    .join("")}
                                 <option value="custom">Custom... (EXPERIMENTAL)</option>
                             </select>
                             <input type="text" class="form-control custom-slot-input mt-2 d-none" placeholder="Enter custom slot (e.g. c123)">
@@ -2911,15 +3029,15 @@ class UIController {
                         <div class="overlay"></div>
                     </div>
                 `
-                  )
-                  .join("")}
+              )
+              .join("")}
             </div>
             <div class="mb-3">
                 <strong>Files to be changed (${affectedFiles.length}):</strong>
                 <div class="small textmuted" style="max-height: 100px; overflow-y: auto;">
                     ${affectedFiles
-                      .map((file) => `<div>${file}</div>`)
-                      .join("")}
+              .map((file) => `<div>${file}</div>`)
+              .join("")}
                 </div>
             </div>
         `;
@@ -3244,8 +3362,8 @@ class UIController {
       item.innerHTML = `
                 <div class="download-info">
                     <strong class="mod-name">${this.escapeHtml(
-                      modName
-                    )}</strong>
+        modName
+      )}</strong>
                     <div class="message">${message}</div>
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -3329,13 +3447,12 @@ class UIController {
       if (messageEl) messageEl.textContent = message;
       if (progressBar) {
         progressBar.style.width = "100%";
-        progressBar.className = `progress-bar ${
-          type === "error"
-            ? "bg-danger"
-            : type === "cancelled"
+        progressBar.className = `progress-bar ${type === "error"
+          ? "bg-danger"
+          : type === "cancelled"
             ? "bg-warning"
             : "bg-success"
-        }`;
+          }`;
       }
       if (modNameEl && modName) modNameEl.textContent = modName;
 
@@ -3528,9 +3645,8 @@ class UIController {
 
     downloadItem.innerHTML = `
             <div class="download-info">
-                <strong class="download-title">${
-                  status.modName || "Downloading..."
-                }</strong>
+                <strong class="download-title">${status.modName || "Downloading..."
+      }</strong>
                 <p class="download-message">${status.message}</p>
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" 
@@ -3596,15 +3712,15 @@ class UIController {
   }
   initializeAnnouncementSystem() {
     try {
-        console.log('[UIController] Initialisation du système d\'annonces');
-        const githubJsonUrl = 'https://raw.githubusercontent.com/FightPlanner/.github/refs/heads/main/v3.json';
-        this.announcementModal = new AnnouncementModal(githubJsonUrl);
-        this.announcementModal.initialize();
-        console.log('[UIController] Système d\'annonces prêt');
+      console.log('[UIController] Initialisation du système d\'annonces');
+      const githubJsonUrl = 'https://raw.githubusercontent.com/FightPlanner/.github/refs/heads/main/v3.json';
+      this.announcementModal = new AnnouncementModal(githubJsonUrl);
+      this.announcementModal.initialize();
+      console.log('[UIController] Système d\'annonces prêt');
     } catch (error) {
-        console.error('[UIController] Erreur initialisation annonces:', error);
+      console.error('[UIController] Erreur initialisation annonces:', error);
     }
-}
+  }
   async showCreateFppDialog() {
     try {
       // Load mods and plugins
@@ -3616,9 +3732,8 @@ class UIController {
           .map(
             (mod) => `
                     <label class="list-group-item">
-                        <input class="form-check-input me-2 fpp-mod" type="checkbox" value="${
-                          mod.id
-                        }">
+                        <input class="form-check-input me-2 fpp-mod" type="checkbox" value="${mod.id
+              }">
                         ${this.escapeHtml(mod.name)}
                     </label>
                 `
@@ -3632,9 +3747,8 @@ class UIController {
           .map(
             (plugin) => `
                     <label class="list-group-item">
-                        <input class="form-check-input me-2 fpp-plugin" type="checkbox" value="${
-                          plugin.id
-                        }">
+                        <input class="form-check-input me-2 fpp-plugin" type="checkbox" value="${plugin.id
+              }">
                         ${this.escapeHtml(plugin.name)}
                     </label>
                 `

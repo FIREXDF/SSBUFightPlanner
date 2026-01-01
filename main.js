@@ -1137,6 +1137,15 @@ ipcMain.handle("set-conflict-check-enabled", (event, enabled) => {
   return true;
 });
 
+ipcMain.handle("get-auto-prefix-rename", () => {
+  return store.get("autoPrefixRename", false);
+});
+
+ipcMain.handle("set-auto-prefix-rename", (event, enabled) => {
+  store.set("autoPrefixRename", enabled);
+  return true;
+});
+
 // Legacy mod discovery handler
 ipcMain.handle("get-legacy-mod-discovery", () => {
   return store.get("legacyModDiscovery", false);
