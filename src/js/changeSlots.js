@@ -5,6 +5,7 @@ export class ChangeSlots {
         try {
             const files = await window.api.modOperations.getModFiles(modPath);
             console.log('[scanForSlots] Tous les fichiers trouvés:', files);
+
             const slotFiles = files.filter(file => {
                 const pathParts = file.split(/[/\\]/);
                 const fileName = pathParts[pathParts.length - 1];
@@ -27,26 +28,68 @@ export class ChangeSlots {
             console.log('[scanForSlots] Fichiers slots détectés:', slotFiles);
 
             const slots = new Set();
+            const fighterToSlots = {}; // Map fighters to slots with files
+
             slotFiles.forEach(file => {
                 const pathParts = file.split(/[/\\]/);
                 const part = pathParts[pathParts.length - 1];
 
+                // Extract fighter name from path (e.g., fighter/mario/c00)
+                let fighterName = null;
+                const fighterIndex = pathParts.indexOf('fighter');
+                if (fighterIndex !== -1 && pathParts.length > fighterIndex + 1) {
+                    fighterName = pathParts[fighterIndex + 1];
+                }
+
                 // Dossier slot : cXX, cXXX, etc.
                 const cMatch = part.match(/^c\d{2,3}$/i);
+
                 if (cMatch) {
-                    slots.add(cMatch[0].toLowerCase());
+                    const slot = cMatch[0].toLowerCase();
+                    slots.add(slot);
+                    if (fighterName) {
+                        if (!fighterToSlots[fighterName]) {
+                            fighterToSlots[fighterName] = {};
+                        }
+                        if (!fighterToSlots[fighterName][slot]) {
+                            fighterToSlots[fighterName][slot] = [];
+                        }
+                        fighterToSlots[fighterName][slot].push(file);
+                    }
                 } else {
                     // Fichier slot : 0XX, 0XXX, etc.
                     const zeroMatch = part.match(/0\d{2,3}/);
+
                     if (zeroMatch) {
-                        slots.add('c' + zeroMatch[0].slice(1)); // <-- toujours stocker en cXX
+                        const slot = 'c' + zeroMatch[0].slice(1); // <-- toujours stocker en cXX
+                        slots.add(slot);
+                        if (fighterName) {
+                            if (!fighterToSlots[fighterName]) {
+                                fighterToSlots[fighterName] = {};
+                            }
+                            if (!fighterToSlots[fighterName][slot]) {
+                                fighterToSlots[fighterName][slot] = [];
+                            }
+                            fighterToSlots[fighterName][slot].push(file);
+                        }
                     }
                     // Fichier slot : XX, XXX (sans 0 devant, ni c)
                     const numMatch = part.match(/(?<!\d)\d{2,3}(?=\.[^.]+$)/);
+
                     if (numMatch) {
                         let num = numMatch[0];
                         if (num.length === 1) num = '0' + num;
-                        slots.add('c' + num);
+                        const slot = 'c' + num;
+                        slots.add(slot);
+                        if (fighterName) {
+                            if (!fighterToSlots[fighterName]) {
+                                fighterToSlots[fighterName] = {};
+                            }
+                            if (!fighterToSlots[fighterName][slot]) {
+                                fighterToSlots[fighterName][slot] = [];
+                            }
+                            fighterToSlots[fighterName][slot].push(file);
+                        }
                     }
                 }
             });
@@ -54,13 +97,19 @@ export class ChangeSlots {
             const sortedSlots = Array.from(slots).sort((a, b) => {
                 const numA = parseInt(a.replace('c', ''));
                 const numB = parseInt(b.replace('c', ''));
+
                 return numA - numB;
             });
 
+            // fighterSlots already contains the structure: { fighter: { slot: [files] } }
+            const fighterSlots = fighterToSlots;
+
             console.log('[scanForSlots] Slots détectés:', sortedSlots);
+            console.log('[scanForSlots] Slots par fighter:', fighterSlots);
 
             return {
                 currentSlots: sortedSlots,
+                fighterSlots: fighterSlots,
                 affectedFiles: slotFiles
             };
         } catch (error) {

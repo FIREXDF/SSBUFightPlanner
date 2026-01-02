@@ -5,7 +5,7 @@ import { languageService } from "./services/languageService.js";
 import { ChangeSlots } from "./changeSlots.js";
 import { CharacterScanner } from "./scanallfoldercharacter.js";
 import { AnnouncementModal } from './announcementModal.js';
-import { getInternalFighterName } from "./fighterNames.js";
+import { getInternalFighterName, getNonCopyFighterNames } from "./fighterNames.js";
 
 class UIController {
   constructor() {
@@ -2983,7 +2983,7 @@ class UIController {
       const modDetails = await Promise.all(
         selectedMods.map(async (modId) => {
           const mod = await this.modManager.getMod(modId);
-          const { currentSlots, affectedFiles } =
+          const { currentSlots, affectedFiles, fighterSlots } =
             await ChangeSlots.scanForSlots(mod.path);
 
           // Get fighter name and existing custom names
@@ -3001,13 +3001,106 @@ class UIController {
             }
           }
 
-          return { mod, currentSlots, affectedFiles, existingCustomNames, defaultCustomNames };
+          return { mod, currentSlots, affectedFiles, fighterSlots, existingCustomNames, defaultCustomNames, fighterNameInternal };
         })
       );
 
+      // Collect all slots in use for the same fighter across all mods
+      // Only consider a slot "in use" if it shares files with the mod being changed
+      const slotsInUse = new Map(); // Map<slot, Array<modName>>
+      const fighterName = modDetails[0]?.fighterNameInternal;
+
+      if (fighterName) {
+        // Get all files from the mod being changed for this fighter
+        const modBeingChangedFiles = new Set();
+        for (const detail of modDetails) {
+          if (detail.fighterSlots && detail.fighterSlots[fighterName]) {
+            const slotsData = detail.fighterSlots[fighterName];
+            for (const slot in slotsData) {
+              const files = slotsData[slot];
+              files.forEach(file => {
+                // Normalize file path (remove slot-specific parts to compare base paths)
+                const normalizedFile = file.replace(/[\/\\]c\d{2,3}(?=[\/\\]|$)/gi, '/c##');
+                modBeingChangedFiles.add(normalizedFile);
+              });
+            }
+          }
+        }
+
+        for (const mod of this.mods) {
+          try {
+            const modFighterNames = await getNonCopyFighterNames(mod.path);
+
+            if (modFighterNames.includes(fighterName)) {
+              const { fighterSlots } = await ChangeSlots.scanForSlots(mod.path);
+
+              if (fighterSlots[fighterName]) {
+                const slotsData = fighterSlots[fighterName];
+
+                for (const slot in slotsData) {
+                  const files = slotsData[slot];
+
+                  // Check if any files from this slot overlap with the mod being changed
+                  let hasOverlap = false;
+                  for (const file of files) {
+                    const normalizedFile = file.replace(/[\/\\]c\d{2,3}(?=[\/\\]|$)/gi, '/c##');
+
+                    if (modBeingChangedFiles.has(normalizedFile)) {
+                      hasOverlap = true;
+                      break;
+                    }
+                  }
+
+                  // Only add to slotsInUse if there's a file overlap
+                  if (hasOverlap) {
+                    if (!slotsInUse.has(slot)) {
+                      slotsInUse.set(slot, []);
+                    }
+                    slotsInUse.get(slot).push(mod.name);
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error scanning mod ${mod.name}:`, error);
+          }
+        }
+      }
+
       // Génération du HTML avec tous les slots détectés (y compris > c07)
       const slotsInfo = document.getElementById("currentSlotsInfo");
-      slotsInfo.innerHTML = modDetails
+
+      // Build slots in use display
+      let slotsInUseHtml = '';
+      if (slotsInUse.size > 0) {
+        const sortedSlots = Array.from(slotsInUse.keys()).sort((a, b) => {
+          const numA = parseInt(a.replace('c', ''));
+          const numB = parseInt(b.replace('c', ''));
+          return numA - numB;
+        });
+
+        slotsInUseHtml = `
+          <div class="alert alert-info mb-3">
+            <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>Slots currently in use for this fighter:</h6>
+            <div class="d-flex flex-wrap gap-2">
+              ${sortedSlots.map(slot => {
+          const mods = slotsInUse.get(slot);
+          const isConflict = mods.length > 1;
+          return `
+                  <span class="badge ${isConflict ? 'bg-warning text-dark' : 'bg-secondary'}" 
+                        title="${mods.join(', ')}"
+                        style="cursor: help;">
+                    ${slot} ${isConflict ? `⚠️ (${mods.length})` : ''}
+                  </span>
+                `;
+        }).join('')}
+            </div>
+            ${slotsInUse.size > 0 ? '<small class="text-muted d-block mt-2">⚠️ = Multiple mods use this slot (hover for details)</small>' : ''}
+          </div>
+        `;
+      }
+
+      slotsInfo.innerHTML = slotsInUseHtml + modDetails
         .map(({ mod, currentSlots, affectedFiles, existingCustomNames, defaultCustomNames }) => {
           // Liste unique des slots à proposer dans le select (standards + tous détectés, sauf le slot courant)
           const standardSlots = Array.from({ length: 8 }, (_, i) => `c0${i}`);
