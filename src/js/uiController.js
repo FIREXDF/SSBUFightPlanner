@@ -2983,7 +2983,7 @@ class UIController {
       const modDetails = await Promise.all(
         selectedMods.map(async (modId) => {
           const mod = await this.modManager.getMod(modId);
-          const { currentSlots, affectedFiles, fighterSlots } =
+          const { currentSlots, affectedFiles, normalizedFighterSlotData: fighterSlots } =
             await ChangeSlots.scanForSlots(mod.path);
 
           // Get fighter name and existing custom names
@@ -3032,19 +3032,18 @@ class UIController {
             const modFighterNames = await getNonCopyFighterNames(mod.path);
 
             if (modFighterNames.includes(fighterName)) {
-              const { fighterSlots } = await ChangeSlots.scanForSlots(mod.path);
+              const { normalizedFighterSlotData } = await ChangeSlots.scanForSlots(mod.path);
 
-              if (fighterSlots[fighterName]) {
-                const slotsData = fighterSlots[fighterName];
+              if (normalizedFighterSlotData[fighterName]) {
+                const slotsData = normalizedFighterSlotData[fighterName];
 
                 for (const slot in slotsData) {
-                  const files = slotsData[slot];
+                  const normalizedFiles = slotsData[slot];
 
                   // Check if any files from this slot overlap with the mod being changed
                   let hasOverlap = false;
-                  for (const file of files) {
-                    const normalizedFile = file.replace(/[\/\\]c\d{2,3}(?=[\/\\]|$)/gi, '/c##');
 
+                  for (const normalizedFile of normalizedFiles) {
                     if (modBeingChangedFiles.has(normalizedFile)) {
                       hasOverlap = true;
                       break;
@@ -3056,6 +3055,7 @@ class UIController {
                     if (!slotsInUse.has(slot)) {
                       slotsInUse.set(slot, []);
                     }
+
                     slotsInUse.get(slot).push(mod.name);
                   }
                 }

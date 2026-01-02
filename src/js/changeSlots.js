@@ -6,91 +6,68 @@ export class ChangeSlots {
             const files = await window.api.modOperations.getModFiles(modPath);
             console.log('[scanForSlots] Tous les fichiers trouvés:', files);
 
-            const slotFiles = files.filter(file => {
-                const pathParts = file.split(/[/\\]/);
-                const fileName = pathParts[pathParts.length - 1];
-
-                // Si on est dans fighter, on ne garde que les dossiers slot
-                if (pathParts.includes('fighter')) {
-                    const isFighterSlotFolder =
-                        pathParts.length >= 2 &&
-                        /^c\d/i.test(fileName) &&
-                        !fileName.includes('.'); // évite les fichiers
-                    if (isFighterSlotFolder) return true;
-                    // Sinon, on ignore tout le reste dans fighter
-                    return false;
-                }
-
-                // Sinon (hors fighter), on garde les fichiers qui matchent 0X, 0XX, 0XXX
-                return /0\d{1,3}/.test(fileName) || /\d{2,3}(?=\.[^.]+$)/.test(fileName);
-            });
-
-            console.log('[scanForSlots] Fichiers slots détectés:', slotFiles);
-
             const slots = new Set();
-            const fighterToSlots = {}; // Map fighters to slots with files
+            const normalizedFighterSlotData = {};
+            const filesIncludingSlotNumbers = [];
 
-            slotFiles.forEach(file => {
+            files.forEach(file => {
+                if (!file.includes('.')) return;
+
                 const pathParts = file.split(/[/\\]/);
-                const part = pathParts[pathParts.length - 1];
 
                 // Extract fighter name from path (e.g., fighter/mario/c00)
                 let fighterName = null;
+
                 const fighterIndex = pathParts.indexOf('fighter');
+
                 if (fighterIndex !== -1 && pathParts.length > fighterIndex + 1) {
                     fighterName = pathParts[fighterIndex + 1];
                 }
 
-                // Dossier slot : cXX, cXXX, etc.
-                const cMatch = part.match(/^c\d{2,3}$/i);
+                const cXXMatchRegex = /c\d{2,3}/i;
+                const dotXXMatchRegex = /\d{2,3}(?=\.[^.]+$)/;
+
+                // Match cXX or cXXX in filename
+                const cMatch = file.match(cXXMatchRegex);
+                // Match XX or XXX before file extension
+                const dotMatch = file.match(dotXXMatchRegex);
 
                 if (cMatch) {
                     const slot = cMatch[0].toLowerCase();
+
                     slots.add(slot);
+
                     if (fighterName) {
-                        if (!fighterToSlots[fighterName]) {
-                            fighterToSlots[fighterName] = {};
+                        if (!normalizedFighterSlotData[fighterName]) {
+                            normalizedFighterSlotData[fighterName] = {};
                         }
-                        if (!fighterToSlots[fighterName][slot]) {
-                            fighterToSlots[fighterName][slot] = [];
-                        }
-                        fighterToSlots[fighterName][slot].push(file);
-                    }
-                } else {
-                    // Fichier slot : 0XX, 0XXX, etc.
-                    const zeroMatch = part.match(/0\d{2,3}/);
 
-                    if (zeroMatch) {
-                        const slot = 'c' + zeroMatch[0].slice(1); // <-- toujours stocker en cXX
-                        slots.add(slot);
-                        if (fighterName) {
-                            if (!fighterToSlots[fighterName]) {
-                                fighterToSlots[fighterName] = {};
-                            }
-                            if (!fighterToSlots[fighterName][slot]) {
-                                fighterToSlots[fighterName][slot] = [];
-                            }
-                            fighterToSlots[fighterName][slot].push(file);
+                        if (!normalizedFighterSlotData[fighterName][slot]) {
+                            normalizedFighterSlotData[fighterName][slot] = [];
                         }
-                    }
-                    // Fichier slot : XX, XXX (sans 0 devant, ni c)
-                    const numMatch = part.match(/(?<!\d)\d{2,3}(?=\.[^.]+$)/);
 
-                    if (numMatch) {
-                        let num = numMatch[0];
-                        if (num.length === 1) num = '0' + num;
-                        const slot = 'c' + num;
-                        slots.add(slot);
-                        if (fighterName) {
-                            if (!fighterToSlots[fighterName]) {
-                                fighterToSlots[fighterName] = {};
-                            }
-                            if (!fighterToSlots[fighterName][slot]) {
-                                fighterToSlots[fighterName][slot] = [];
-                            }
-                            fighterToSlots[fighterName][slot].push(file);
-                        }
+                        normalizedFighterSlotData[fighterName][slot].push(file.replace(cXXMatchRegex, 'c##'));
                     }
+                } else if (dotMatch) {
+                    const slot = 'c' + dotMatch[0];
+
+                    slots.add(slot);
+
+                    if (fighterName) {
+                        if (!normalizedFighterSlotData[fighterName]) {
+                            normalizedFighterSlotData[fighterName] = {};
+                        }
+
+                        if (!normalizedFighterSlotData[fighterName][slot]) {
+                            normalizedFighterSlotData[fighterName][slot] = [];
+                        }
+
+                        normalizedFighterSlotData[fighterName][slot].push(file.replace(dotXXMatchRegex, '##'));
+                    }
+                }
+
+                if (cMatch || dotMatch) {
+                    filesIncludingSlotNumbers.push(file);
                 }
             });
 
@@ -101,16 +78,12 @@ export class ChangeSlots {
                 return numA - numB;
             });
 
-            // fighterSlots already contains the structure: { fighter: { slot: [files] } }
-            const fighterSlots = fighterToSlots;
-
             console.log('[scanForSlots] Slots détectés:', sortedSlots);
-            console.log('[scanForSlots] Slots par fighter:', fighterSlots);
 
             return {
                 currentSlots: sortedSlots,
-                fighterSlots: fighterSlots,
-                affectedFiles: slotFiles
+                normalizedFighterSlotData,
+                affectedFiles: filesIncludingSlotNumbers
             };
         } catch (error) {
             console.error('Error scanning for slots:', error);
@@ -155,18 +128,21 @@ export class ChangeSlots {
                     config["new-dir-files"][transplantDirInfo].push(file);
                 continue;
             }
+
             // Effets spécifiques au slot
             if (file.includes(`effect/fighter/${fighterName}/ef_${fighterName}_${targetAlt}`)) {
                 if (!config["new-dir-files"][newDirInfo].includes(file))
                     config["new-dir-files"][newDirInfo].push(file);
                 continue;
             }
+
             // Caméra
             if (file.startsWith(`camera/fighter/${fighterName}/${targetAlt}/`) && file.endsWith('.nuanmb')) {
                 if (!config["new-dir-files"][cameraDirInfo].includes(file))
                     config["new-dir-files"][cameraDirInfo].push(file);
                 continue;
             }
+
             // Fichiers custom dans le slot cible
             if (file.includes(`/${targetAlt}/`) || file.endsWith(`/${targetAlt}`)) {
                 const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
