@@ -1506,7 +1506,7 @@ class DiscordRichPresence {
 
 // Export the Discord RPC instance
 module.exports = new DiscordRichPresence();
-app.whenReady().then(() => {});
+app.whenReady().then(() => { });
 ipcMain.on("open-external", (event, url) => {
   shell.openExternal(url);
 });
@@ -1991,9 +1991,8 @@ ipcMain.handle("launch-game", async () => {
 
     let command;
     if (selectedEmulator === "yuzu") {
-      command = `"${emulatorPath}" -g "${gamePath}"${
-        yuzuFullscreen ? " -f" : ""
-      }`;
+      command = `"${emulatorPath}" -g "${gamePath}"${yuzuFullscreen ? " -f" : ""
+        }`;
     } else if (selectedEmulator === "ryujinx") {
       command = `"${emulatorPath}" "${gamePath}"`;
     } else {
@@ -2385,7 +2384,45 @@ ipcMain.handle("file-exists", async (event, filePath) => {
 
 ipcMain.handle("read-mod-file", async (event, filePath) => {
   try {
-    return await fsp.readFile(filePath, "utf8");
+    // For XML files, auto-detect encoding
+    if ((filePath.endsWith('.xml') || filePath.endsWith('.xmsbt') || filePath.endsWith('.prcxml') || filePath === 'Files/messages.data')) {
+      // Read first few bytes as buffer to detect encoding
+      const buffer = await fsp.readFile(filePath);
+
+      // Check BOM (Byte Order Mark)
+      if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
+        // UTF-16 LE BOM
+        encoding = 'utf16le';
+      } else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
+        // UTF-16 BE BOM
+        encoding = 'utf16le'; // Node.js handles BE with 'utf16le' by swapping bytes
+      } else if (buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+        // UTF-8 BOM
+        encoding = 'utf8';
+      } else {
+        // No BOM, check XML declaration
+        const start = buffer.toString('utf8', 0, Math.min(200, buffer.length));
+        if (start.includes('encoding="utf-16"') || start.includes("encoding='utf-16'")) {
+          encoding = 'utf16le';
+        } else {
+          // Try to detect if it looks like UTF-16 by checking for null bytes
+          let nullCount = 0;
+          for (let i = 0; i < Math.min(100, buffer.length); i++) {
+            if (buffer[i] === 0) nullCount++;
+          }
+          // If more than 30% null bytes, likely UTF-16
+          if (nullCount > 30) {
+            encoding = 'utf16le';
+          } else {
+            encoding = 'utf8';
+          }
+        }
+      }
+
+      return buffer.toString(encoding);
+    }
+
+    return await fsp.readFile(filePath, encoding);
   } catch (error) {
     console.error("Error reading mod file:", error);
     throw error;

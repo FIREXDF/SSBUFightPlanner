@@ -133,7 +133,7 @@ export class ChangeSlots {
         await window.api.modOperations.writeModFile(configPath, JSON.stringify(config, null, 4));
     }
 
-    static async changeSlots(modPath, slotChanges, allSlots, files) {
+    static async changeSlots(modPath, slotChanges, allSlots, files, slotCustomNames = null) {
         const changedFiles = [];
 
         // Filter out config.json from files to rename
@@ -269,7 +269,7 @@ export class ChangeSlots {
         const finalSlots = Object.values(allSlots);
         const hasAnySlotAboveC07 = finalSlots.find(slot => parseInt(slot.replace('c', '')) > 7);
 
-        if (hasAnySlotAboveC07) {
+        if (hasAnySlotAboveC07 || (slotCustomNames && Object.keys(slotCustomNames).length > 0)) {
             try {
                 // 1. Get the fighter folder name
                 const fighterNameInternal = await getInternalFighterName(modPath);
@@ -297,14 +297,24 @@ export class ChangeSlots {
                     for (const slot of finalSlots) {
                         const slotNum = parseInt(slot.replace('c', ''));
 
-                        if (slotNum > 7) {
+                        if (slotNum > 7 || slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].announcer) {
                             const colorNum = slotNum + 1;
+                            const nxyIndex = slotNum + 8;
                             const hashLine = new RegExp(`<hash40 index="${fighterIndex}">dummy<\\/hash40>`, 'g');
 
-                            prcxmlContent = prcxmlContent.replace(
-                                hashLine,
-                                `<struct index="${fighterIndex}"><byte hash="color_num">${colorNum}</byte></struct>`
-                            );
+                            // Build the struct with color_num, nXY_index, and optional characall_label
+                            let structContent = `<struct index="${fighterIndex}">` +
+                                (slotNum > 7 ? `<byte hash="color_num">${colorNum}</byte>` : '') +
+                                `<byte hash="n${String(slotNum).padStart(2, '0')}_index">${nxyIndex}</byte>`;
+
+                            // Add custom announcer call if provided
+                            if (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].announcer) {
+                                structContent += `<hash40 hash="characall_label_c${String(nxyIndex).padStart(2, '0')}">${slotCustomNames[slot].announcer}</hash40>`;
+                            }
+
+                            structContent += `</struct>`;
+
+                            prcxmlContent = prcxmlContent.replace(hashLine, structContent);
                         }
                     }
 
@@ -321,6 +331,12 @@ export class ChangeSlots {
                 console.error('Error editing ui_chara_db.prcxml:', error);
                 throw new Error(`Error editing ui_chara_db.prcxml: ${error.message}`);
             }
+        }
+
+        // Update msg_name.xmsbt with custom names if provided (for all slots)
+        const fighterNameForMsg = await getInternalFighterName(modPath);
+        if (fighterNameForMsg && slotCustomNames && Object.keys(slotCustomNames).length > 0) {
+            await ChangeSlots.updateMsgName(modPath, fighterNameForMsg, finalSlots, slotCustomNames);
         }
 
         // Update config.json after renaming
@@ -781,8 +797,9 @@ export class ChangeSlots {
 
     static async removeSlot(modPath, slot, files) {
         let deletedFiles = 0;
+
         for (const file of files) {
-            if (file.includes(slot) || (file.endsWith('.bntx') && file.includes(slot.replace('c', '')))) {
+            if (file.includes(slot) || ((file.endsWith('.bntx') || file.endsWith('.dds')) && file.includes(slot.replace('c', '')))) {
                 await window.api.modOperations.deleteModFile(modPath, file);
                 deletedFiles++;
             }
@@ -990,5 +1007,246 @@ export class ChangeSlots {
         }
         // Écriture finale : JSON bien indenté, sans clés vides, sections dans l'ordre strict
         await window.api.modOperations.writeModFile(configPath, JSON.stringify(orderedConfig, null, 4));
+    }
+
+    static async updateMsgName(modPath, fighterName, slots, slotCustomNames) {
+        try {
+            console.log('[updateMsgName] called');
+
+            // Prepare XML content
+            let xmlEntries = [];
+
+            for (const slot of slots) {
+                const slotNum = parseInt(slot.replace('c', ''));
+
+                const names = slotCustomNames[slot];
+                if (!names) continue;
+
+                // Calculate the label index to match ui_chara_db.prcxml nXY_index value
+                // This should always be slot number + 8 (same as nxyIndex in ui_chara_db.prcxml)
+                const labelIndex = slotNum + 8;
+
+                const cspName = names.cspName || '';
+                const vsName = names.vsName || (cspName ? cspName.toUpperCase() : '');
+                const boxingRingName = names.boxingRing || '';
+
+                // Create entries for this slot
+                xmlEntries.push(`\t<entry label="nam_chr1_${labelIndex}_${fighterName}">`);
+                xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
+                xmlEntries.push(`\t</entry>`);
+
+                xmlEntries.push(`\t<entry label="nam_chr2_${labelIndex}_${fighterName}">`);
+                xmlEntries.push(`\t\t<text>${this.escapeXml(vsName)}</text>`);
+                xmlEntries.push(`\t</entry>`);
+
+                xmlEntries.push(`\t<entry label="nam_stage_name_${labelIndex}_${fighterName}">`);
+                xmlEntries.push(`\t\t<text>${this.escapeXml(boxingRingName)}</text>`);
+                xmlEntries.push(`\t</entry>`);
+            }
+
+            if (xmlEntries.length === 0) {
+                console.log('[updateMsgName] No custom names to write');
+                return;
+            }
+
+            // Build complete XML file
+            const xmlContent = [
+                '<?xml version="1.0" encoding="utf-16"?>',
+                '<xmsbt>',
+                ...xmlEntries,
+                '</xmsbt>'
+            ].join('\n');
+
+            // Ensure the directory exists
+            const outputDir = `${modPath}/ui/message`;
+            if (!(await window.api.modOperations.fileExists(outputDir))) {
+                await window.api.modOperations.createDirectory(outputDir);
+            }
+
+            // Write the file
+            await window.api.modOperations.writeModFile(`${modPath}/ui/message/msg_name.xmsbt`, xmlContent);
+            console.log('[updateMsgName] Successfully wrote msg_name.xmsbt');
+        } catch (error) {
+            console.error('[updateMsgName] Error:', error);
+            throw error;
+        }
+    }
+
+    static escapeXml(str) {
+        if (!str) return '';
+        return str
+            .replace(/\\n/g, '\n')  // Convert \n escape sequences to actual newlines
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+    }
+
+    static async readExistingCustomNames(modPath, fighterName, slots) {
+        const customNames = {};
+        const parser = new DOMParser();
+
+        try {
+            // First, read ui_chara_db.prcxml to get the actual labelIndex for each slot
+            const slotToLabelIndex = {};
+            const prcxmlPath = `${modPath}/ui/param/database/ui_chara_db.prcxml`;
+
+            if (await window.api.modOperations.fileExists(prcxmlPath)) {
+                const prcxmlContent = await window.api.modOperations.readModFile(prcxmlPath);
+                const prcxmlDoc = parser.parseFromString(prcxmlContent, 'text/xml');
+
+                // Check for parsing errors
+                const parserError = prcxmlDoc.querySelector('parsererror');
+
+                if (!parserError) {
+                    for (const slot of slots) {
+                        const slotNum = parseInt(slot.replace('c', ''));
+
+                        // Look for the nXY_index byte element
+                        const nxyIndexElement = prcxmlDoc.querySelector(`byte[hash="n${String(slotNum).padStart(2, '0')}_index"]`);
+
+                        if (nxyIndexElement && nxyIndexElement.textContent) {
+                            slotToLabelIndex[slot] = parseInt(nxyIndexElement.textContent);
+                        } else {
+                            // Fallback to default calculation
+                            slotToLabelIndex[slot] = slotNum + 8;
+                        }
+                    }
+                }
+            } else {
+                // If prcxml doesn't exist, use default calculation for all slots
+                for (const slot of slots) {
+                    const slotNum = parseInt(slot.replace('c', ''));
+                    slotToLabelIndex[slot] = slotNum + 8;
+                }
+            }
+
+            // Read msg_name.xmsbt if it exists
+            const msgNamePath = `${modPath}/ui/message/msg_name.xmsbt`;
+
+            if (await window.api.modOperations.fileExists(msgNamePath)) {
+                const msgContent = await window.api.modOperations.readModFile(msgNamePath);
+                const msgDoc = parser.parseFromString(msgContent, 'text/xml');
+
+                // Check for parsing errors
+                const parserError = msgDoc.querySelector('parsererror');
+
+                if (!parserError) {
+                    for (const slot of slots) {
+                        const labelIndex = slotToLabelIndex[slot];
+
+                        console.log(`[readExistingCustomNames] Reading names for slot ${slot} (label index ${labelIndex})`);
+
+                        // Query for entry elements with specific labels
+                        const cspEntry = msgDoc.querySelector(`entry[label="nam_chr1_${labelIndex}_${fighterName}"]`);
+                        const vsEntry = msgDoc.querySelector(`entry[label="nam_chr2_${labelIndex}_${fighterName}"]`);
+                        const boxingEntry = msgDoc.querySelector(`entry[label="nam_stage_name_${labelIndex}_${fighterName}"]`);
+
+                        // Convert actual newlines to \n escape sequences for editing
+                        const cspText = (cspEntry?.querySelector('text')?.textContent || '').replace(/\n/g, '\\n');
+                        const vsText = (vsEntry?.querySelector('text')?.textContent || '').replace(/\n/g, '\\n');
+                        const boxingText = (boxingEntry?.querySelector('text')?.textContent || '').replace(/\n/g, '\\n');
+
+                        if (cspText || vsText || boxingText) {
+                            customNames[slot] = {
+                                cspName: cspText,
+                                vsName: vsText,
+                                boxingRing: boxingText,
+                                announcer: ''
+                            };
+                        }
+                    }
+                }
+            }
+
+            // Read announcer info from ui_chara_db.prcxml
+            if (await window.api.modOperations.fileExists(prcxmlPath)) {
+                const prcxmlContent = await window.api.modOperations.readModFile(prcxmlPath);
+                const prcxmlDoc = parser.parseFromString(prcxmlContent, 'text/xml');
+
+                // Check for parsing errors
+                const parserError = prcxmlDoc.querySelector('parsererror');
+                if (!parserError) {
+                    for (const slot of slots) {
+                        const labelIndex = slotToLabelIndex[slot];
+
+                        // Query for hash40 element with specific hash attribute
+                        const announcerElement = prcxmlDoc.querySelector(`hash40[hash="characall_label_c${String(labelIndex).padStart(2, '0')}"]`);
+                        const announcerText = announcerElement?.textContent || '';
+
+                        if (announcerText) {
+                            if (!customNames[slot]) {
+                                customNames[slot] = {
+                                    cspName: '',
+                                    vsName: '',
+                                    boxingRing: '',
+                                    announcer: ''
+                                };
+                            }
+                            customNames[slot].announcer = announcerText;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[readExistingCustomNames] Error:', error);
+            // Return empty customNames on error
+        }
+
+        return customNames;
+    }
+
+    /**
+     * Gets default custom names from messages.data file
+     * @param {string} fighterNameInternal - Internal fighter name (e.g., 'mario', 'link')
+     * @param {string} slot - Slot number (e.g., '00', '01')
+     * @returns {Object} - Object with cspName, vsName, and boxingRing properties
+     */
+    static async getDefaultCustomNames(fighterNameInternal, slot) {
+        try {
+            // Get the path to messages.data
+            const messagesPath = 'Files/messages.data';
+
+            if (!(await window.api.modOperations.fileExists(messagesPath))) {
+                console.warn('messages.data file not found');
+                return { cspName: '', vsName: '', boxingRing: '' };
+            }
+
+            // Read and parse the XML file
+            const xmlContent = await window.api.modOperations.readModFile(messagesPath);
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+
+            // Check for parsing errors
+            const parserError = xmlDoc.querySelector('parsererror');
+            if (parserError) {
+                console.log('parserError :: ', parserError)
+                console.error('Error parsing messages.data XML');
+                return { cspName: '', vsName: '', boxingRing: '' };
+            }
+
+            // Format slot number (remove 'c' prefix if present)
+            const slotNum = slot.replace('c', '');
+
+            // Build label patterns
+            const cspLabel = `nam_chr1_08_${fighterNameInternal}`;
+            const vsLabel = `nam_chr2_08_${fighterNameInternal}`;
+            const boxingRingLabel = `nam_stage_name_08_${fighterNameInternal}`;
+
+            // Find matching entries
+            const cspEntry = xmlDoc.querySelector(`entry[label="${cspLabel}"]`);
+            const vsEntry = xmlDoc.querySelector(`entry[label="${vsLabel}"]`);
+            const boxingRingEntry = xmlDoc.querySelector(`entry[label="${boxingRingLabel}"]`);
+
+            return {
+                cspName: cspEntry?.querySelector('text')?.textContent || '',
+                vsName: vsEntry?.querySelector('text')?.textContent || '',
+                boxingRing: boxingRingEntry?.querySelector('text')?.textContent?.replace(/\n/g, ' ') || ''
+            };
+        } catch (error) {
+            console.error('Error reading messages.data:', error);
+            return { cspName: '', vsName: '', boxingRing: '' };
+        }
     }
 }

@@ -37,13 +37,15 @@
 .loading-animation-crop {
     width: 200px;
     overflow: hidden;
-    border-radius: 100px !important; /* Add rounded corners to the animation container */
+    border-radius: 100px !important;
+    /* Add rounded corners to the animation container */
 }
 
 .loading-content {
     text-align: center;
     color: white;
-    position: relative; /* Add this */
+    position: relative;
+    /* Add this */
 }
 
 .loading-message {
@@ -80,8 +82,11 @@
     animation: conflict-spin 0.8s linear infinite;
     vertical-align: middle;
 }
+
 @keyframes conflict-spin {
-    100% { transform: rotate(360deg); }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Affiche le texte au survol */
@@ -92,9 +97,15 @@
     margin-left: 0.3em;
     animation: fadeIn 0.3s;
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .nav-tabs {
@@ -122,7 +133,7 @@
 .app-logo:hover {
     transform: scale(1.2) rotate(5deg);
     opacity: 1;
-    filter: drop-shadow(0 4px 3px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
 }
 
 .app-logo:active {
@@ -131,24 +142,25 @@
 }
 
 #creditsModal .credits-section {
-    background-color: rgba(73, 73, 73, 0.05) ;
-    border-radius: 10px ;
-    padding: 5px ;
-    max-width: 600px ;
-    margin: 0 auto ;
+    background-color: rgba(73, 73, 73, 0.05);
+    border-radius: 10px;
+    padding: 5px;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .app-logo {
-    transition: transform 0.3s ease ;
+    transition: transform 0.3s ease;
 }
 
 .app-logo:hover {
-    transform: scale(1.1) rotate(5deg) ;
+    transform: scale(1.1) rotate(5deg);
 }
 
 .app-logo:active {
-    transform: scale(0.95) ;
+    transform: scale(0.95);
 }
+
 .container {
     display: flex;
     height: 100vh;
@@ -181,6 +193,7 @@
 .mod-metadata {
     padding: 10px;
 }
+
 body {
     height: 100vh;
     overflow: hidden;
@@ -225,6 +238,7 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
 .floating-actions {
     position: absolute;
     bottom: 20px;
@@ -271,30 +285,33 @@ body {
 .mod-list .mod-item .mod-status-disabled {
     color: #dc3545;
 }
+
 /* Dark mode base styles */
 body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-    /* Form controls */
-    .form-control.dark-mode {
-        background-color: #2c2c2c ;
-        border-color: #444 ;
-        color: #ffffff ;
-    }
+/* Form controls */
+.form-control.dark-mode {
+    background-color: #2c2c2c;
+    border-color: #444;
+    color: #ffffff;
+}
 
-    .form-control:focus.dark-mode {
-        background-color: #2c2c2c ;
-        border-color: #666 ;
-        color: #ffffff ; 
-    }
+.form-control:focus.dark-mode {
+    background-color: #2c2c2c;
+    border-color: #666;
+    color: #ffffff;
+}
 
 /* Dark mode specific styles */
 body.dark-mode {
     /* Global dark mode background */
     background-color: #121212;
-    --bs-body-bg: #2c2c2c; /* Match the background color of .form-control:focus.dark-mode */
-    --bs-body-color: #ffffff; /* Match the text color of .form-control:focus.dark-mode */
+    --bs-body-bg: #2c2c2c;
+    /* Match the background color of .form-control:focus.dark-mode */
+    --bs-body-color: #ffffff;
+    /* Match the text color of .form-control:focus.dark-mode */
 
     /* Tab navigation */
     .nav-tabs {
@@ -311,11 +328,11 @@ body.dark-mode {
         border-color: #333 #333 #1e1e1e;
     }
 
-    .textmuted{
+    .textmuted {
         color: #999999;
     }
 
-    .text-muted{
+    .text-muted {
         color: #999999;
     }
 
@@ -348,30 +365,40 @@ body.dark-mode {
 
     /* Form controls */
     select {
-        background-color: #2c2c2c; /* Match .form-control.dark-mode */
-        border-color: #444; /* Match .form-control.dark-mode */
-        color: #ffffff; /* Match .form-control.dark-mode */
+        background-color: #2c2c2c;
+        /* Match .form-control.dark-mode */
+        border-color: #444;
+        /* Match .form-control.dark-mode */
+        color: #ffffff;
+        /* Match .form-control.dark-mode */
         transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
     }
-    
+
     select:focus {
-        background-color: #2c2c2c; /* Match .form-control:focus.dark-mode */
-        border-color: #666; /* Match .form-control:focus.dark-mode */
-        color: #ffffff; /* Match .form-control:focus.dark-mode */
-        outline: none; /* Remove default outline */
+        background-color: #2c2c2c;
+        /* Match .form-control:focus.dark-mode */
+        border-color: #666;
+        /* Match .form-control:focus.dark-mode */
+        color: #ffffff;
+        /* Match .form-control:focus.dark-mode */
+        outline: none;
+        /* Remove default outline */
     }
-    
+
     .form-check-input {
-        background-color: #2c2c2c; /* Match dark mode background */
-        border-color: #444; /* Match dark mode border */
+        background-color: #2c2c2c;
+        /* Match dark mode background */
+        border-color: #444;
+        /* Match dark mode border */
         transition: border-color 0.3s ease, background-color 0.3s ease;
     }
-    
+
     .form-check-input:checked {
-        background-color: #666; /* Match focused border color */
+        background-color: #666;
+        /* Match focused border color */
         border-color: #666;
     }
-    
+
     .form-control {
         background-color: #2c2c2c;
         border-color: #444;
@@ -429,11 +456,11 @@ body.dark-mode {
         position: relative;
         margin-bottom: 15px;
     }
-    
+
     .search-container input {
         padding-left: 30px;
     }
-    
+
     .search-container::before {
         content: '🔍';
         position: absolute;
@@ -442,31 +469,33 @@ body.dark-mode {
         transform: translateY(-50%);
         pointer-events: none;
     }
-    
+
     .search-filters {
         display: flex;
         justify-content: space-between;
         margin-top: 10px;
     }
-    
+
     .mod-item {
         transition: background-color 0.3s ease;
     }
-    
+
     .mod-item:hover {
-        background-color: rgba(0,0,0,0.05);
+        background-color: rgba(0, 0, 0, 0.05);
         cursor: pointer;
     }
+
     .drag-over {
-        background-color: rgba(0, 128, 0, 0.1) ;
-        outline: 3px dashed #28a745 ;
+        background-color: rgba(0, 128, 0, 0.1);
+        outline: 3px dashed #28a745;
         outline-offset: -10px;
         transition: all 0.3s ease;
     }
-    
+
     body {
         transition: background-color 0.3s ease, outline 0.3s ease;
     }
+
     .drag-drop-hint-container {
         position: fixed;
         top: 0;
@@ -481,11 +510,11 @@ body.dark-mode {
         opacity: 0;
         transition: opacity 0.3s ease;
     }
-    
+
     .drag-over .drag-drop-hint-container {
         opacity: 1;
     }
-    
+
     .drag-drop-hint {
         background-color: rgba(0, 0, 0, 0.7);
         color: white;
@@ -493,12 +522,13 @@ body.dark-mode {
         border-radius: 10px;
         text-align: center;
     }
-    
+
     .drag-drop-hint i {
         font-size: 3rem;
         margin-bottom: 15px;
         display: block;
     }
+
     .toast-container {
         z-index: 1060;
     }
@@ -552,8 +582,15 @@ body.dragging .drag-drop-hint {
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .drag-drop-hint p {
@@ -624,18 +661,23 @@ body.dark-mode .mod-link:hover {
     overflow-y: auto;
     max-height: calc(100vh - 160px);
 }
+
 .loading-message {
     text-align: center;
 }
+
 .slot-group.removed {
     background-color: #f8d7da;
 }
+
 .slot-group {
     position: relative;
 }
+
 .slot-group.removed .overlay {
     display: block;
 }
+
 .overlay {
     display: none;
     position: absolute;
@@ -647,20 +689,41 @@ body.dark-mode .mod-link:hover {
     z-index: 1;
 }
 
+/* Custom names section styling */
+.custom-names-section {
+    background-color: #f8f9fa;
+}
+
+.custom-names-section small {
+    font-size: 0.75rem;
+}
+
+.custom-names-section input::placeholder {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.custom-names-section .form-control-sm {
+    font-size: 0.875rem;
+}
+
+
 .downloads-panel {
     position: fixed;
     bottom: 0;
-    left: 20px; /* Changed from right to left */
+    left: 20px;
+    /* Changed from right to left */
     width: 300px;
     background: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
     border-bottom: none;
     border-radius: 8px 8px 0 0;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     z-index: 1040;
     transform: translateY(calc(100% - 40px));
     transition: transform 0.3s ease;
-    color: inherit; /* Change from var(--bs-body-color) to inherit */
+    color: inherit;
+    /* Change from var(--bs-body-color) to inherit */
 }
 
 .downloads-panel.expanded {
@@ -688,7 +751,8 @@ body.dark-mode .mod-link:hover {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    color: inherit; /* Add this line */
+    color: inherit;
+    /* Add this line */
 }
 
 .download-item:last-child {
@@ -716,13 +780,13 @@ body.dark-mode .mod-link:hover {
 
 .download-item.paused .progress-bar {
     background-image: linear-gradient(45deg,
-        rgba(255,255,255,.15) 25%,
-        transparent 25%,
-        transparent 50%,
-        rgba(255,255,255,.15) 50%,
-        rgba(255,255,255,.15) 75%,
-        transparent 75%,
-        transparent);
+            rgba(255, 255, 255, .15) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255, 255, 255, .15) 50%,
+            rgba(255, 255, 255, .15) 75%,
+            transparent 75%,
+            transparent);
     background-size: 1rem 1rem;
     animation: progress-bar-stripes 1s linear infinite;
 }
@@ -732,8 +796,13 @@ body.dark-mode .mod-link:hover {
 }
 
 @keyframes progress-bar-stripes {
-    from { background-position: 1rem 0; }
-    to { background-position: 0 0; }
+    from {
+        background-position: 1rem 0;
+    }
+
+    to {
+        background-position: 0 0;
+    }
 }
 
 body.dark-mode .downloads-panel,
@@ -834,7 +903,7 @@ body.dark-mode .downloads-panel {
 }
 
 #characterSlotsList .list-group-item:hover {
-    background-color: rgba(0,0,0,0.02);
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 #characterSlotsList h5 {
@@ -973,7 +1042,7 @@ body.dark-mode #characterImageModal .modal-title {
 .character-slots-list .list-group-item {
     border-radius: 8px;
     margin-bottom: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease;
 }
 
@@ -1045,9 +1114,10 @@ body.dark-mode .character-slots-list .slot-info {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 4px;
-    z-index: 1100; /* Ensure it's above most elements but below modals */
+    z-index: 1100;
+    /* Ensure it's above most elements but below modals */
     pointer-events: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: opacity 0.2s ease, visibility 0.2s ease;
     opacity: 0;
     visibility: hidden;
@@ -1079,7 +1149,8 @@ body.dark-mode .character-slots-list .slot-info {
 .mod-preview-tooltip img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Maintain aspect ratio */
+    object-fit: contain;
+    /* Maintain aspect ratio */
     display: block;
 }
 
@@ -1094,23 +1165,23 @@ body.dark-mode .character-slots-list .slot-info {
 body.dark-mode .mod-preview-tooltip {
     background: #2c2c2c;
     border-color: #444;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 #contextMenu {
-      position: fixed !important;
-  will-change: unset !important;
-  padding: 0.5rem 0;
-  opacity: 0;
-  transform: scale(0.97);
-  transition: opacity 0.18s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1);
-  pointer-events: none;
+    position: fixed !important;
+    will-change: unset !important;
+    padding: 0.5rem 0;
+    opacity: 0;
+    transform: scale(0.97);
+    transition: opacity 0.18s cubic-bezier(.4, 0, .2, 1), transform 0.18s cubic-bezier(.4, 0, .2, 1);
+    pointer-events: none;
 }
 
 #contextMenu.show {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
 }
 
 #contextMenu .dropdown-item {
@@ -1137,7 +1208,7 @@ body.dark-mode .dropdown-item:hover {
 body.dark-mode .dropdown-menu {
     background-color: #2c2c2c;
     border-color: #444;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 body.dark-mode .dropdown-item {
@@ -1209,6 +1280,31 @@ body.dark-mode #changeSlotsModal .overlay {
     background: rgba(220, 53, 69, 0.3);
 }
 
+/* Dark mode custom names section */
+body.dark-mode .custom-names-section {
+    background-color: #252525 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .custom-names-section small {
+    color: #b0b0b0 !important;
+}
+
+body.dark-mode .custom-names-section input {
+    background-color: #2c2c2c !important;
+    border-color: #444 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .custom-names-section input::placeholder {
+    color: #888 !important;
+}
+
+body.dark-mode .custom-names-section input:focus {
+    background-color: #333 !important;
+    border-color: #666 !important;
+}
+
 /* Download modal specific styles */
 body.dark-mode #gameBananaDownloadModal .form-control {
     background-color: #2c2c2c;
@@ -1228,7 +1324,7 @@ body.dark-mode #confirmationModal .modal-content {
 }
 
 .credits-logo {
-    filter: drop-shadow(0 0 20px rgba(255,255,255,0.1));
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
     transition: transform 0.3s ease;
 }
 
@@ -1238,7 +1334,7 @@ body.dark-mode #confirmationModal .modal-content {
 
 .version-badge {
     display: inline-block;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
     padding: 0.5rem 1rem;
     border-radius: 20px;
@@ -1255,7 +1351,7 @@ body.dark-mode #confirmationModal .modal-content {
 }
 
 .credits-member {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     padding: 1.5rem;
     border-radius: 8px;
     text-align: center;
@@ -1264,7 +1360,7 @@ body.dark-mode #confirmationModal .modal-content {
 
 .credits-member:hover {
     transform: translateY(-5px);
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .member-role {
@@ -1289,7 +1385,7 @@ body.dark-mode #confirmationModal .modal-content {
 }
 
 .tester-tag {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     color: #fff;
     padding: 0.5rem 1rem;
     border-radius: 20px;
@@ -1298,7 +1394,7 @@ body.dark-mode #confirmationModal .modal-content {
 }
 
 .tester-tag:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
 }
 
@@ -1480,7 +1576,8 @@ body.dark-mode #categoryFilters .dropdown-item.active {
 
 
 .mod-item {
-    user-select: none;  /* Prevent text selection while clicking */
+    user-select: none;
+    /* Prevent text selection while clicking */
 }
 
 .mod-item.selected {
@@ -1502,7 +1599,7 @@ body.dark-mode .mod-item.selected {
     opacity: 0.8;
 }
 
-input.form-control.form-control-sm::placeholder  {
+input.form-control.form-control-sm::placeholder {
     color: #999999;
     opacity: 1;
 }
@@ -1579,29 +1676,33 @@ body.dark-mode .dropdown-item.active {
 
 .theme-image {
     border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 body.dark-mode .theme-image {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
+
 #showConflictsBtn {
     display: none;
     animation: pulse 2s infinite;
 }
+
 @keyframes pulse {
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.1);
     }
+
     100% {
         transform: scale(1);
     }
 }
 
-    
+
 .toast {
     opacity: 0;
     transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
@@ -1622,10 +1723,25 @@ body.dark-mode .theme-image {
 }
 
 @keyframes toastFadeIn {
-    from { opacity: 0; transform: translateX(40px);}
-    to   { opacity: 1; transform: translateX(0);}
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
+
 @keyframes toastFadeOut {
-    from { opacity: 1; transform: translateX(0);}
-    to   { opacity: 0; transform: translateX(40px);}
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(40px);
+    }
 }

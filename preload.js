@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electron', {
             console.error('Download mod error:', error);
             throw error;
         }
-        
+
     },
     onDownloadConfirmation: (callback) => {
         try {
@@ -34,7 +34,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, changelog) => callback(changelog)),
     onProtocolUrl: (callback) => ipcRenderer.on('protocol-url', (event, url) => callback(url)),
-    onDownloadStatus: (callback) => 
+    onDownloadStatus: (callback) =>
         ipcRenderer.on('download-status', (_, status) => callback(status)),
     cancelDownload: async (id) => {
         try {
@@ -49,7 +49,7 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer: {
         send: (channel, data) => ipcRenderer.send(channel, data),
         on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
-      },
+    },
 });
 
 contextBridge.exposeInMainWorld('api', {
@@ -70,8 +70,8 @@ contextBridge.exposeInMainWorld('api', {
         getModFiles: (modPath) => ipcRenderer.invoke('get-mod-files', modPath),
         checkConflicts: () => ipcRenderer.invoke('check-mod-conflicts'),
         createDirectory: (path) => ipcRenderer.invoke('mod:createDirectory', path),
-        renameModFile: (modPath, oldPath, newPath) => 
-        ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
+        renameModFile: (modPath, oldPath, newPath) =>
+            ipcRenderer.invoke('rename-mod-file', { modPath, oldPath, newPath }),
         deleteModFile: (modPath, filePath) => ipcRenderer.invoke('delete-mod-file', { modPath, filePath }),
         writeModFile: (filePath, content) => ipcRenderer.invoke('write-mod-file', { filePath, content }),
         fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),

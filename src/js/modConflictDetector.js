@@ -83,7 +83,7 @@ class ModConflictDetector {
         }
 
         // Check if file matches any ignored pattern
-        return this.ignoredPatterns.some(pattern => 
+        return this.ignoredPatterns.some(pattern =>
             pattern.test(fileName) || pattern.test(normalizedPath)
         );
     }
@@ -104,28 +104,28 @@ class ModConflictDetector {
             try {
                 // Notify progress caller which mod is being analyzed
                 if (typeof onProgress === 'function') {
-                    try { onProgress(mod.name, mod); } catch (_) {}
+                    try { onProgress(mod.name, mod); } catch (_) { }
                 }
 
                 const files = await this.getModFiles(mod.path);
-                
+
                 for (const file of files) {
                     // Skip if the path has no extension (likely a directory)
-                    if (!file.includes('.')) return;
+                    if (!file.includes('.')) continue;
 
                     // Skip ignored files
-                    if (this.isFileIgnored(file)) return;
+                    if (this.isFileIgnored(file)) continue;
 
                     // Normalize the file path for comparison
                     const normalizedPath = file.toLowerCase();
-                    
+
                     // Check for specific file patterns (like c00, c01, etc.)
                     if (this.isConflictSensitiveFile(normalizedPath)) {
                         if (!fileMap.has(normalizedPath)) {
                             fileMap.set(normalizedPath, [mod.name]);
                         } else {
                             fileMap.get(normalizedPath).push(mod.name);
-                            
+
                             // If we found multiple mods with the same file, record the conflict
                             if (fileMap.get(normalizedPath).length > 1) {
                                 this.conflicts.set(normalizedPath, fileMap.get(normalizedPath));
@@ -149,16 +149,16 @@ class ModConflictDetector {
     isConflictSensitiveFile(filePath) {
         // Check for common SSBU mod file patterns
         const sensitivePatterns = [
-            /[/\\]c00/i,      
-            /[/\\]c01/i,      
-            /[/\\]c02/i,      
-            /[/\\]c03/i,      
-            /[/\\]c05/i,      
-            /[/\\]c06/i,      
-            /[/\\]c07/i,      
-            /\.nutexb$/i,     
-            /\.bntx$/i,       
-            /\.prc$/i,        
+            /[/\\]c00/i,
+            /[/\\]c01/i,
+            /[/\\]c02/i,
+            /[/\\]c03/i,
+            /[/\\]c05/i,
+            /[/\\]c06/i,
+            /[/\\]c07/i,
+            /\.nutexb$/i,
+            /\.bntx$/i,
+            /\.prc$/i,
             /\.eff$/i,
             /\.numatb$/i,
             /\.numshb$/i,
@@ -193,7 +193,7 @@ class ModConflictDetector {
      */
     getConflictDescriptions() {
         const descriptions = [];
-        
+
         this.conflicts.forEach((mods, file) => {
             const fileName = file.split(/[/\\]/).pop(); // Get just the filename
             descriptions.push({

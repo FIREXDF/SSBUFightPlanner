@@ -2985,14 +2985,30 @@ class UIController {
           const mod = await this.modManager.getMod(modId);
           const { currentSlots, affectedFiles } =
             await ChangeSlots.scanForSlots(mod.path);
-          return { mod, currentSlots, affectedFiles };
+
+          // Get fighter name and existing custom names
+          const fighterNameInternal = await getInternalFighterName(mod.path) || '';
+          const existingCustomNames = fighterNameInternal
+            ? await ChangeSlots.readExistingCustomNames(mod.path, fighterNameInternal, currentSlots)
+            : {};
+
+          // Get default custom names for each slot from messages.data
+          const defaultCustomNames = {};
+          if (fighterNameInternal) {
+            for (const slot of currentSlots) {
+              const slotNum = slot.replace('c', '');
+              defaultCustomNames[slot] = await ChangeSlots.getDefaultCustomNames(fighterNameInternal, slotNum);
+            }
+          }
+
+          return { mod, currentSlots, affectedFiles, existingCustomNames, defaultCustomNames };
         })
       );
 
       // Génération du HTML avec tous les slots détectés (y compris > c07)
       const slotsInfo = document.getElementById("currentSlotsInfo");
       slotsInfo.innerHTML = modDetails
-        .map(({ mod, currentSlots, affectedFiles }) => {
+        .map(({ mod, currentSlots, affectedFiles, existingCustomNames, defaultCustomNames }) => {
           // Liste unique des slots à proposer dans le select (standards + tous détectés, sauf le slot courant)
           const standardSlots = Array.from({ length: 8 }, (_, i) => `c0${i}`);
           const extraSlots = currentSlots.filter(
@@ -3007,28 +3023,60 @@ class UIController {
                 <strong>${mod.name} - Current slots found:</strong> 
                 ${currentSlots
               .map(
-                (slot) => `
-                    <div class="input-group mb-2 slot-group" data-slot="${slot}">
+                (slot) => {
+                  return `
+                    <div class="input-group mb-3 slot-group" data-slot="${slot}">
                         <span class="input-group-text">${slot}</span>
                         <div style="flex:1;">
                             <select class="form-select target-slot" data-current-slot="${slot}">
                                 <option value="">Select new slot</option>
                                 ${allSlots
-                    .filter((s) => s !== slot)
-                    .map(
-                      (newSlot) => `
+                      .filter((s) => s !== slot)
+                      .map(
+                        (newSlot) => `
                                     <option value="${newSlot}">${newSlot}</option>
                                 `
-                    )
-                    .join("")}
+                      )
+                      .join("")}
                                 <option value="custom">Custom... (EXPERIMENTAL)</option>
                             </select>
                             <input type="text" class="form-control custom-slot-input mt-2 d-none" placeholder="Enter custom slot (e.g. c123)">
+                            
+                            <!-- Custom names section (for all slots) -->
+                            <div class="custom-names-section mt-2 p-2 border rounded bg-light">
+                                <small class="fw-bold text-muted d-block mb-2">Custom Names (Optional)</small>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="text" class="form-control form-control-sm custom-csp-name" 
+                                               placeholder="${defaultCustomNames[slot]?.cspName || 'CSP Name'}" 
+                                               value="${existingCustomNames[slot]?.cspName || ''}"
+                                               data-slot="${slot}">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" class="form-control form-control-sm custom-vs-name" 
+                                               placeholder="${defaultCustomNames[slot]?.vsName || 'VS NAME'}" 
+                                               value="${existingCustomNames[slot]?.vsName || ''}"
+                                               data-slot="${slot}">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" class="form-control form-control-sm custom-boxing-ring" 
+                                               placeholder="${defaultCustomNames[slot]?.boxingRing || 'Boxing Ring Title'}" 
+                                               value="${existingCustomNames[slot]?.boxingRing || ''}"
+                                               data-slot="${slot}">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" class="form-control form-control-sm custom-announcer" 
+                                               placeholder="vc_narration_characall" 
+                                               value="${existingCustomNames[slot]?.announcer || ''}"
+                                               data-slot="${slot}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <button class="btn btn-danger remove-slot" data-slot="${slot}">Remove Slot</button>
                         <div class="overlay"></div>
                     </div>
-                `
+                `}
               )
               .join("")}
             </div>
@@ -3105,6 +3153,7 @@ class UIController {
           const allSlots = {};
           const slotChanges = {};
           const slotsToRemove = [];
+          const slotCustomNames = {};
 
           document.querySelectorAll(".target-slot").forEach((select) => {
             const currentSlot = select.getAttribute("data-current-slot");
@@ -3125,6 +3174,24 @@ class UIController {
             }
 
             allSlots[currentSlot] = targetSlot || currentSlot;
+
+            // Collect custom names for this slot (all slots supported)
+            const finalSlot = targetSlot || currentSlot;
+            const slotGroup = select.closest('.slot-group');
+            const cspName = slotGroup.querySelector('.custom-csp-name')?.value.trim();
+            const vsName = slotGroup.querySelector('.custom-vs-name')?.value.trim();
+            const boxingRing = slotGroup.querySelector('.custom-boxing-ring')?.value.trim();
+            const announcer = slotGroup.querySelector('.custom-announcer')?.value.trim();
+
+            // Only add if at least one field is filled
+            if (cspName || vsName || boxingRing || announcer) {
+              slotCustomNames[finalSlot] = {
+                cspName: cspName || '',
+                vsName: vsName || '',
+                boxingRing: boxingRing || '',
+                announcer: announcer || ''
+              };
+            }
           });
 
           document.querySelectorAll(".slot-group.removed").forEach((group) => {
@@ -3151,9 +3218,11 @@ class UIController {
                 slotsToRemove,
                 allSlots,
                 affectedFiles,
+                slotCustomNames
               )
             )
           );
+
           modal.hide();
         } catch (error) {
           this.showError(`Failed to change slots: ${error.message}`);
@@ -3174,7 +3243,7 @@ class UIController {
     }
   }
 
-  async handleChangeSlots(modPath, slotChanges, slotsToRemove, allSlots, files) {
+  async handleChangeSlots(modPath, slotChanges, slotsToRemove, allSlots, files, slotCustomNames = null) {
     try {
       this.showLoading("Changing character slots...");
 
@@ -3183,9 +3252,11 @@ class UIController {
         slotChanges,
         allSlots,
         files,
+        slotCustomNames
       );
 
       let deletedFiles = 0;
+
       for (const slot of slotsToRemove) {
         deletedFiles += await ChangeSlots.removeSlot(modPath, slot, files);
       }
@@ -3193,13 +3264,23 @@ class UIController {
       this.showSuccess(
         `Character slots changed successfully (${changedFiles} files/folders updated, ${deletedFiles} files/folders deleted)`
       );
-      await this.loadMods();
+
+      // Check if auto-prefix is enabled and prompt for rename
+      const autoPrefixEnabled = await window.api.settings.getAutoPrefixRename();
+
+      if (autoPrefixEnabled && this.selectedMod) {
+        this.hideLoading();
+        await this.handleRenameMod();
+      } else {
+        await this.loadMods();
+      }
     } catch (error) {
       this.showError(`Failed to change slots: ${error.message}`);
     } finally {
       this.hideLoading();
     }
   }
+
 
   initializeEmulatorSettings() {
     // Get elements
