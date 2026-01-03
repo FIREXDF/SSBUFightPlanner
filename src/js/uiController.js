@@ -2994,6 +2994,7 @@ class UIController {
 
           // Get default custom names for each slot from messages.data
           const defaultCustomNames = {};
+
           if (fighterNameInternal) {
             for (const slot of currentSlots) {
               const slotNum = slot.replace('c', '');
@@ -3241,9 +3242,10 @@ class UIController {
 
       // Handle slot change confirmation
       const confirmBtn = document.getElementById("confirmChangeSlots");
+
       confirmBtn.onclick = async () => {
         try {
-          const allSlots = {};
+          const slotAssignments = {};
           const slotChanges = {};
           const slotsToRemove = [];
           const slotCustomNames = {};
@@ -3266,7 +3268,7 @@ class UIController {
               slotChanges[currentSlot] = targetSlot;
             }
 
-            allSlots[currentSlot] = targetSlot || currentSlot;
+            slotAssignments[currentSlot] = targetSlot || currentSlot;
 
             // Collect custom names for this slot (all slots supported)
             const finalSlot = targetSlot || currentSlot;
@@ -3290,18 +3292,10 @@ class UIController {
           document.querySelectorAll(".slot-group.removed").forEach((group) => {
             const slot = group.getAttribute("data-slot");
             slotsToRemove.push(slot);
-            delete allSlots[slot];
+            delete slotAssignments[slot];
           });
 
-          // Validate that no two different skins are assigned to the same slot
-          const duplicateSlots = Object.values(allSlots).filter(
-            (slot, _, arr) => arr.indexOf(slot) !== arr.lastIndexOf(slot)
-          );
-
-          if (duplicateSlots.length > 0) {
-            const uniqueDuplicates = [...new Set(duplicateSlots)];
-            throw new Error(`Cannot assign multiple skins to the same slot: ${uniqueDuplicates.join(', ')}`);
-          }
+          const finalSlots = Object.values(slotAssignments);
 
           await Promise.all(
             modDetails.map(({ mod, affectedFiles }) =>
@@ -3309,7 +3303,7 @@ class UIController {
                 mod.path,
                 slotChanges,
                 slotsToRemove,
-                allSlots,
+                finalSlots,
                 affectedFiles,
                 slotCustomNames
               )
@@ -3336,14 +3330,14 @@ class UIController {
     }
   }
 
-  async handleChangeSlots(modPath, slotChanges, slotsToRemove, allSlots, files, slotCustomNames = null) {
+  async handleChangeSlots(modPath, slotChanges, slotsToRemove, finalSlots, files, slotCustomNames = null) {
     try {
       this.showLoading("Changing character slots...");
 
       const changedFiles = await ChangeSlots.changeSlots(
         modPath,
         slotChanges,
-        allSlots,
+        finalSlots,
         files,
         slotCustomNames
       );

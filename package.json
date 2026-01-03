@@ -103,6 +103,13 @@
                 "filter": [
                     "**/*"
                 ]
+            },
+            {
+                "from": "./Files",
+                "to": "Files",
+                "filter": [
+                    "**/*"
+                ]
             }
         ],
         "compression": "maximum",

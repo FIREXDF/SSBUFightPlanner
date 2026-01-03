@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('api', {
         finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
         initializeConfigurations: () => ipcRenderer.invoke('initialize-configurations')
     },
+    getAppPath: () => ipcRenderer.invoke('get-app-path'),
     modOperations: {
         renameMod: (oldName, newName) => ipcRenderer.invoke('rename-mod', { oldName, newName }),
         installMod: (filePath) => ipcRenderer.invoke('install-mod', filePath),

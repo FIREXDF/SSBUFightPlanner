@@ -203,6 +203,10 @@ if (!gotTheLock) {
     ipcMain.handle("get-app-version", () => {
       return app.getVersion();
     });
+
+    ipcMain.handle("get-app-path", () => {
+      return app.getAppPath();
+    });
   });
 
   app.on("activate", function () {
@@ -2224,7 +2228,17 @@ ipcMain.handle("delete-mod-file", async (event, { modPath, filePath }) => {
 
 ipcMain.handle("write-mod-file", async (event, { filePath, content }) => {
   try {
-    await fsp.writeFile(filePath, content, "utf8");
+    let encoding = 'utf8'; // Default encoding
+
+    // File doesn't exist, check content for encoding hints
+    if (content.includes('encoding="utf-16"') || content.includes("encoding='utf-16'")) {
+      encoding = 'utf16le';
+    }
+
+    console.log('Writing file with encoding:', encoding, 'to', filePath);
+
+    await fsp.writeFile(filePath, content, encoding);
+
     return true;
   } catch (error) {
     console.error("Error writing mod file:", error);
@@ -2384,45 +2398,41 @@ ipcMain.handle("file-exists", async (event, filePath) => {
 
 ipcMain.handle("read-mod-file", async (event, filePath) => {
   try {
-    // For XML files, auto-detect encoding
-    if ((filePath.endsWith('.xml') || filePath.endsWith('.xmsbt') || filePath.endsWith('.prcxml') || filePath === 'Files/messages.data')) {
-      // Read first few bytes as buffer to detect encoding
-      const buffer = await fsp.readFile(filePath);
+    // Read first few bytes as buffer to detect encoding
+    const buffer = await fsp.readFile(filePath);
 
-      // Check BOM (Byte Order Mark)
-      if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
-        // UTF-16 LE BOM
+    let encoding;
+    // Check BOM (Byte Order Mark)
+    if (buffer[0] === 0xFF && buffer[1] === 0xFE) {
+      // UTF-16 LE BOM
+      encoding = 'utf16le';
+    } else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
+      // UTF-16 BE BOM
+      encoding = 'utf16e'; // Node.js handles BE with 'utf16le' by swapping bytes
+    } else if (buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+      // UTF-8 BOM
+      encoding = 'utf8';
+    } else {
+      // No BOM, check XML declaration
+      const start = buffer.toString('utf8', 0, Math.min(200, buffer.length));
+      if (start.includes('encoding="utf-16"') || start.includes("encoding='utf-16'")) {
         encoding = 'utf16le';
-      } else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
-        // UTF-16 BE BOM
-        encoding = 'utf16le'; // Node.js handles BE with 'utf16le' by swapping bytes
-      } else if (buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
-        // UTF-8 BOM
-        encoding = 'utf8';
       } else {
-        // No BOM, check XML declaration
-        const start = buffer.toString('utf8', 0, Math.min(200, buffer.length));
-        if (start.includes('encoding="utf-16"') || start.includes("encoding='utf-16'")) {
+        // Try to detect if it looks like UTF-16 by checking for null bytes
+        let nullCount = 0;
+        for (let i = 0; i < Math.min(100, buffer.length); i++) {
+          if (buffer[i] === 0) nullCount++;
+        }
+        // If more than 30% null bytes, likely UTF-16
+        if (nullCount > 30) {
           encoding = 'utf16le';
         } else {
-          // Try to detect if it looks like UTF-16 by checking for null bytes
-          let nullCount = 0;
-          for (let i = 0; i < Math.min(100, buffer.length); i++) {
-            if (buffer[i] === 0) nullCount++;
-          }
-          // If more than 30% null bytes, likely UTF-16
-          if (nullCount > 30) {
-            encoding = 'utf16le';
-          } else {
-            encoding = 'utf8';
-          }
+          encoding = 'utf8';
         }
       }
-
-      return buffer.toString(encoding);
     }
 
-    return await fsp.readFile(filePath, encoding);
+    return buffer.toString(encoding);
   } catch (error) {
     console.error("Error reading mod file:", error);
     throw error;
