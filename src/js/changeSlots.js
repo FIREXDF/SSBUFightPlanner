@@ -11,9 +11,18 @@ export class ChangeSlots {
             const filesIncludingSlotNumbers = [];
 
             files.forEach(file => {
-                if (!file.includes('.')) return;
-
                 const pathParts = file.split(/[/\\]/);
+
+                // Si on est dans fighter, on ne garde que les dossiers slot
+                if (pathParts.includes('fighter')) {
+                    const finalPathPart = pathParts[pathParts.length - 1];
+
+                    const isFighterSlotFolder =
+                        pathParts.length >= 2 &&
+                        /^c\d{2,3}$/i.test(finalPathPart);
+
+                    if (!isFighterSlotFolder) return;
+                }
 
                 // Extract fighter name from path (e.g., fighter/mario/c00)
                 let fighterName = null;
@@ -24,17 +33,9 @@ export class ChangeSlots {
                     fighterName = pathParts[fighterIndex + 1];
                 }
 
-                // Match cXX or cXXX in filename
-                const cXXMatchRegex = /c\d{2,3}/i;
-                // Match XX or XXX before file extension
-                const dotXXMatchRegex = /\d{2,3}(?=\.[^.]+$)/;
+                const { slot, normalizedPath } = this.extractSlot(file);
 
-                const cMatch = file.match(cXXMatchRegex);
-                const dotMatch = file.match(dotXXMatchRegex);
-
-                if (cMatch) {
-                    const slot = cMatch[0].toLowerCase();
-
+                if (slot) {
                     slots.add(slot);
 
                     if (fighterName) {
@@ -46,28 +47,12 @@ export class ChangeSlots {
                             normalizedFighterSlotData[fighterName][slot] = [];
                         }
 
-                        normalizedFighterSlotData[fighterName][slot].push(file.replace(cXXMatchRegex, 'c##'));
+                        normalizedFighterSlotData[fighterName][slot].push(normalizedPath);
                     }
-                } else if (dotMatch) {
-                    const slot = 'c' + dotMatch[0];
 
-                    slots.add(slot);
-
-                    if (fighterName) {
-                        if (!normalizedFighterSlotData[fighterName]) {
-                            normalizedFighterSlotData[fighterName] = {};
-                        }
-
-                        if (!normalizedFighterSlotData[fighterName][slot]) {
-                            normalizedFighterSlotData[fighterName][slot] = [];
-                        }
-
-                        normalizedFighterSlotData[fighterName][slot].push(file.replace(dotXXMatchRegex, '##'));
-                    }
-                }
-
-                if (cMatch || dotMatch) {
                     filesIncludingSlotNumbers.push(file);
+
+                    return;
                 }
             });
 
@@ -172,29 +157,10 @@ export class ChangeSlots {
         const tempMappings = []; // { originalPath, tempPath, finalPath }
 
         for (const file of filesToRename) {
-            // Découpe le chemin
-            const pathParts = file.split(/[/\\]/);
-            const fileName = pathParts[pathParts.length - 1];
-
-            // Cas 1 : dossier slot dans fighter (ex: fighter/ryu/c34)
-            const isFighterSlotFolder =
-                pathParts.length >= 2 &&
-                pathParts.includes('fighter') &&
-                /^c\d{2,3}$/i.test(fileName) &&
-                !fileName.includes('.');
-
-            // Cas 2 : fichier slot ailleurs (ex: ui/replace_patch/chara/chara_0_eflame_only_04.bntx)
-            const isSlotFile =
-                !pathParts.includes('fighter') &&
-                /0\d/.test(fileName);
+            const { slot: currentSlot, normalizedPath } = this.extractSlot(file);
 
             // On ne renomme que si l'un des deux cas est vrai
-            if (isFighterSlotFolder || isSlotFile) {
-                const currentSlot = this.extractSlot(file);
-                if (!currentSlot) {
-                    console.warn(`[changeSlots] Slot non détecté pour le fichier : ${file}, skip.`);
-                    continue;
-                }
+            if (currentSlot) {
                 if (!slotChanges[currentSlot]) {
                     // Slot not in slotChanges, skip
                     continue;
@@ -205,48 +171,18 @@ export class ChangeSlots {
 
                 const newSlot = slotChanges[currentSlot];
 
-                let newFilePath;
+                let oldNum = currentSlot.replace('c', '');
+                let newNum = newSlot.replace('c', '');
 
-                if (isFighterSlotFolder) {
-                    // Renommer le dossier slot (remplace tout le slot, ex: c01, c11, c123)
-                    newFilePath = file.replace(new RegExp(`\\b${currentSlot}\\b`), newSlot);
-                    console.debug('[changeSlots] Dossier slot:', file, '->', newFilePath, '| Regex utilisée: /c\\d{1,3}/i | newSlot:', newSlot);
-                } else {
-                    // Renommer le fichier slot (hors fighter)
-                    let oldNum = currentSlot.replace('c', '');
-                    let newNum = newSlot.replace('c', '');
+                if (oldNum.length === 1) oldNum = '0' + oldNum;
+                if (newNum.length === 1) newNum = '0' + newNum;
 
-                    if (oldNum.length === 1) oldNum = '0' + oldNum;
-                    if (newNum.length === 1) newNum = '0' + newNum;
+                const newFilePath = normalizedPath.replace('###', newNum);
 
-                    let tempFilePath = file;
-                    let regex = new RegExp(`_${oldNum}(?=\\.[^.]+$)`);
-
-                    if (regex.test(tempFilePath)) {
-                        tempFilePath = tempFilePath.replace(regex, `_${newNum}`);
-                    }
-
-                    if (tempFilePath === file) {
-                        regex = new RegExp(`${oldNum}(?=\\.[^.]+$)`);
-                        if (regex.test(tempFilePath)) {
-                            tempFilePath = tempFilePath.replace(regex, newNum);
-                        }
-                    }
-
-                    if (tempFilePath === file) {
-                        regex = new RegExp(`c${oldNum}(?=\\.[^.]+$)`, 'i');
-                        if (regex.test(tempFilePath)) {
-                            tempFilePath = tempFilePath.replace(regex, `c${newNum}`);
-                        }
-                    }
-
-                    newFilePath = tempFilePath;
-
-                    // Sécurité : si newFilePath est undefined ou vide, skip
-                    if (!newFilePath) {
-                        console.warn(`[changeSlots] newFilePath is undefined for file: ${file}, skip.`);
-                        continue;
-                    }
+                // Sécurité : si newFilePath est undefined ou vide, skip
+                if (!newFilePath) {
+                    console.warn(`[changeSlots] newFilePath is undefined for file: ${file}, skip.`);
+                    continue;
                 }
 
                 // Create temporary path by adding .temp_ prefix to the last path component
@@ -842,27 +778,21 @@ export class ChangeSlots {
     }
 
     static extractSlot(filePath) {
-        // Cherche cXX, cXXX
-        const cMatch = filePath.match(/c\d{2,3}/i);
+        // Match cXX or cXXX in filename
+        const cXXMatchRegex = /c\d{2,3}/i;
+        // Match XX or XXX before file extension
+        const dotXXMatchRegex = /\d{2,3}(?=\.[^.]+$)/;
+
+        const cMatch = filePath.match(cXXMatchRegex);
+        const dotMatch = filePath.match(dotXXMatchRegex);
+
         if (cMatch) {
-            return cMatch[0].toLowerCase();
+            return { slot: cMatch[0].toLowerCase(), normalizedPath: filePath.replace(cMatch[0], 'c###') };
+        } else if (dotMatch) {
+            return { slot: 'c' + dotMatch[0], normalizedPath: filePath.replace(dotMatch[0], '###') };
+        } else {
+            return {};
         }
-        // Cherche cX (un seul chiffre, à la fin d'un nom de dossier/fichier)
-        const c1Match = filePath.match(/c\d(?!\d)/i);
-        if (c1Match) {
-            return ('c0' + c1Match[0].slice(1)).toLowerCase();
-        }
-        // Cherche 0XX, 0XXX
-        const zeroMatch = filePath.match(/0\d{2,3}/);
-        if (zeroMatch) {
-            return 'c' + zeroMatch[0].slice(1);
-        }
-        // Cherche 0X (un seul chiffre)
-        const zero1Match = filePath.match(/0\d(?!\d)/);
-        if (zero1Match) {
-            return 'c0' + zero1Match[0].slice(1);
-        }
-        return null;
     }
 
     /**
