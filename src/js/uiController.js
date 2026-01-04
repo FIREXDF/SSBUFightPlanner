@@ -1461,7 +1461,7 @@ class UIController {
         }
     }
 
-    async handleRenameMod() {
+    async handleRenameMod(skipRenameOnPrefixMatch = false) {
         if (this.isDialogOpen) return;
 
         if (!this.selectedMod) {
@@ -1492,6 +1492,11 @@ class UIController {
                         if (match) {
                             // Replace existing prefix with new one
                             defaultName = currentName.replace(prefixRegex, `${prefix} `);
+
+                            if (defaultName === currentName && skipRenameOnPrefixMatch) {
+                                this.isDialogOpen = false;
+                                return;
+                            }
                         } else {
                             // No existing prefix, add new one
                             defaultName = `${prefix} ${currentName}`;
@@ -3285,6 +3290,25 @@ class UIController {
                     );
 
                     modal.hide();
+
+                    // Check if slots actually changed by comparing current and final slots
+                    const currentSlotsSet = new Set(modDetails.currentSlots);
+                    const finalSlotsSet = new Set(finalSlots);
+
+                    const slotsChanged =
+                        currentSlotsSet.size !== finalSlotsSet.size ||
+                        [...currentSlotsSet].some(slot => !finalSlotsSet.has(slot)) ||
+                        [...finalSlotsSet].some(slot => !currentSlotsSet.has(slot));
+
+                    // Check if auto-prefix is enabled and prompt for rename only if slots changed
+                    const autoPrefixEnabled = await window.api.settings.getAutoPrefixRename();
+
+                    if (autoPrefixEnabled && this.selectedMod) {
+                        await this.handleRenameMod(!slotsChanged);
+                    } else {
+                        await this.loadMods();
+                    }
+
                 } catch (error) {
                     this.showError(`Failed to change slots: ${error.message}`);
                 }
@@ -3327,16 +3351,6 @@ class UIController {
             this.showSuccess(
                 `Character slots changed successfully (${changedFiles} files/folders updated, ${deletedPaths} files/folders deleted)`
             );
-
-            // Check if auto-prefix is enabled and prompt for rename
-            const autoPrefixEnabled = await window.api.settings.getAutoPrefixRename();
-
-            if (autoPrefixEnabled && this.selectedMod) {
-                this.hideLoading();
-                await this.handleRenameMod();
-            } else {
-                await this.loadMods();
-            }
         } catch (error) {
             this.showError(`Failed to change slots: ${error.message}`);
         } finally {
