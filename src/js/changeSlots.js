@@ -1,4 +1,4 @@
-import { getInternalFighterName, getNonCopyFighterNames } from "./fighterNames.js";
+import {getInternalFighterName, getNonCopyFighterNames} from "./fighterNames.js";
 
 export class ChangeSlots {
     static async scanForSlots(modPath) {
@@ -11,29 +11,19 @@ export class ChangeSlots {
             const filesIncludingSlotNumbers = [];
 
             files.forEach(file => {
-                const pathParts = file.split(/[/\\]/);
+                const {
+                    slot,
+                    fighterName,
+                    normalizedPath,
+                    isFighterSlotFolder,
+                    includesFighterSlotFolder,
+                } = this.extractFighterAndSlotInfo(file);
 
-                // Si on est dans fighter, on ne garde que les dossiers slot
-                if (pathParts.includes('fighter')) {
-                    const finalPathPart = pathParts[pathParts.length - 1];
-
-                    const isFighterSlotFolder =
-                        pathParts.length >= 2 &&
-                        /^c\d{2,3}$/i.test(finalPathPart);
-
-                    if (!isFighterSlotFolder) return;
+                // If we find a slot folder (i.e., c00, c01, etc.) within the fighter folder, skip all other files
+                // as we know they do not contain slot numbers
+                if (includesFighterSlotFolder && !isFighterSlotFolder) {
+                    return;
                 }
-
-                // Extract fighter name from path (e.g., fighter/mario/c00)
-                let fighterName = null;
-
-                const fighterIndex = pathParts.indexOf('fighter');
-
-                if (fighterIndex !== -1 && pathParts.length > fighterIndex + 1) {
-                    fighterName = pathParts[fighterIndex + 1];
-                }
-
-                const { slot, normalizedPath } = this.extractSlot(file);
 
                 if (slot) {
                     slots.add(slot);
@@ -51,8 +41,6 @@ export class ChangeSlots {
                     }
 
                     filesIncludingSlotNumbers.push(file);
-
-                    return;
                 }
             });
 
@@ -157,7 +145,7 @@ export class ChangeSlots {
         const tempMappings = []; // { originalPath, tempPath, finalPath }
 
         for (const file of filesToRename) {
-            const { slot: currentSlot, normalizedPath } = this.extractSlot(file);
+            const {slot: currentSlot, normalizedPath} = this.extractFighterAndSlotInfo(file);
 
             // On ne renomme que si l'un des deux cas est vrai
             if (currentSlot) {
@@ -777,22 +765,61 @@ export class ChangeSlots {
         return deletedFiles;
     }
 
-    static extractSlot(filePath) {
+    /**
+     * FILL_ME_IN
+     *
+     * @param filePath {string}
+     * @returns {{slot: string | null, fighterName: string | null, normalizedPath: string | null, isFighterSlotFolder: boolean, includesFighterSlotFolder: boolean}}
+     */
+    static extractFighterAndSlotInfo(filePath) {
+        let fighterName = null;
+        let isFighterSlotFolder = false;
+
+        const pathParts = filePath.split(/[/\\]/);
+        const fighterIndex = pathParts.indexOf('fighter');
+        const includesFighterSlotFolder = fighterIndex !== -1;
+
+        if (includesFighterSlotFolder) {
+            const finalPathPart = pathParts[pathParts.length - 1];
+
+            isFighterSlotFolder =
+                pathParts.length >= 2 &&
+                /^c\d{2,3}$/i.test(finalPathPart);
+
+            if (pathParts.length > fighterIndex + 1) {
+                fighterName = pathParts[fighterIndex + 1];
+            }
+        }
+
         // Match cXX or cXXX in filename
-        const cXXMatchRegex = /c\d{2,3}/i;
+        const cXXMatchRegex = /(c)(\d{2,3})/i;
         // Match XX or XXX before file extension
-        const dotXXMatchRegex = /\d{2,3}(?=\.[^.]+$)/;
+        const dotXXMatchRegex = /_([^_]+)_(c)?(\d{2,3})(\.[^.]+)$/i;
 
         const cMatch = filePath.match(cXXMatchRegex);
         const dotMatch = filePath.match(dotXXMatchRegex);
 
-        if (cMatch) {
-            return { slot: cMatch[0].toLowerCase(), normalizedPath: filePath.replace(cMatch[0], 'c###') };
-        } else if (dotMatch) {
-            return { slot: 'c' + dotMatch[0], normalizedPath: filePath.replace(dotMatch[0], '###') };
-        } else {
-            return {};
+        if (!fighterName && dotMatch) {
+            fighterName = dotMatch[1];
         }
+
+        const slot = cMatch
+            ? cMatch[0].toLowerCase()
+            : (dotMatch ? 'c' + dotMatch[3] : null);
+
+        const normalizedPath = cMatch
+            ? filePath.replace(cXXMatchRegex, '$1###')
+            : (dotMatch
+                ? filePath.replace(dotXXMatchRegex, `_$1_${dotMatch[2] || ''}###$4`)
+                : null);
+
+        return {
+            slot,
+            fighterName,
+            normalizedPath,
+            isFighterSlotFolder,
+            includesFighterSlotFolder,
+        };
     }
 
     /**
@@ -1165,10 +1192,9 @@ export class ChangeSlots {
     /**
      * Gets default custom names from messages.data file
      * @param {string} fighterNameInternal - Internal fighter name (e.g., 'mario', 'link')
-     * @param {string} slot - Slot number (e.g., '00', '01')
      * @returns {Object} - Object with cspName, vsName, and boxingRing properties
      */
-    static async getDefaultCustomNames(fighterNameInternal, slot) {
+    static async getDefaultCustomNames(fighterNameInternal) {
         try {
             const appPath = await window.api.getAppPath();
 
@@ -1177,7 +1203,7 @@ export class ChangeSlots {
 
             if (!(await window.api.modOperations.fileExists(messagesPath))) {
                 console.warn('messages.data file not found');
-                return { cspName: '', vsName: '', boxingRing: '' };
+                return {cspName: '', vsName: '', boxingRing: ''};
             }
 
             // Read and parse the XML file
@@ -1187,9 +1213,10 @@ export class ChangeSlots {
 
             // Check for parsing errors
             const parserError = xmlDoc.querySelector('parsererror');
+            
             if (parserError) {
                 console.error('Error parsing messages.data XML');
-                return { cspName: '', vsName: '', boxingRing: '' };
+                return {cspName: '', vsName: '', boxingRing: ''};
             }
 
             // Build label patterns
@@ -1209,7 +1236,7 @@ export class ChangeSlots {
             };
         } catch (error) {
             console.error('Error reading messages.data:', error);
-            return { cspName: '', vsName: '', boxingRing: '' };
+            return {cspName: '', vsName: '', boxingRing: ''};
         }
     }
 }
