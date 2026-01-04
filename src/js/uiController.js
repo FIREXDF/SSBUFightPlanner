@@ -1,11 +1,12 @@
 console.log("UIController loading...");
 import {ModManager} from "./modManager.js";
+import {SlotScanner} from "./slotScanner.js";
 import ModConflictDetector from "./modConflictDetector.js";
 import {languageService} from "./services/languageService.js";
 import {ChangeSlots} from "./changeSlots.js";
 import {CharacterScanner} from "./scanallfoldercharacter.js";
 import {AnnouncementModal} from './announcementModal.js';
-import {getInternalFighterName, getNonCopyFighterNames} from "./fighterNames.js";
+import {getInternalFighterName} from "./fighterNames.js";
 
 class UIController {
     constructor() {
@@ -795,6 +796,7 @@ class UIController {
             // Call rename method
             await this.handleRenameMod();
         });
+
         // Button handlers
         document
             .getElementById("installMod")
@@ -844,7 +846,7 @@ class UIController {
             .addEventListener("click", () => this.handleRenameMod());
         document.getElementById("changeSlots").addEventListener("click", () => {
             if (this.selectedMod) {
-                this.showChangeSlotsDialog([this.selectedMod]);
+                this.showChangeSlotsDialog(this.selectedMod);
             } else {
                 this.showError("Please select at least one mod");
             }
@@ -1394,13 +1396,13 @@ class UIController {
     async generateModPrefix(modPath) {
         try {
             // Scan for slots in the mod
-            const {currentSlots} = await ChangeSlots.scanForSlots(modPath);
+            const {currentSlots, pathData} = await SlotScanner.scanForSlots(modPath);
 
             if (!currentSlots || currentSlots.length === 0) {
                 return null;
             }
 
-            const fighterNameInternal = await getInternalFighterName(modPath);
+            const fighterNameInternal = getInternalFighterName(pathData);
 
             if (!fighterNameInternal) {
                 return null;
@@ -1442,7 +1444,7 @@ class UIController {
                             // Range of 3 or more
                             ranges.push(`${sorted[rangeStart]}-${sorted[i]}`);
                         }
-                        
+
                         rangeStart = i + 1;
                     }
                 }
@@ -1452,7 +1454,7 @@ class UIController {
 
             const slotsStr = formatSlots(currentSlots);
 
-            return `${characterName} (${slotsStr})`;
+            return `[${characterName}] [${slotsStr}]`;
         } catch (error) {
             console.error('Error generating mod prefix:', error);
             return null;
@@ -1482,9 +1484,9 @@ class UIController {
                     const prefix = await this.generateModPrefix(mod.path);
 
                     if (prefix) {
-                        // Regex to match existing prefix format: [Character] (slots with ranges...)
-                        // Matches patterns like: [Mario] (c00-c03, c05) or [Link] (c00, c02)
-                        const prefixRegex = /^\[([^\]]+)\]\s*\((c\d+(?:-c\d+)?(?:,\s*c\d+(?:-c\d+)?)*)\)\s*/;
+                        // Regex to match existing prefix format: [Character] [slots with ranges...]
+                        // Matches patterns like: [Mario] [c00-c03, c05] or [Link] [c00, c02]
+                        const prefixRegex = /^\[([^\]]+)]\s*\[(c\d+(?:-c\d+)?(?:,\s*c\d+(?:-c\d+)?)*)]\s*/;
                         const match = currentName.match(prefixRegex);
 
                         if (match) {
@@ -2945,119 +2947,89 @@ class UIController {
         document.querySelectorAll(".mod-button").forEach((button) => {
             button.addEventListener("click", () => {
                 const selectedMod = button.dataset.modId;
-                this.showChangeSlotsDialog([selectedMod]);
+                this.showChangeSlotsDialog(selectedMod);
                 selectModsModal.hide();
             });
         });
     }
 
-    async showChangeSlotsDialog(selectedMods, file) {
+    async showChangeSlotsDialog(selectedMod, file) {
         this.hideContextMenu();
-        if (!selectedMods || selectedMods.length === 0) {
-            this.showError("Please select at least one mod");
+
+        if (!selectedMod) {
+            this.showError("Please select a mod");
             return;
         }
 
         try {
             this.showLoading("Scanning mod files...");
 
-            const modDetails = await Promise.all(
-                selectedMods.map(async (modId) => {
-                    const mod = await this.modManager.getMod(modId);
+            const mod = await this.modManager.getMod(selectedMod);
+            const {currentSlots, pathData} = await SlotScanner.scanForSlots(mod.path);
+            const fighterNameInternal = getInternalFighterName(pathData);
 
-                    const {currentSlots, affectedFiles, normalizedFighterSlotData} =
-                        await ChangeSlots.scanForSlots(mod.path);
+            const existingCustomNames = fighterNameInternal
+                ? await ChangeSlots.readExistingCustomNames(mod.path, fighterNameInternal, currentSlots)
+                : {};
 
-                    // Get fighter name and existing custom names
-                    const fighterNameInternal = await getInternalFighterName(mod.path) || '';
+            // Get default custom names for each slot from messages.data
+            const defaultCustomNames = {};
 
-                    const existingCustomNames = fighterNameInternal
-                        ? await ChangeSlots.readExistingCustomNames(mod.path, fighterNameInternal, currentSlots)
-                        : {};
+            if (fighterNameInternal) {
+                for (const slot of currentSlots) {
+                    defaultCustomNames[slot] = await ChangeSlots.getDefaultCustomNames(fighterNameInternal);
+                }
+            }
 
-                    // Get default custom names for each slot from messages.data
-                    const defaultCustomNames = {};
-
-                    if (fighterNameInternal) {
-                        for (const slot of currentSlots) {
-                            const slotNum = slot.replace('c', '');
-                            defaultCustomNames[slot] = await ChangeSlots.getDefaultCustomNames(fighterNameInternal, slotNum);
-                        }
-                    }
-
-                    return {
-                        mod,
-                        currentSlots,
-                        affectedFiles,
-                        defaultCustomNames,
-                        fighterNameInternal,
-                        existingCustomNames,
-                        normalizedFighterSlotData,
-                    };
-                })
-            );
+            const modDetails = {
+                mod,
+                pathData,
+                currentSlots,
+                defaultCustomNames,
+                fighterNameInternal,
+                existingCustomNames,
+            };
 
             // Collect all slots in use for the same fighter across all mods
             // Only consider a slot "in use" if it shares files with the mod being changed
             const slotsInUse = new Map(); // Map<slot, Array<modName>>
-            const fighterName = modDetails[0]?.fighterNameInternal;
-
-            console.log('fighterName :: ', fighterName)
+            const fighterName = modDetails.fighterNameInternal;
 
             if (fighterName) {
                 // Get all files from the mod being changed for this fighter
                 const modBeingChangedFiles = new Set();
 
-                for (const detail of modDetails) {
-                    console.log('detail.normalizedFighterSlotData :: ', detail.normalizedFighterSlotData)
-                    if (detail.normalizedFighterSlotData && detail.normalizedFighterSlotData[fighterName]) {
-                        const slotsData = detail.normalizedFighterSlotData[fighterName];
-
-                        console.log('slotsData :: ', slotsData)
-
-                        for (const slot in slotsData) {
-                            const files = slotsData[slot];
-
-                            files.forEach(file => {
-                                // Normalize file path (remove slot-specific parts to compare base paths)
-                                const normalizedFile = file.replace(/[\/\\]c\d{2,3}(?=[\/\\]|$)/gi, '/c##');
-                                modBeingChangedFiles.add(normalizedFile);
-                            });
-                        }
+                if (modDetails.pathData && modDetails.pathData[fighterName]) {
+                    for (const {filesToBeModified} of Object.values(modDetails.pathData[fighterName])) {
+                        filesToBeModified.forEach(file => {
+                            modBeingChangedFiles.add(file.normalized);
+                        });
                     }
                 }
 
                 for (const mod of this.mods) {
                     try {
-                        const modFighterNames = await getNonCopyFighterNames(mod.path);
+                        const {pathData} = await SlotScanner.scanForSlots(mod.path);
 
-                        if (modFighterNames.includes(fighterName)) {
-                            const {normalizedFighterSlotData} = await ChangeSlots.scanForSlots(mod.path);
+                        if (pathData[fighterName]) {
+                            for (const slot of Object.keys(pathData[fighterName])) {
+                                // Check if any files from this slot overlap with the mod being changed
+                                let hasOverlap = false;
 
-                            if (normalizedFighterSlotData[fighterName]) {
-                                const slotsData = normalizedFighterSlotData[fighterName];
+                                for (const file of pathData[fighterName][slot].filesToBeModified) {
+                                    if (modBeingChangedFiles.has(file.normalized)) {
+                                        hasOverlap = true;
+                                        break;
+                                    }
+                                }
 
-                                for (const slot in slotsData) {
-                                    const normalizedFiles = slotsData[slot];
-
-                                    // Check if any files from this slot overlap with the mod being changed
-                                    let hasOverlap = false;
-
-                                    for (const normalizedFile of normalizedFiles) {
-                                        if (modBeingChangedFiles.has(normalizedFile)) {
-                                            hasOverlap = true;
-                                            break;
-                                        }
+                                // Only add to slotsInUse if there's a file overlap
+                                if (hasOverlap) {
+                                    if (!slotsInUse.has(slot)) {
+                                        slotsInUse.set(slot, []);
                                     }
 
-                                    // Only add to slotsInUse if there's a file overlap
-                                    if (hasOverlap) {
-                                        if (!slotsInUse.has(slot)) {
-                                            slotsInUse.set(slot, []);
-                                        }
-
-                                        slotsInUse.get(slot).push(mod.name);
-                                    }
+                                    slotsInUse.get(slot).push(mod.name);
                                 }
                             }
                         }
@@ -3100,37 +3072,43 @@ class UIController {
         `;
             }
 
-            slotsInfo.innerHTML = slotsInUseHtml + modDetails
-                .map(({mod, currentSlots, affectedFiles, existingCustomNames, defaultCustomNames}) => {
-                    // Liste unique des slots à proposer dans le select (standards + tous détectés, sauf le slot courant)
-                    const standardSlots = Array.from({length: 8}, (_, i) => `c0${i}`);
-                    const extraSlots = currentSlots.filter(
-                        (s) => !standardSlots.includes(s)
-                    );
-                    const allSlots = Array.from(
-                        new Set([...standardSlots, ...extraSlots])
-                    );
+            const standardSlots = Array.from({length: 8}, (_, i) => `c0${i}`);
 
-                    return `
+            const extraSlots = modDetails.currentSlots.filter(
+                (s) => !standardSlots.includes(s)
+            );
+
+            const allSlots = Array.from(
+                new Set([...standardSlots, ...extraSlots])
+            );
+
+            const allAffectedFiles = Object.values(modDetails.pathData).flatMap((slotData) => {
+                return Object.values(slotData).flatMap((data) => {
+                    return data.filesToBeModified.flatMap((file) => file.original);
+                });
+            });
+
+            slotsInfo.innerHTML = slotsInUseHtml +
+                `
             <div class="mb-3">
                 <strong>${mod.name} - Current slots found:</strong> 
-                ${currentSlots
-                        .map(
-                            (slot) => {
-                                return `
+                ${modDetails.currentSlots
+                    .map(
+                        (slot) => {
+                            return `
                     <div class="input-group mb-3 slot-group" data-slot="${slot}">
                         <span class="input-group-text">${slot}</span>
                         <div style="flex:1;">
                             <select class="form-select target-slot" data-current-slot="${slot}">
                                 <option value="">Select new slot</option>
                                 ${allSlots
-                                    .filter((s) => s !== slot)
-                                    .map(
-                                        (newSlot) => `
+                                .filter((s) => s !== slot)
+                                .map(
+                                    (newSlot) => `
                                     <option value="${newSlot}">${newSlot}</option>
                                 `
-                                    )
-                                    .join("")}
+                                )
+                                .join("")}
                                 <option value="custom">Custom... (EXPERIMENTAL)</option>
                             </select>
                             <input type="text" class="form-control custom-slot-input mt-2 d-none" placeholder="Enter custom slot (e.g. c123)">
@@ -3141,26 +3119,26 @@ class UIController {
                                 <div class="row g-2">
                                     <div class="col-6">
                                         <input type="text" class="form-control form-control-sm custom-csp-name" 
-                                               placeholder="${defaultCustomNames[slot]?.cspName || 'CSP Name'}" 
-                                               value="${existingCustomNames[slot]?.cspName || ''}"
+                                               placeholder="${modDetails.defaultCustomNames[slot]?.cspName || 'CSP Name'}" 
+                                               value="${modDetails.existingCustomNames[slot]?.cspName || ''}"
                                                data-slot="${slot}">
                                     </div>
                                     <div class="col-6">
                                         <input type="text" class="form-control form-control-sm custom-vs-name" 
-                                               placeholder="${defaultCustomNames[slot]?.vsName || 'VS NAME'}" 
-                                               value="${existingCustomNames[slot]?.vsName || ''}"
+                                               placeholder="${modDetails.defaultCustomNames[slot]?.vsName || 'VS NAME'}" 
+                                               value="${modDetails.existingCustomNames[slot]?.vsName || ''}"
                                                data-slot="${slot}">
                                     </div>
                                     <div class="col-6">
                                         <input type="text" class="form-control form-control-sm custom-boxing-ring" 
-                                               placeholder="${defaultCustomNames[slot]?.boxingRing || 'Boxing Ring Title'}" 
-                                               value="${existingCustomNames[slot]?.boxingRing || ''}"
+                                               placeholder="${modDetails.defaultCustomNames[slot]?.boxingRing || 'Boxing Ring Title'}" 
+                                               value="${modDetails.existingCustomNames[slot]?.boxingRing || ''}"
                                                data-slot="${slot}">
                                     </div>
                                     <div class="col-6">
                                         <input type="text" class="form-control form-control-sm custom-announcer" 
                                                placeholder="vc_narration_characall" 
-                                               value="${existingCustomNames[slot]?.announcer || ''}"
+                                               value="${modDetails.existingCustomNames[slot]?.announcer || ''}"
                                                data-slot="${slot}">
                                     </div>
                                 </div>
@@ -3170,21 +3148,19 @@ class UIController {
                         <div class="overlay"></div>
                     </div>
                 `
-                            }
-                        )
-                        .join("")}
+                        }
+                    )
+                    .join("")}
             </div>
             <div class="mb-3">
-                <strong>Files to be changed (${affectedFiles.length}):</strong>
+                <strong>Files to be changed (${allAffectedFiles.length}):</strong>
                 <div class="small textmuted" style="max-height: 100px; overflow-y: auto;">
-                    ${affectedFiles
-                        .map((file) => `<div>${file}</div>`)
-                        .join("")}
+                    ${allAffectedFiles
+                    .map((file) => `<div>${file}</div>`)
+                    .join("")}
                 </div>
             </div>
         `;
-                })
-                .join("");
 
             // Show the modal
             const modal = new bootstrap.Modal(
@@ -3297,17 +3273,15 @@ class UIController {
 
                     const finalSlots = Object.values(slotAssignments);
 
-                    await Promise.all(
-                        modDetails.map(({mod, affectedFiles}) =>
-                            this.handleChangeSlots(
-                                mod.path,
-                                slotChanges,
-                                slotsToRemove,
-                                finalSlots,
-                                affectedFiles,
-                                slotCustomNames
-                            )
-                        )
+                    await this.handleChangeSlots(
+                        mod.path,
+                        slotChanges,
+                        slotsToRemove,
+                        finalSlots,
+                        modDetails.pathData,
+                        fighterName,
+                        slotCustomNames,
+                        allAffectedFiles
                     );
 
                     modal.hide();
@@ -3330,26 +3304,28 @@ class UIController {
         }
     }
 
-    async handleChangeSlots(modPath, slotChanges, slotsToRemove, finalSlots, files, slotCustomNames = null) {
+    async handleChangeSlots(modPath, slotChanges, slotsToRemove, finalSlots, pathData, fighterName, slotCustomNames = null, allAffectedFiles) {
         try {
             this.showLoading("Changing character slots...");
+
+            let deletedPaths = 0;
+
+            for (const slot of slotsToRemove) {
+                deletedPaths += await ChangeSlots.removeSlot(modPath, slot, pathData);
+            }
 
             const changedFiles = await ChangeSlots.changeSlots(
                 modPath,
                 slotChanges,
                 finalSlots,
-                files,
-                slotCustomNames
+                pathData,
+                fighterName,
+                slotCustomNames,
+                allAffectedFiles
             );
 
-            let deletedFiles = 0;
-
-            for (const slot of slotsToRemove) {
-                deletedFiles += await ChangeSlots.removeSlot(modPath, slot, files);
-            }
-
             this.showSuccess(
-                `Character slots changed successfully (${changedFiles} files/folders updated, ${deletedFiles} files/folders deleted)`
+                `Character slots changed successfully (${changedFiles} files/folders updated, ${deletedPaths} files/folders deleted)`
             );
 
             // Check if auto-prefix is enabled and prompt for rename

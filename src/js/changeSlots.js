@@ -1,190 +1,63 @@
-import {getInternalFighterName, getNonCopyFighterNames} from "./fighterNames.js";
-
 export class ChangeSlots {
-    static async scanForSlots(modPath) {
-        try {
-            const files = await window.api.modOperations.getModFiles(modPath);
-            console.debug('[scanForSlots] Tous les fichiers trouvés:', files);
-
-            const slots = new Set();
-            const normalizedFighterSlotData = {};
-            const filesIncludingSlotNumbers = [];
-
-            files.forEach(file => {
-                const {
-                    slot,
-                    fighterName,
-                    normalizedPath,
-                    isFighterSlotFolder,
-                    includesFighterSlotFolder,
-                } = this.extractFighterAndSlotInfo(file);
-
-                // If we find a slot folder (i.e., c00, c01, etc.) within the fighter folder, skip all other files
-                // as we know they do not contain slot numbers
-                if (includesFighterSlotFolder && !isFighterSlotFolder) {
-                    return;
-                }
-
-                if (slot) {
-                    slots.add(slot);
-
-                    if (fighterName) {
-                        if (!normalizedFighterSlotData[fighterName]) {
-                            normalizedFighterSlotData[fighterName] = {};
-                        }
-
-                        if (!normalizedFighterSlotData[fighterName][slot]) {
-                            normalizedFighterSlotData[fighterName][slot] = [];
-                        }
-
-                        normalizedFighterSlotData[fighterName][slot].push(normalizedPath);
-                    }
-
-                    filesIncludingSlotNumbers.push(file);
-                }
-            });
-
-            const sortedSlots = Array.from(slots).sort((a, b) => {
-                const numA = parseInt(a.replace('c', ''));
-                const numB = parseInt(b.replace('c', ''));
-
-                return numA - numB;
-            });
-
-            console.debug('[scanForSlots] Slots détectés:', sortedSlots);
-
-            return {
-                currentSlots: sortedSlots,
-                normalizedFighterSlotData,
-                affectedFiles: filesIncludingSlotNumbers
-            };
-        } catch (error) {
-            console.error('Error scanning for slots:', error);
-            throw error;
-        }
-    }
-
-    static async resetConfig(modPath, fighterName, targetAlt, allFiles) {
+    static async resetConfig(modPath) {
         const configPath = `${modPath}\\config.json`;
 
-        let config = {
+        await window.api.modOperations.writeModFile(configPath, JSON.stringify({
             "new-dir-infos": [],
             "new-dir-infos-base": {},
             "share-to-vanilla": {},
             "new-dir-files": {},
             "share-to-added": {}
-        };
-
-        // Préparer les chemins
-        const newDirInfo = `fighter/${fighterName}/${targetAlt}`;
-        const cameraDirInfo = `fighter/${fighterName}/${targetAlt}/camera`;
-        const transplantDirInfo = `fighter/${fighterName}/cmn`;
-        const oldCameraDir = `fighter/${fighterName}/camera/${targetAlt}`;
-
-        // Initialiser les sections si besoin
-        if (!config["new-dir-files"][newDirInfo]) config["new-dir-files"][newDirInfo] = [];
-        if (!config["new-dir-files"][cameraDirInfo]) config["new-dir-files"][cameraDirInfo] = [];
-        if (!config["new-dir-files"][transplantDirInfo]) config["new-dir-files"][transplantDirInfo] = [];
-        if (config["new-dir-files"][oldCameraDir]) delete config["new-dir-files"][oldCameraDir];
-
-        // Extensions custom
-        const customExtensions = [
-            '.nuanmb', '.marker', '.bin', '.tonelabel', '.numatb', '.numdlb', '.nutexb',
-            '.numshb', '.numshexb', '.nus3audio', '.nus3bank', '.nuhlpb', '.numdlb', '.xmb', '.kime', '.eff'
-        ];
-
-        // Parcours des fichiers
-        for (const file of allFiles) {
-            // Effets transplantés
-            if (file.includes(`effect/fighter/${fighterName}/transplant/`)) {
-                if (!config["new-dir-files"][transplantDirInfo].includes(file))
-                    config["new-dir-files"][transplantDirInfo].push(file);
-
-                continue;
-            }
-
-            // Effets spécifiques au slot
-            if (file.includes(`effect/fighter/${fighterName}/ef_${fighterName}_${targetAlt}`)) {
-                if (!config["new-dir-files"][newDirInfo].includes(file))
-                    config["new-dir-files"][newDirInfo].push(file);
-
-                continue;
-            }
-
-            // Caméra
-            if (file.startsWith(`camera/fighter/${fighterName}/${targetAlt}/`) && file.endsWith('.nuanmb')) {
-                if (!config["new-dir-files"][cameraDirInfo].includes(file))
-                    config["new-dir-files"][cameraDirInfo].push(file);
-
-                continue;
-            }
-
-            // Fichiers custom dans le slot cible
-            if (file.includes(`/${targetAlt}/`) || file.endsWith(`/${targetAlt}`)) {
-                const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
-                const isCustom = customExtensions.includes(ext) ||
-                    ['body', 'face', 'hair', 'eye', 'brs_', 'bust_', 'hand_'].some(marker => file.toLowerCase().includes(marker));
-
-                if (isCustom && !config["new-dir-files"][newDirInfo].includes(file)) {
-                    config["new-dir-files"][newDirInfo].push(file);
-                }
-            }
-        }
-
-        // Réécrire le config.json
-        await window.api.modOperations.writeModFile(configPath, JSON.stringify(config, null, 4));
+        }, null, 4));
     }
 
-    static async changeSlots(modPath, slotChanges, finalSlots, files, slotCustomNames = null) {
+    static async changeSlots(modPath, slotChanges, finalSlots, pathData, fighterName, slotCustomNames = null, allAffectedFiles) {
+        console.log('[changeSlots] Starting slot change operation');
+
         const changedFiles = [];
 
-        // Filter out config.json from files to rename
-        const filesToRename = files.filter(file => !file.endsWith('config.json'));
-
         // Step 1: Move all files to temporary paths first
-        const tempMappings = []; // { originalPath, tempPath, finalPath }
+        const tempMappings = []; // { originalPath, tempPath, finalPath, slot }
 
-        for (const file of filesToRename) {
-            const {slot: currentSlot, normalizedPath} = this.extractFighterAndSlotInfo(file);
-
-            // On ne renomme que si l'un des deux cas est vrai
-            if (currentSlot) {
+        Object.keys(pathData).forEach(fighter => {
+            Object.keys(pathData[fighter]).forEach(currentSlot => {
                 if (!slotChanges[currentSlot]) {
-                    // Slot not in slotChanges, skip
-                    continue;
+                    return;
                 }
 
-                console.debug('[changeSlots] Fichier:', file);
-                console.debug('[changeSlots] Slot extrait:', currentSlot);
+                Object.values(pathData[fighter][currentSlot].pathsToBeModified).forEach(({original, normalized}) => {
+                    console.log('[changeSlots] Original path:', original);
+                    console.log('[changeSlots] Slot extracted:', currentSlot);
 
-                const newSlot = slotChanges[currentSlot];
+                    const newSlot = slotChanges[currentSlot];
+                    let newNum = newSlot.replace('c', '');
+                    if (newNum.length === 1) newNum = '0' + newNum;
 
-                let oldNum = currentSlot.replace('c', '');
-                let newNum = newSlot.replace('c', '');
+                    const newPath = normalized.replace('###', newNum);
 
-                if (oldNum.length === 1) oldNum = '0' + oldNum;
-                if (newNum.length === 1) newNum = '0' + newNum;
+                    // Sécurité : si newFilePath est undefined ou vide, skip
+                    if (!newPath) {
+                        console.warn(`[changeSlots] newFilePath is undefined for path: ${original}, skip.`);
+                        return;
+                    }
 
-                const newFilePath = normalizedPath.replace('###', newNum);
+                    // Create temporary path in a slot-specific temp directory
+                    // This isolates temp files for each slot to prevent conflicts
+                    const tempPathParts = normalized.split(/[/\\]/);
+                    const lastPart = tempPathParts[tempPathParts.length - 1];
 
-                // Sécurité : si newFilePath est undefined ou vide, skip
-                if (!newFilePath) {
-                    console.warn(`[changeSlots] newFilePath is undefined for file: ${file}, skip.`);
-                    continue;
-                }
+                    tempPathParts[tempPathParts.length - 1] = `.temp_${currentSlot}_${lastPart}`;
 
-                // Create temporary path by adding .temp_ prefix to the last path component
-                const tempPathParts = file.split(/[/\\]/);
-                tempPathParts[tempPathParts.length - 1] = '.temp_' + tempPathParts[tempPathParts.length - 1];
-                const tempPath = tempPathParts.join('/');
+                    const tempPath = tempPathParts.join('/');
 
-                tempMappings.push({
-                    originalPath: file,
-                    tempPath: tempPath,
-                    finalPath: newFilePath
+                    tempMappings.push({
+                        originalPath: original,
+                        tempPath: tempPath,
+                        finalPath: newPath,
+                    });
                 });
-            }
-        }
+            });
+        });
 
         for (const mapping of tempMappings) {
             try {
@@ -203,6 +76,7 @@ export class ChangeSlots {
 
         // Step 3: Move all files from temp paths to final paths
         console.log('[changeSlots] Moving files from temporary to final paths...');
+
         for (const mapping of tempMappings) {
             try {
                 await window.api.modOperations.renameModFile(
@@ -210,7 +84,9 @@ export class ChangeSlots {
                     mapping.tempPath.replace(/\\/g, '/'),
                     mapping.finalPath.replace(/\\/g, '/')
                 );
+
                 console.log(`[changeSlots] Moved to final: ${mapping.tempPath} -> ${mapping.finalPath}`);
+
                 changedFiles.push(mapping.finalPath);
             } catch (error) {
                 console.error(`Error moving file from temp ${mapping.tempPath}:`, error);
@@ -223,9 +99,7 @@ export class ChangeSlots {
         if (hasAnySlotAboveC07 || (slotCustomNames && Object.keys(slotCustomNames).length > 0)) {
             try {
                 // 1. Get the fighter folder name
-                const fighterNameInternal = await getInternalFighterName(modPath);
-
-                if (!fighterNameInternal) {
+                if (!fighterName) {
                     console.log('[changeSlots] Dossier fighter non trouvé, skip la partie Max Slots.');
                     // On skip, pas d'erreur bloquante
                 } else {
@@ -236,8 +110,8 @@ export class ChangeSlots {
 
                     // 3. Find the line with the fighter name and get the number at the start of the line
                     const lines = uiCharaDbTxt.split(/\r?\n/);
-                    const fighterIndex = lines.findIndex(line => line.trim().toLowerCase() === fighterNameInternal.trim().toLowerCase());
-                    if (fighterIndex === -1) throw new Error(`Fighter name "${fighterNameInternal}" not found in ui_chara_db.txt`);
+                    const fighterIndex = lines.findIndex(line => line.trim().toLowerCase() === fighterName.trim().toLowerCase());
+                    if (fighterIndex === -1) throw new Error(`Fighter name "${fighterName}" not found in ui_chara_db.txt`);
 
                     // 4. Edit ui_chara_db.prcxml
                     const pathParts = modPath.replace(/\\/g, '/').split('/');
@@ -247,13 +121,15 @@ export class ChangeSlots {
 
                     let prcxmlContent = await window.api.modOperations.readModFile(prcxmlTemplatePath);
 
+                    // Build all structs for this fighter first
+                    const structs = [];
+
                     for (const slot of finalSlots) {
                         const slotNum = parseInt(slot.replace('c', ''));
 
                         if (slotNum > 7 || slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].announcer) {
                             const colorNum = slotNum + 1;
                             const nxyIndex = slotNum + 8;
-                            const hashLine = new RegExp(`<hash40 index="${fighterIndex}">dummy<\\/hash40>`, 'g');
 
                             // Build the struct with color_num, nXY_index, and optional characall_label
                             let structContent = `<struct index="${fighterIndex}">` +
@@ -266,9 +142,14 @@ export class ChangeSlots {
                             }
 
                             structContent += `</struct>`;
-
-                            prcxmlContent = prcxmlContent.replace(hashLine, structContent);
+                            structs.push(structContent);
                         }
+                    }
+
+                    // Replace the dummy line once with all structs
+                    if (structs.length > 0) {
+                        const hashLine = new RegExp(`<hash40 index="${fighterIndex}">dummy<\\/hash40>`, 'g');
+                        prcxmlContent = prcxmlContent.replace(hashLine, structs.join(''));
                     }
 
                     // Ensure the directory exists before writing the file
@@ -287,29 +168,18 @@ export class ChangeSlots {
         }
 
         // Update msg_name.xmsbt with custom names if provided (for all slots)
-        const fighterNameForMsg = await getInternalFighterName(modPath);
-        if (fighterNameForMsg && slotCustomNames && Object.keys(slotCustomNames).length > 0) {
-            await ChangeSlots.updateMsgName(modPath, fighterNameForMsg, finalSlots, slotCustomNames);
+        if (fighterName && slotCustomNames && Object.keys(slotCustomNames).length > 0) {
+            await ChangeSlots.updateMsgName(modPath, fighterName, finalSlots, slotCustomNames);
         }
-
-        // Update config.json after renaming
-        const fighterName = await getInternalFighterName(modPath);
 
         if (fighterName) {
-            for (const newSlot of Object.values(finalSlots)) {
-                await ChangeSlots.resetConfig(modPath, fighterName, newSlot, files);
-            }
-        } else {
-            console.log('[changeSlots] Dossier fighter non trouvé, skip addMissingFilesToConfig.');
-        }
+            await ChangeSlots.resetConfig(modPath);
 
-        // Après tous les renommages, mettre à jour share-to-vanilla et new-dir-infos dans config.json
-        if (changedFiles.length > 0) {
-            await ChangeSlots.updateShareToVanilla(modPath, finalSlots);
-            await ChangeSlots.updateNewDirInfos(modPath, finalSlots);
-            await ChangeSlots.updateNewDirFiles(modPath, finalSlots);
-            await ChangeSlots.updateNewDirInfosBase(modPath, finalSlots);
-            await ChangeSlots.updateShareToAdded(modPath, finalSlots);
+            await ChangeSlots.updateShareToVanilla(modPath, fighterName, finalSlots);
+            await ChangeSlots.updateNewDirInfos(modPath, fighterName, finalSlots);
+            await ChangeSlots.updateNewDirFiles(modPath, fighterName, finalSlots);
+            await ChangeSlots.updateNewDirInfosBase(modPath, fighterName, finalSlots);
+            await ChangeSlots.updateShareToAdded(modPath, fighterName, finalSlots);
         }
 
         return changedFiles.length;
@@ -320,17 +190,20 @@ export class ChangeSlots {
      * @param {string} modPath
      * @param {Object} finalSlots - ex: { c34: c255 }
      */
-    static async updateShareToVanilla(modPath, finalSlots) {
+    static async updateShareToVanilla(modPath, fighterName, finalSlots) {
         try {
             console.log('[updateShareToVanilla] called');
+
+            if (!fighterName) {
+                console.log('[updateShareToVanilla] Fighter name not found, skipping.');
+                return;
+            }
 
             const fighterRoot = `${modPath}/fighter`;
             if (!(await window.api.modOperations.fileExists(fighterRoot))) {
                 console.warn('[updateShareToVanilla] fighter folder not found:', fighterRoot);
                 return;
             }
-
-            const fighterNames = await getNonCopyFighterNames(modPath);
 
             // Charger vanilla.json
             const appPath = await window.api.getAppPath();
@@ -366,6 +239,7 @@ export class ChangeSlots {
 
             const configPath = `${modPath}/config.json`;
             let config = {};
+
             if (await window.api.modOperations.fileExists(configPath)) {
                 try {
                     config = JSON.parse(await window.api.modOperations.readModFile(configPath));
@@ -373,58 +247,61 @@ export class ChangeSlots {
                     config = {};
                 }
             }
+
             if (!config["share-to-vanilla"]) config["share-to-vanilla"] = {};
 
             let keyOrder = [];
             let vanillaSet = new Set();
 
-            for (const [oldSlot, newSlot] of Object.entries(finalSlots)) {
+            for (const [, newSlot] of Object.entries(finalSlots)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
                 if (newSlotNum < 7) continue; // Ignore slots below c07
 
                 for (const vanillaPath of vanillaFiles) {
                     let matchFighter = false;
-                    for (const fighterName of fighterNames) {
-                        // model/xxx/c00/...
-                        if (
-                            vanillaPath.startsWith(`fighter/${fighterName}/model/`)
-                        ) {
-                            // Récupère le sous-dossier (ex: bow, bowarrow, navy, parasail)
-                            const match = vanillaPath.match(new RegExp(`^fighter/${fighterName}/model/([^/]+)/c00/`));
-                            if (match) {
-                                matchFighter = true;
-                                break;
-                            }
-                        }
-                        // camera
-                        if (
-                            vanillaPath.startsWith(`camera/fighter/${fighterName}/c00/`) ||
-                            vanillaPath.startsWith(`camera/fighter/${fighterName}/c00.`)
-                        ) {
-                            matchFighter = true;
-                            break;
-                        }
-                        // sound
-                        if (
-                            vanillaPath.startsWith(`sound/bank/fighter/se_${fighterName}_c00`) ||
-                            vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_c00`) ||
-                            vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_cheer_c00`)
-                        ) {
-                            matchFighter = true;
-                            break;
-                        }
-                        // kirbycopy
-                        if (
-                            vanillaPath.startsWith(`fighter/kirby/model/copy_${fighterName}_cap/c00/`) ||
-                            vanillaPath.startsWith(`fighter/kirby/model/copy_${fighterName}_cap/c00.`)
-                        ) {
+
+                    // model/xxx/c00/...
+                    if (
+                        vanillaPath.startsWith(`fighter/${fighterName}/model/`)
+                    ) {
+                        // Récupère le sous-dossier (ex: bow, bowarrow, navy, parasail)
+                        const match = vanillaPath.match(new RegExp(`^fighter/${fighterName}/model/([^/]+)/c00/`));
+                        if (match) {
                             matchFighter = true;
                             break;
                         }
                     }
+                    // camera
+                    if (
+                        vanillaPath.startsWith(`camera/fighter/${fighterName}/c00/`) ||
+                        vanillaPath.startsWith(`camera/fighter/${fighterName}/c00.`)
+                    ) {
+                        matchFighter = true;
+                        break;
+                    }
+                    // sound
+                    if (
+                        vanillaPath.startsWith(`sound/bank/fighter/se_${fighterName}_c00`) ||
+                        vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_c00`) ||
+                        vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_cheer_c00`)
+                    ) {
+                        matchFighter = true;
+                        break;
+                    }
+                    // kirbycopy
+                    if (
+                        vanillaPath.startsWith(`fighter/kirby/model/copy_${fighterName}_cap/c00/`) ||
+                        vanillaPath.startsWith(`fighter/kirby/model/copy_${fighterName}_cap/c00.`)
+                    ) {
+                        matchFighter = true;
+                        break;
+                    }
+
                     if (!matchFighter) continue;
                     // On ne mappe que les fichiers (présence d'une extension)
+
                     if (!/\.[a-z0-9]+$/i.test(vanillaPath)) continue;
+
                     // Remplacement strict de /c00/ ou _c00 ou /c00 (fin de chemin) par le slot custom
                     let customPath = vanillaPath
                         .replace(/\/c00\//g, `/${newSlot}/`)
@@ -447,6 +324,7 @@ export class ChangeSlots {
             }
             // On retire toute clé qui n'est pas dans keyOrder (pour éviter les clés parasites)
             const filteredShareToVanilla = {};
+
             for (const k of keyOrder) {
                 if (config["share-to-vanilla"][k]) filteredShareToVanilla[k] = config["share-to-vanilla"][k];
             }
@@ -464,20 +342,12 @@ export class ChangeSlots {
      * @param {string} modPath
      * @param {Object} slotChanges - ex: { c34: c255 }
      */
-    static async updateNewDirInfos(modPath, slotChanges) {
+    static async updateNewDirInfos(modPath, fighterName, slotChanges) {
         try {
-            // Cherche le(s) nom(s) du fighter
-            const fighterNames = await getNonCopyFighterNames(modPath);
-
             // Si pas trouvé, tente de déduire le nom du fighter depuis le chemin ou fallback "link"
-            if (fighterNames.length === 0) {
-                const match = modPath.replace(/\\/g, '/').match(/fighter\/([^/]+)/i);
-
-                if (match) {
-                    fighterNames = [match[1]];
-                } else {
-                    fighterNames = ["link"];
-                }
+            if (!fighterName) {
+                console.log('[updateNewDirInfos] Fighter name not found, skipping.');
+                return;
             }
 
             const configPath = `${modPath}/config.json`;
@@ -503,15 +373,13 @@ export class ChangeSlots {
 
             let keyOrder = [];
 
-            for (const fighterName of fighterNames) {
-                for (const [oldSlot, newSlot] of Object.entries(slotChanges)) {
-                    const newSlotNum = parseInt(newSlot.replace('c', ''));
-                    if (newSlotNum < 7) continue; // Ignore slots below c07
+            for (const [, newSlot] of Object.entries(slotChanges)) {
+                const newSlotNum = parseInt(newSlot.replace('c', ''));
+                if (newSlotNum < 7) continue; // Ignore slots below c07
 
-                    for (const template of vanillaTemplates) {
-                        const newDir = template.replace('{fighter}', fighterName).replace('{slot}', newSlot);
-                        keyOrder.push(newDir);
-                    }
+                for (const template of vanillaTemplates) {
+                    const newDir = template.replace('{fighter}', fighterName).replace('{slot}', newSlot);
+                    keyOrder.push(newDir);
                 }
             }
 
@@ -533,17 +401,14 @@ export class ChangeSlots {
      * @param {string} modPath
      * @param {Object} slotChanges - ex: { c00: c08 }
      */
-    static async updateNewDirFiles(modPath, slotChanges) {
+    static async updateNewDirFiles(modPath, fighterName, slotChanges) {
         try {
             console.log('[updateNewDirFiles] called');
-            const fighterRoot = `${modPath}/fighter`;
-            if (!(await window.api.modOperations.fileExists(fighterRoot))) {
-                console.warn('[updateNewDirFiles] fighter folder not found:', fighterRoot);
+
+            if (!fighterName) {
+                console.log('[updateNewDirFiles] Fighter name not found, skipping.');
                 return;
             }
-
-            const fighterNames = await getNonCopyFighterNames(modPath);
-            if (fighterNames.length === 0) return;
 
             // Charger vanilla.json
             const appPath = await window.api.getAppPath();
@@ -584,92 +449,86 @@ export class ChangeSlots {
                 }
             }
 
-            // Correction : n'inclure que les fichiers c08 pour chaque section, dans l'ordre de l'exemple
-            const vanillaTemplates = [
-                "fighter/{fighter}/{slot}",
-                "fighter/{fighter}/camera/{slot}",
-                "fighter/{fighter}/kirbycopy/{slot}",
-                "fighter/{fighter}/movie/{slot}",
-                "fighter/{fighter}/result/{slot}"
-            ];
             let keyOrder = [];
-            for (const fighterName of fighterNames) {
-                for (const [oldSlot, newSlot] of Object.entries(slotChanges)) {
-                    const newSlotNum = parseInt(newSlot.replace('c', ''));
-                    if (newSlotNum < 7) continue; // Ignore slots below c07
 
+            for (const [, newSlot] of Object.entries(slotChanges)) {
+                const newSlotNum = parseInt(newSlot.replace('c', ''));
+                if (newSlotNum < 7) continue; // Ignore slots below c07
+
+                // fighter/{fighter}/{slot}
+                let filesForSlot = [];
+                let filesKirby = [];
+                let filesCamera = [];
+
+                for (const f of vanillaFiles) {
                     // fighter/{fighter}/{slot}
-                    let filesForSlot = [];
-                    let filesKirby = [];
-                    let filesCamera = [];
-                    for (const f of vanillaFiles) {
-                        // fighter/{fighter}/{slot}
-                        if (
-                            f.startsWith(`fighter/${fighterName}/model/`) &&
-                            f.includes(`/c00/`)
-                        ) {
-                            filesForSlot.push(f.replace(`/c00/`, `/${newSlot}/`));
-                        }
-                        // fighter/{fighter}/motion/...
-                        if (
-                            f.startsWith(`fighter/${fighterName}/motion/`) &&
-                            f.includes(`/c00/`)
-                        ) {
-                            filesForSlot.push(f.replace(`/c00/`, `/${newSlot}/`));
-                        }
-                        // sound
-                        if (
-                            f.startsWith(`sound/bank/fighter/se_${fighterName}_c00`) ||
-                            f.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_c00`) ||
-                            f.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_cheer_c00`)
-                        ) {
-                            filesForSlot.push(f.replace(/_c00/g, `_${newSlot}`));
-                        }
-                        // camera
-                        if (
-                            f.startsWith(`camera/fighter/${fighterName}/`) &&
-                            f.includes(`/c00/`)
-                        ) {
-                            filesCamera.push(f.replace(`/c00/`, `/${newSlot}/`));
-                        }
-                        // kirbycopy
-                        if (
-                            f.startsWith(`fighter/kirby/model/copy_${fighterName}_cap/`) &&
-                            f.includes(`/c00/`)
-                        ) {
-                            filesKirby.push(f.replace(`/c00/`, `/${newSlot}/`));
-                        }
+                    if (
+                        f.startsWith(`fighter/${fighterName}/model/`) &&
+                        f.includes(`/c00/`)
+                    ) {
+                        filesForSlot.push(f.replace(`/c00/`, `/${newSlot}/`));
                     }
-                    // Remove duplicates and sort
-                    filesForSlot = [...new Set(filesForSlot)].sort();
-                    filesCamera = [...new Set(filesCamera)].sort();
-                    filesKirby = [...new Set(filesKirby)].sort();
-
-                    // fighter/{fighter}/{slot}
-                    const dirKey = `fighter/${fighterName}/${newSlot}`;
-                    keyOrder.push(dirKey);
-                    config["new-dir-files"][dirKey] = filesForSlot;
-
-                    // fighter/{fighter}/camera/{slot}
-                    const cameraKey = `fighter/${fighterName}/camera/${newSlot}`;
-                    keyOrder.push(cameraKey);
-                    config["new-dir-files"][cameraKey] = filesCamera;
-
-                    // fighter/{fighter}/kirbycopy/{slot}
-                    const kirbyKey = `fighter/${fighterName}/kirbycopy/${newSlot}`;
-                    keyOrder.push(kirbyKey);
-                    config["new-dir-files"][kirbyKey] = filesKirby;
-
-                    // movie/result (empty arrays)
-                    const movieKey = `fighter/${fighterName}/movie/${newSlot}`;
-                    keyOrder.push(movieKey);
-                    config["new-dir-files"][movieKey] = [];
-
-                    const resultKey = `fighter/${fighterName}/result/${newSlot}`;
-                    keyOrder.push(resultKey);
-                    config["new-dir-files"][resultKey] = [];
+                    // fighter/{fighter}/motion/...
+                    if (
+                        f.startsWith(`fighter/${fighterName}/motion/`) &&
+                        f.includes(`/c00/`)
+                    ) {
+                        filesForSlot.push(f.replace(`/c00/`, `/${newSlot}/`));
+                    }
+                    // sound
+                    if (
+                        f.startsWith(`sound/bank/fighter/se_${fighterName}_c00`) ||
+                        f.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_c00`) ||
+                        f.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_cheer_c00`)
+                    ) {
+                        filesForSlot.push(f.replace(/_c00/g, `_${newSlot}`));
+                    }
+                    // camera
+                    if (
+                        f.startsWith(`camera/fighter/${fighterName}/`) &&
+                        f.includes(`/c00/`)
+                    ) {
+                        filesCamera.push(f.replace(`/c00/`, `/${newSlot}/`));
+                    }
+                    // kirbycopy
+                    if (
+                        f.startsWith(`fighter/kirby/model/copy_${fighterName}_cap/`) &&
+                        f.includes(`/c00/`)
+                    ) {
+                        filesKirby.push(f.replace(`/c00/`, `/${newSlot}/`));
+                    }
                 }
+
+                // Remove duplicates and sort
+                filesForSlot = [...new Set(filesForSlot)].sort();
+                filesCamera = [...new Set(filesCamera)].sort();
+                filesKirby = [...new Set(filesKirby)].sort();
+
+                // fighter/{fighter}/{slot}
+                const dirKey = `fighter/${fighterName}/${newSlot}`;
+                keyOrder.push(dirKey);
+                config["new-dir-files"][dirKey] = filesForSlot;
+
+                // fighter/{fighter}/camera/{slot}
+                const cameraKey = `fighter/${fighterName}/camera/${newSlot}`;
+                keyOrder.push(cameraKey);
+                config["new-dir-files"][cameraKey] = filesCamera;
+
+                // fighter/{fighter}/kirbycopy/{slot}
+                const kirbyKey = `fighter/${fighterName}/kirbycopy/${newSlot}`;
+                keyOrder.push(kirbyKey);
+                config["new-dir-files"][kirbyKey] = filesKirby;
+
+                // movie/result (empty arrays)
+                const movieKey = `fighter/${fighterName}/movie/${newSlot}`;
+                keyOrder.push(movieKey);
+                config["new-dir-files"][movieKey] = [];
+
+                const resultKey = `fighter/${fighterName}/result/${newSlot}`;
+                keyOrder.push(resultKey);
+                config["new-dir-files"][resultKey] = [];
             }
+
             config["new-dir-files"] = ChangeSlots.orderObject(config["new-dir-files"], keyOrder);
 
             await ChangeSlots.writeOrderedConfig(configPath, config);
@@ -685,17 +544,14 @@ export class ChangeSlots {
      * @param {string} modPath
      * @param {Object} slotChanges - ex: { c08: c34 }
      */
-    static async updateNewDirInfosBase(modPath, slotChanges) {
+    static async updateNewDirInfosBase(modPath, fighterName, slotChanges) {
         try {
             console.log('[updateNewDirInfosBase] called');
-            const fighterRoot = `${modPath}/fighter`;
-            if (!(await window.api.modOperations.fileExists(fighterRoot))) {
-                console.warn('[updateNewDirInfosBase] fighter folder not found:', fighterRoot);
+
+            if (!fighterName) {
+                console.log('[updateNewDirInfosBase] Fighter name not found, skipping.');
                 return;
             }
-
-            const fighterNames = await getNonCopyFighterNames(modPath);
-            if (fighterNames.length === 0) return;
 
             const configPath = `${modPath}/config.json`;
             let config = {};
@@ -711,40 +567,40 @@ export class ChangeSlots {
             // Ordre attendu pour new-dir-infos-base
             // Pour coller à l'exemple fourni
             let keyOrder = [];
-            for (const fighterName of fighterNames) {
-                for (const [oldSlot, newSlot] of Object.entries(slotChanges)) {
-                    const newSlotNum = parseInt(newSlot.replace('c', ''));
-                    if (newSlotNum < 7) continue; // Ignore slots below c07
 
-                    // camera pour slot principal
-                    const customCamera = `fighter/${fighterName}/${newSlot}/camera`;
-                    const vanillaCamera = `fighter/${fighterName}/c00/camera`;
-                    config["new-dir-infos-base"][customCamera] = vanillaCamera;
-                    keyOrder.push(customCamera);
+            for (const [, newSlot] of Object.entries(slotChanges)) {
+                const newSlotNum = parseInt(newSlot.replace('c', ''));
+                if (newSlotNum < 7) continue; // Ignore slots below c07
 
-                    // bodymotion/cmn/sound/cmn pour kirbycopy
-                    const customKirbyBodymotion = `fighter/${fighterName}/kirbycopy/${newSlot}/bodymotion`;
-                    const vanillaKirbyBodymotion = `fighter/${fighterName}/kirbycopy/c00/bodymotion`;
-                    config["new-dir-infos-base"][customKirbyBodymotion] = vanillaKirbyBodymotion;
-                    keyOrder.push(customKirbyBodymotion);
+                // camera pour slot principal
+                const customCamera = `fighter/${fighterName}/${newSlot}/camera`;
+                const vanillaCamera = `fighter/${fighterName}/c00/camera`;
+                config["new-dir-infos-base"][customCamera] = vanillaCamera;
+                keyOrder.push(customCamera);
 
-                    const customKirbyCmn = `fighter/${fighterName}/kirbycopy/${newSlot}/cmn`;
-                    const vanillaKirbyCmn = `fighter/${fighterName}/kirbycopy/c00/cmn`;
-                    config["new-dir-infos-base"][customKirbyCmn] = vanillaKirbyCmn;
-                    keyOrder.push(customKirbyCmn);
+                // bodymotion/cmn/sound/cmn pour kirbycopy
+                const customKirbyBodymotion = `fighter/${fighterName}/kirbycopy/${newSlot}/bodymotion`;
+                const vanillaKirbyBodymotion = `fighter/${fighterName}/kirbycopy/c00/bodymotion`;
+                config["new-dir-infos-base"][customKirbyBodymotion] = vanillaKirbyBodymotion;
+                keyOrder.push(customKirbyBodymotion);
 
-                    const customKirbySound = `fighter/${fighterName}/kirbycopy/${newSlot}/sound`;
-                    const vanillaKirbySound = `fighter/${fighterName}/kirbycopy/c00/sound`;
-                    config["new-dir-infos-base"][customKirbySound] = vanillaKirbySound;
-                    keyOrder.push(customKirbySound);
+                const customKirbyCmn = `fighter/${fighterName}/kirbycopy/${newSlot}/cmn`;
+                const vanillaKirbyCmn = `fighter/${fighterName}/kirbycopy/c00/cmn`;
+                config["new-dir-infos-base"][customKirbyCmn] = vanillaKirbyCmn;
+                keyOrder.push(customKirbyCmn);
 
-                    // cmn pour slot principal
-                    const customCmn = `fighter/${fighterName}/${newSlot}/cmn`;
-                    const vanillaCmn = `fighter/${fighterName}/c00/cmn`;
-                    config["new-dir-infos-base"][customCmn] = vanillaCmn;
-                    keyOrder.push(customCmn);
-                }
+                const customKirbySound = `fighter/${fighterName}/kirbycopy/${newSlot}/sound`;
+                const vanillaKirbySound = `fighter/${fighterName}/kirbycopy/c00/sound`;
+                config["new-dir-infos-base"][customKirbySound] = vanillaKirbySound;
+                keyOrder.push(customKirbySound);
+
+                // cmn pour slot principal
+                const customCmn = `fighter/${fighterName}/${newSlot}/cmn`;
+                const vanillaCmn = `fighter/${fighterName}/c00/cmn`;
+                config["new-dir-infos-base"][customCmn] = vanillaCmn;
+                keyOrder.push(customCmn);
             }
+
             config["new-dir-infos-base"] = ChangeSlots.orderObject(config["new-dir-infos-base"], keyOrder);
 
             await ChangeSlots.writeOrderedConfig(configPath, config);
@@ -753,73 +609,21 @@ export class ChangeSlots {
         }
     }
 
-    static async removeSlot(modPath, slot, files) {
-        let deletedFiles = 0;
+    static async removeSlot(modPath, slot, pathData) {
+        let deletedPaths = 0;
 
-        for (const file of files) {
-            if (file.includes(slot) || ((file.endsWith('.bntx') || file.endsWith('.dds')) && file.includes(slot.replace('c', '')))) {
-                await window.api.modOperations.deleteModFile(modPath, file);
-                deletedFiles++;
-            }
-        }
-        return deletedFiles;
-    }
+        for (const fighter in pathData) {
+            for (const currentSlot in pathData[fighter]) {
+                if (currentSlot !== slot) continue;
 
-    /**
-     * FILL_ME_IN
-     *
-     * @param filePath {string}
-     * @returns {{slot: string | null, fighterName: string | null, normalizedPath: string | null, isFighterSlotFolder: boolean, includesFighterSlotFolder: boolean}}
-     */
-    static extractFighterAndSlotInfo(filePath) {
-        let fighterName = null;
-        let isFighterSlotFolder = false;
-
-        const pathParts = filePath.split(/[/\\]/);
-        const fighterIndex = pathParts.indexOf('fighter');
-        const includesFighterSlotFolder = fighterIndex !== -1;
-
-        if (includesFighterSlotFolder) {
-            const finalPathPart = pathParts[pathParts.length - 1];
-
-            isFighterSlotFolder =
-                pathParts.length >= 2 &&
-                /^c\d{2,3}$/i.test(finalPathPart);
-
-            if (pathParts.length > fighterIndex + 1) {
-                fighterName = pathParts[fighterIndex + 1];
+                for (const {original} of Object.values(pathData[fighter][currentSlot].pathsToBeModified)) {
+                    await window.api.modOperations.deleteModFile(modPath, original);
+                    deletedPaths++;
+                }
             }
         }
 
-        // Match cXX or cXXX in filename
-        const cXXMatchRegex = /(c)(\d{2,3})/i;
-        // Match XX or XXX before file extension
-        const dotXXMatchRegex = /_([^_]+)_(c)?(\d{2,3})(\.[^.]+)$/i;
-
-        const cMatch = filePath.match(cXXMatchRegex);
-        const dotMatch = filePath.match(dotXXMatchRegex);
-
-        if (!fighterName && dotMatch) {
-            fighterName = dotMatch[1];
-        }
-
-        const slot = cMatch
-            ? cMatch[0].toLowerCase()
-            : (dotMatch ? 'c' + dotMatch[3] : null);
-
-        const normalizedPath = cMatch
-            ? filePath.replace(cXXMatchRegex, '$1###')
-            : (dotMatch
-                ? filePath.replace(dotXXMatchRegex, `_$1_${dotMatch[2] || ''}###$4`)
-                : null);
-
-        return {
-            slot,
-            fighterName,
-            normalizedPath,
-            isFighterSlotFolder,
-            includesFighterSlotFolder,
-        };
+        return deletedPaths;
     }
 
     /**
@@ -828,18 +632,14 @@ export class ChangeSlots {
      * @param {string} modPath
      * @param {Object} slotChanges - ex: { c00: c08 }
      */
-    static async updateShareToAdded(modPath, slotChanges) {
+    static async updateShareToAdded(modPath, fighterName, slotChanges) {
         try {
             console.log('[updateShareToAdded] called');
-            const fighterRoot = `${modPath}/fighter`;
 
-            if (!(await window.api.modOperations.fileExists(fighterRoot))) {
-                console.warn('[updateShareToAdded] fighter folder not found:', fighterRoot);
+            if (!fighterName) {
+                console.log('[updateShareToAdded] Fighter name not found, skipping.');
                 return;
             }
-
-            const fighterNames = await getNonCopyFighterNames(modPath);
-            if (fighterNames.length === 0) return;
 
             // Charger vanilla.json
             const appPath = await window.api.getAppPath();
@@ -880,52 +680,49 @@ export class ChangeSlots {
                 }
             }
 
-            let mappingCount = 0;
-            for (const fighterName of fighterNames) {
-                for (const [oldSlot, newSlot] of Object.entries(slotChanges)) {
-                    const newSlotNum = parseInt(newSlot.replace('c', ''));
-                    if (newSlotNum < 7) continue; // Ignore slots below c07
+            for (const [, newSlot] of Object.entries(slotChanges)) {
+                const newSlotNum = parseInt(newSlot.replace('c', ''));
+                if (newSlotNum < 7) continue; // Ignore slots below c07
 
-                    // 1. Motion, camera, sound
-                    for (const vanillaPath of vanillaFiles) {
-                        if (
-                            (
-                                vanillaPath.startsWith(`camera/fighter/${fighterName}/`) ||
-                                vanillaPath.startsWith(`fighter/${fighterName}/motion/`) ||
-                                vanillaPath.startsWith(`sound/bank/fighter/se_${fighterName}_c00`) ||
-                                vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_c00`) ||
-                                vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_cheer_c00`)
-                            ) &&
-                            /\/c00(\/|$)/.test(vanillaPath)
-                        ) {
-                            const addedPath = vanillaPath.replace(/\/c00(\/|$)/g, `/${newSlot}$1`);
-                            if (!config["share-to-added"][vanillaPath]) {
-                                config["share-to-added"][vanillaPath] = [];
-                            }
-                            if (!config["share-to-added"][vanillaPath].includes(addedPath)) {
-                                config["share-to-added"][vanillaPath].push(addedPath);
-                            }
+                // 1. Motion, camera, sound
+                for (const vanillaPath of vanillaFiles) {
+                    if (
+                        (
+                            vanillaPath.startsWith(`camera/fighter/${fighterName}/`) ||
+                            vanillaPath.startsWith(`fighter/${fighterName}/motion/`) ||
+                            vanillaPath.startsWith(`sound/bank/fighter/se_${fighterName}_c00`) ||
+                            vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_c00`) ||
+                            vanillaPath.startsWith(`sound/bank/fighter_voice/vc_${fighterName}_cheer_c00`)
+                        ) &&
+                        /\/c00(\/|$)/.test(vanillaPath)
+                    ) {
+                        const addedPath = vanillaPath.replace(/\/c00(\/|$)/g, `/${newSlot}$1`);
+                        if (!config["share-to-added"][vanillaPath]) {
+                            config["share-to-added"][vanillaPath] = [];
+                        }
+                        if (!config["share-to-added"][vanillaPath].includes(addedPath)) {
+                            config["share-to-added"][vanillaPath].push(addedPath);
                         }
                     }
-                    // 2. Uniquement le dossier racine kirbycopy (PAS tous les fichiers du slot Kirby)
-                    const kirbyRoot = `fighter/kirby/model/copy_${fighterName}_cap/c00`;
-                    const kirbyRootNew = `fighter/kirby/model/copy_${fighterName}_cap/${newSlot}`;
-                    // Remplace toute valeur existante par [kirbyRootNew] UNIQUEMENT si le slot custom existe réellement dans le mod
-                    // (sinon, ne mappe pas du tout)
-                    let kirbyRootExists = false;
-                    for (const f of vanillaFiles) {
-                        if (f === kirbyRootNew) {
-                            kirbyRootExists = true;
-                            break;
-                        }
+                }
+                // 2. Uniquement le dossier racine kirbycopy (PAS tous les fichiers du slot Kirby)
+                const kirbyRoot = `fighter/kirby/model/copy_${fighterName}_cap/c00`;
+                const kirbyRootNew = `fighter/kirby/model/copy_${fighterName}_cap/${newSlot}`;
+                // Remplace toute valeur existante par [kirbyRootNew] UNIQUEMENT si le slot custom existe réellement dans le mod
+                // (sinon, ne mappe pas du tout)
+                let kirbyRootExists = false;
+                for (const f of vanillaFiles) {
+                    if (f === kirbyRootNew) {
+                        kirbyRootExists = true;
+                        break;
                     }
-                    if (kirbyRootExists) {
-                        config["share-to-added"][kirbyRoot] = [kirbyRootNew];
-                    } else {
-                        // Supprime la clé si elle existe et le slot custom n'existe pas
-                        if (config["share-to-added"].hasOwnProperty(kirbyRoot)) {
-                            delete config["share-to-added"][kirbyRoot];
-                        }
+                }
+                if (kirbyRootExists) {
+                    config["share-to-added"][kirbyRoot] = [kirbyRootNew];
+                } else {
+                    // Supprime la clé si elle existe et le slot custom n'existe pas
+                    if (config["share-to-added"].hasOwnProperty(kirbyRoot)) {
+                        delete config["share-to-added"][kirbyRoot];
                     }
                 }
             }
@@ -1213,7 +1010,7 @@ export class ChangeSlots {
 
             // Check for parsing errors
             const parserError = xmlDoc.querySelector('parsererror');
-            
+
             if (parserError) {
                 console.error('Error parsing messages.data XML');
                 return {cspName: '', vsName: '', boxingRing: ''};
