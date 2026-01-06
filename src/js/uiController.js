@@ -1336,37 +1336,45 @@ class UIController {
                 return;
             }
 
-            // Confirm with the user
-            const confirmed = confirm(
-                `This will open the "Change Character Slot" dialog for all ${this.mods.length} mods in sequence.\n\n` +
-                `You'll need to configure each mod individually.\n\n` +
-                `Do you want to continue?`
-            );
+            // Update the modal with the mod count
+            document.getElementById("batchModCountText").textContent = this.mods.length;
+            // Show the confirmation modal
+            const modal = new bootstrap.Modal(document.getElementById("batchChangeSlotsModal"));
+            modal.show();
+
+            // Wait for user confirmation
+            const confirmed = await this.waitForModalConfirmation("batchChangeSlotsModal", "confirmBatchChangeSlots");
 
             if (!confirmed) {
                 return;
             }
+
+            // Set batch mode flag to prevent rescanning after each mod
+            this.isBatchProcessing = true;
+            console.log('🚀 Batch processing started - isBatchProcessing set to TRUE');
 
             // Loop through each mod
             for (let i = 0; i < this.mods.length; i++) {
                 const mod = this.mods[i];
 
                 // Show which mod we're processing
-                console.log(`Processing mod ${i + 1}/${this.mods.length}: ${mod.name}`);
+                console.log(`\n📦 Processing mod ${i + 1}/${this.mods.length}: ${mod.name}`);
+                console.log('Batch mode status:', this.isBatchProcessing);
 
                 try {
                     // Trigger the change slots dialog for this mod
                     await this.showChangeSlotsDialog(mod.name);
 
                     // Wait for the user to close the modal before continuing to the next mod
-                    // This is done by waiting for the modal to be hidden
                     await this.waitForModalClose("changeSlotsModal");
-
                 } catch (error) {
                     console.error(`Error processing mod ${mod.name}:`, error);
-                    const continueProcessing = confirm(
-                        `Error processing mod "${mod.name}": ${error.message}\n\n` +
-                        `Do you want to continue with the remaining mods?`
+
+                    // Show error modal instead of confirm
+                    const continueProcessing = await this.showErrorWithContinue(
+                        "Batch Process Error",
+                        `Error processing mod "${mod.name}": ${error.message}`,
+                        "Do you want to continue with the remaining mods?"
                     );
 
                     if (!continueProcessing) {
@@ -1375,12 +1383,119 @@ class UIController {
                 }
             }
 
+            // Clear batch mode flag
+            this.isBatchProcessing = false;
+
+            // Rescan mods once at the end
+            console.log("Batch processing complete, rescanning mods...");
+            await this.loadMods();
+
             this.showSuccess("Batch slot change process completed!");
 
         } catch (error) {
+            // Make sure to clear batch mode flag on error
+            this.isBatchProcessing = false;
+
             this.showError("Failed to process batch slot changes: " + error.message);
             console.error("Batch change slots error:", error);
         }
+    }
+
+    // Helper method to wait for a modal confirmation
+    waitForModalConfirmation(modalId, confirmButtonId) {
+        return new Promise((resolve) => {
+            const modalElement = document.getElementById(modalId);
+            const confirmButton = document.getElementById(confirmButtonId);
+
+            if (!modalElement || !confirmButton) {
+                resolve(false);
+                return;
+            }
+
+            let confirmed = false;
+
+            const handleConfirm = () => {
+                confirmed = true;
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            };
+
+            const handleHidden = () => {
+                confirmButton.removeEventListener('click', handleConfirm);
+                modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+                resolve(confirmed);
+            };
+
+            confirmButton.addEventListener('click', handleConfirm);
+            modalElement.addEventListener('hidden.bs.modal', handleHidden);
+        });
+    }
+
+    // Helper method to show error with continue option
+    async showErrorWithContinue(title, message, question) {
+        return new Promise((resolve) => {
+            // Create a temporary modal for error continuation
+            const modalHtml = `
+                <div class="modal fade" id="errorContinueModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>${title}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-2"><strong>${message}</strong></p>
+                                <p class="mb-0">${question}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-2"></i>Stop Process
+                                </button>
+                                <button type="button" class="btn btn-primary" id="continueProcessBtn">
+                                    <i class="bi bi-arrow-right me-2"></i>Continue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if present
+            const existingModal = document.getElementById("errorContinueModal");
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to body
+            document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+            const modalElement = document.getElementById("errorContinueModal");
+            const continueButton = document.getElementById("continueProcessBtn");
+            const modal = new bootstrap.Modal(modalElement);
+
+            let shouldContinue = false;
+
+            const handleContinue = () => {
+                shouldContinue = true;
+                modal.hide();
+            };
+
+            const handleHidden = () => {
+                continueButton.removeEventListener('click', handleContinue);
+                modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+                modalElement.remove();
+                resolve(shouldContinue);
+            };
+
+            continueButton.addEventListener('click', handleContinue);
+            modalElement.addEventListener('hidden.bs.modal', handleHidden);
+
+            modal.show();
+        });
     }
 
     // Helper method to wait for a modal to be closed
@@ -1608,8 +1723,9 @@ class UIController {
                     // Call rename method
                     await window.api.modOperations.renameMod(currentName, trimmedNewName);
 
-                    // Reload mods
-                    await this.loadMods();
+                    if (!this.isBatchProcessing) {
+                        await this.loadMods();
+                    }
 
                     // Select the newly renamed mod
                     await this.selectMod(trimmedNewName);
@@ -3419,6 +3535,9 @@ class UIController {
 
                     modal.hide();
 
+                    // Check if we're in batch processing mode
+                    const isBatchMode = this.isBatchProcessing || false;
+
                     // Check if slots actually changed by comparing current and final slots
                     const currentSlotsSet = new Set(modDetails.currentSlots);
                     const finalSlotsSet = new Set(finalSlots);
@@ -3433,7 +3552,7 @@ class UIController {
 
                     if (autoPrefixEnabled && this.selectedMod) {
                         await this.handleRenameMod(!slotsChanged);
-                    } else {
+                    } else if (!isBatchMode) {
                         await this.loadMods();
                     }
 

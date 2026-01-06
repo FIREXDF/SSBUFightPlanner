@@ -2233,9 +2233,15 @@ ipcMain.handle("write-mod-file", async (event, {filePath, content}) => {
     try {
         // File doesn't exist, check content for encoding hints
         if (content.includes('encoding="utf-16"') || content.includes("encoding='utf-16'")) {
+            // Check if content already starts with BOM (U+FEFF / UTF-16 LE BOM character)
+            const hasBOM = content.charCodeAt(0) === 0xFEFF;
+
+            // If BOM already present, remove it from content since we'll add it as bytes
+            const contentWithoutBOM = hasBOM ? content.substring(1) : content;
+
             // Add BOM for UTF-16LE and write as buffer
             const bom = Buffer.from([0xFF, 0xFE]);
-            const contentBuffer = Buffer.from(content, 'utf16le');
+            const contentBuffer = Buffer.from(contentWithoutBOM, 'utf16le');
             const fullBuffer = Buffer.concat([bom, contentBuffer]);
 
             await fsp.writeFile(filePath, fullBuffer);
@@ -2414,13 +2420,14 @@ ipcMain.handle("read-mod-file", async (event, filePath) => {
             encoding = 'utf16le';
         } else if (buffer[0] === 0xFE && buffer[1] === 0xFF) {
             // UTF-16 BE BOM
-            encoding = 'utf16e'; // Node.js handles BE with 'utf16le' by swapping bytes
+            encoding = 'utf16le'; // Node.js handles BE with 'utf16le' by swapping bytes
         } else if (buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
             // UTF-8 BOM
             encoding = 'utf8';
         } else {
             // No BOM, check XML declaration
             const start = buffer.toString('utf8', 0, Math.min(200, buffer.length));
+
             if (start.includes('encoding="utf-16"') || start.includes("encoding='utf-16'")) {
                 encoding = 'utf16le';
             } else {

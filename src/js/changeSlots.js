@@ -103,15 +103,24 @@ export class ChangeSlots {
                     console.log('[changeSlots] Dossier fighter non trouvé, skip la partie Max Slots.');
                     // On skip, pas d'erreur bloquante
                 } else {
-                    // 2. Read ui_chara_db.txt
+                    // 2. Read names.data to get fighter index
                     const appPath = await window.api.getAppPath();
-                    const uiCharaDbTxtPath = `${appPath}/src/resources/reslot/ui_chara_db.txt`;
-                    const uiCharaDbTxt = await window.api.modOperations.readModFile(uiCharaDbTxtPath);
+                    const namesDataPath = `${appPath}/Files/names.data`;
+                    const namesData = await window.api.modOperations.readModFile(namesDataPath);
 
-                    // 3. Find the line with the fighter name and get the number at the start of the line
-                    const lines = uiCharaDbTxt.split(/\r?\n/);
-                    const fighterIndex = lines.findIndex(line => line.trim().toLowerCase() === fighterName.trim().toLowerCase());
-                    if (fighterIndex === -1) throw new Error(`Fighter name "${fighterName}" not found in ui_chara_db.txt`);
+                    // 3. Find the fighter by internal name and get the index from the third column
+                    const lines = namesData.split(/\r?\n/);
+                    let fighterIndex = -1;
+
+                    for (const line of lines) {
+                        const parts = line.split(',').map(p => p.trim());
+                        if (parts.length >= 3 && parts[0].toLowerCase() === fighterName.trim().toLowerCase()) {
+                            fighterIndex = parseInt(parts[2]);
+                            break;
+                        }
+                    }
+
+                    if (fighterIndex === -1) throw new Error(`Fighter name "${fighterName}" not found in names.data`);
 
                     // 4. Edit ui_chara_db.prcxml
                     const pathParts = modPath.replace(/\\/g, '/').split('/');
@@ -327,7 +336,12 @@ export class ChangeSlots {
                             keyOrder.push(vanillaPath);
                             vanillaSet.add(vanillaPath);
                         }
-                        config["share-to-vanilla"][vanillaPath] = [customPath];
+
+                        if (!config["share-to-vanilla"][vanillaPath]) {
+                            config["share-to-vanilla"][vanillaPath] = [];
+                        }
+
+                        config["share-to-vanilla"][vanillaPath].push(customPath);
                     }
                 }
             }
@@ -833,7 +847,7 @@ export class ChangeSlots {
 
                 // Calculate the label index to match ui_chara_db.prcxml nXY_index value
                 // This should always be slot number + 8 (same as nxyIndex in ui_chara_db.prcxml)
-                const labelIndex = slotNum + 8;
+                const labelIndex = String(slotNum + 8).padStart(2, '0');
 
                 const cspName = names.cspName || '';
                 const vsName = names.vsName || (cspName ? cspName.toUpperCase() : '');
@@ -863,7 +877,7 @@ export class ChangeSlots {
 
             // Build complete XML file
             const xmlContent = [
-                '<?xml version="1.0" encoding="utf-16"?>',
+                '<?xml version="1.0" encoding="utf-8"?>',
                 '<xmsbt>',
                 ...xmlEntries,
                 '</xmsbt>'
@@ -915,8 +929,13 @@ export class ChangeSlots {
                     for (const slot of slots) {
                         const slotNum = parseInt(slot.replace('c', ''));
 
-                        // Look for the nXY_index byte element
-                        const nxyIndexElement = prcxmlDoc.querySelector(`byte[hash="n${String(slotNum).padStart(2, '0')}_index"]`);
+                        // Look for the nXY_index byte element (try without leading zeros first)
+                        let nxyIndexElement = prcxmlDoc.querySelector(`byte[hash="n${slotNum}_index"]`);
+
+                        // If not found, try with leading zeros
+                        if (!nxyIndexElement) {
+                            nxyIndexElement = prcxmlDoc.querySelector(`byte[hash="n${String(slotNum).padStart(2, '0')}_index"]`);
+                        }
 
                         if (nxyIndexElement && nxyIndexElement.textContent) {
                             slotToLabelIndex[slot] = parseInt(nxyIndexElement.textContent);
@@ -924,6 +943,12 @@ export class ChangeSlots {
                             // Fallback to default calculation
                             slotToLabelIndex[slot] = slotNum + 8;
                         }
+                    }
+                } else {
+                    // If there's a parser error, use default calculation for all slots
+                    for (const slot of slots) {
+                        const slotNum = parseInt(slot.replace('c', ''));
+                        slotToLabelIndex[slot] = slotNum + 8;
                     }
                 }
             } else {
@@ -946,14 +971,29 @@ export class ChangeSlots {
 
                 if (!parserError) {
                     for (const slot of slots) {
-                        const labelIndex = slotToLabelIndex[slot];
+                        const labelIndexRaw = slotToLabelIndex[slot];
+                        const labelIndexPadded = String(labelIndexRaw).padStart(2, '0');
+                        const labelIndexUnpadded = String(labelIndexRaw);
 
-                        console.log(`[readExistingCustomNames] Reading names for slot ${slot} (label index ${labelIndex})`);
+                        console.log(`[readExistingCustomNames] Reading names for slot ${slot} (label index ${labelIndexRaw})`);
 
-                        // Query for entry elements with specific labels
-                        const cspEntry = msgDoc.querySelector(`entry[label="nam_chr1_${labelIndex}_${fighterName}"]`);
-                        const vsEntry = msgDoc.querySelector(`entry[label="nam_chr2_${labelIndex}_${fighterName}"]`);
-                        const boxingEntry = msgDoc.querySelector(`entry[label="nam_stage_name_${labelIndex}_${fighterName}"]`);
+                        // Query for entry elements with specific labels - try both with and without leading zeros
+                        let cspEntry = msgDoc.querySelector(`entry[label="nam_chr1_${labelIndexPadded}_${fighterName}"]`);
+                        let vsEntry = msgDoc.querySelector(`entry[label="nam_chr2_${labelIndexPadded}_${fighterName}"]`);
+                        let boxingEntry = msgDoc.querySelector(`entry[label="nam_stage_name_${labelIndexPadded}_${fighterName}"]`);
+
+                        // If not found with padded version, try without padding
+                        if (!cspEntry) {
+                            cspEntry = msgDoc.querySelector(`entry[label="nam_chr1_${labelIndexUnpadded}_${fighterName}"]`);
+                        }
+
+                        if (!vsEntry) {
+                            vsEntry = msgDoc.querySelector(`entry[label="nam_chr2_${labelIndexUnpadded}_${fighterName}"]`);
+                        }
+
+                        if (!boxingEntry) {
+                            boxingEntry = msgDoc.querySelector(`entry[label="nam_stage_name_${labelIndexUnpadded}_${fighterName}"]`);
+                        }
 
                         // Convert actual newlines to \n escape sequences for editing
                         const cspText = (cspEntry?.querySelector('text')?.textContent || '').replace(/\n/g, '\\n');
