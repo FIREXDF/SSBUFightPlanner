@@ -811,6 +811,9 @@ class UIController {
             .getElementById("reloadList")
             .addEventListener("click", () => this.handleReloadList());
         document
+            .getElementById("batchChangeSlots")
+            .addEventListener("click", () => this.handleBatchChangeSlots());
+        document
             .getElementById("selectModsFolder")
             .addEventListener("click", () => this.handleSelectModsFolder());
 
@@ -1323,6 +1326,80 @@ class UIController {
         } finally {
             this.hideLoading();
         }
+    }
+
+    async handleBatchChangeSlots() {
+        try {
+            // Get all mods
+            if (!this.mods || this.mods.length === 0) {
+                this.showError("No mods available. Please add some mods first.");
+                return;
+            }
+
+            // Confirm with the user
+            const confirmed = confirm(
+                `This will open the "Change Character Slot" dialog for all ${this.mods.length} mods in sequence.\n\n` +
+                `You'll need to configure each mod individually.\n\n` +
+                `Do you want to continue?`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            // Loop through each mod
+            for (let i = 0; i < this.mods.length; i++) {
+                const mod = this.mods[i];
+
+                // Show which mod we're processing
+                console.log(`Processing mod ${i + 1}/${this.mods.length}: ${mod.name}`);
+
+                try {
+                    // Trigger the change slots dialog for this mod
+                    await this.showChangeSlotsDialog(mod.name);
+
+                    // Wait for the user to close the modal before continuing to the next mod
+                    // This is done by waiting for the modal to be hidden
+                    await this.waitForModalClose("changeSlotsModal");
+
+                } catch (error) {
+                    console.error(`Error processing mod ${mod.name}:`, error);
+                    const continueProcessing = confirm(
+                        `Error processing mod "${mod.name}": ${error.message}\n\n` +
+                        `Do you want to continue with the remaining mods?`
+                    );
+
+                    if (!continueProcessing) {
+                        break;
+                    }
+                }
+            }
+
+            this.showSuccess("Batch slot change process completed!");
+
+        } catch (error) {
+            this.showError("Failed to process batch slot changes: " + error.message);
+            console.error("Batch change slots error:", error);
+        }
+    }
+
+    // Helper method to wait for a modal to be closed
+    waitForModalClose(modalId) {
+        return new Promise((resolve) => {
+            const modalElement = document.getElementById(modalId);
+            if (!modalElement) {
+                resolve();
+                return;
+            }
+
+            // Listen for the modal hidden event
+            const handleHidden = () => {
+                modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+                resolve();
+            };
+
+            modalElement.addEventListener('hidden.bs.modal', handleHidden);
+        });
     }
 
     async handleSelectModsFolder() {
@@ -3120,7 +3197,12 @@ class UIController {
                             
                             <!-- Custom names section (for all slots) -->
                             <div class="custom-names-section mt-2 p-2 border rounded bg-light">
-                                <small class="fw-bold text-muted d-block mb-2">Custom Names (Optional)</small>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="fw-bold text-muted">Custom Names (Optional)</small>
+                                    <button type="button" class="btn btn-sm btn-outline-primary copy-to-all-btn" data-slot="${slot}" title="Copy these names to all other slots">
+                                        <i class="bi bi-files"></i> Copy to All
+                                    </button>
+                                </div>
                                 <div class="row g-2">
                                     <div class="col-6">
                                         <input type="text" class="form-control form-control-sm custom-csp-name" 
@@ -3142,7 +3224,7 @@ class UIController {
                                     </div>
                                     <div class="col-6">
                                         <input type="text" class="form-control form-control-sm custom-announcer" 
-                                               placeholder="vc_narration_characall" 
+                                               placeholder="${modDetails.defaultCustomNames[slot]?.announcer || 'Narration File'}" 
                                                value="${modDetails.existingCustomNames[slot]?.announcer || ''}"
                                                data-slot="${slot}">
                                     </div>
@@ -3173,6 +3255,9 @@ class UIController {
             );
             modal.show();
 
+            // Track if the custom slot warning has been shown in this dialog session
+            let customWarningShown = false;
+
             // Affiche le champ custom si "Custom..." est choisi
             document.querySelectorAll(".target-slot").forEach((select) => {
                 select.addEventListener("change", function () {
@@ -3183,41 +3268,84 @@ class UIController {
                         customInput.classList.remove("d-none");
                         customInput.focus();
 
-                        // Affiche un modal d'avertissement
-                        if (!document.getElementById("customSlotWarningModal")) {
-                            const warningModalHtml = `
-                            <div class="modal fade" id="customSlotWarningModal" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-warning">
-                                            <h5 class="modal-title">
-                                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                                Experimental Feature
-                                            </h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>
-                                                The custom slot feature is experimental and may break your mod or cause unexpected issues.<br>
-                                                Use at your own risk!
-                                            </p>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Understood</button>
+                        // Affiche un modal d'avertissement (only once per dialog session)
+                        if (!customWarningShown) {
+                            customWarningShown = true;
+
+                            if (!document.getElementById("customSlotWarningModal")) {
+                                const warningModalHtml = `
+                                <div class="modal fade" id="customSlotWarningModal" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-warning">
+                                                <h5 class="modal-title">
+                                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                                    Experimental Feature
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>
+                                                    The custom slot feature is experimental and may break your mod or cause unexpected issues.<br>
+                                                    Use at your own risk!
+                                                </p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Understood</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
-                            document.body.insertAdjacentHTML("beforeend", warningModalHtml);
+                            `;
+                                document.body.insertAdjacentHTML("beforeend", warningModalHtml);
+                            }
+                            const warningModal = new bootstrap.Modal(
+                                document.getElementById("customSlotWarningModal")
+                            );
+                            warningModal.show();
                         }
-                        const warningModal = new bootstrap.Modal(
-                            document.getElementById("customSlotWarningModal")
-                        );
-                        warningModal.show();
                     } else {
                         customInput.classList.add("d-none");
                     }
+                });
+            });
+
+            // Handle "Copy to All" button clicks
+            document.querySelectorAll(".copy-to-all-btn").forEach((btn) => {
+                btn.addEventListener("click", function () {
+                    const sourceSlot = this.getAttribute("data-slot");
+                    const sourceSection = this.closest(".custom-names-section");
+
+                    // Get values from the source slot
+                    const cspName = sourceSection.querySelector(".custom-csp-name").value;
+                    const vsName = sourceSection.querySelector(".custom-vs-name").value;
+                    const boxingRing = sourceSection.querySelector(".custom-boxing-ring").value;
+                    const announcer = sourceSection.querySelector(".custom-announcer").value;
+
+                    // Copy to all other slots
+                    document.querySelectorAll(".custom-names-section").forEach((section) => {
+                        const targetSlot = section.querySelector(".custom-csp-name").getAttribute("data-slot");
+
+                        // Skip the source slot itself
+                        if (targetSlot !== sourceSlot) {
+                            section.querySelector(".custom-csp-name").value = cspName;
+                            section.querySelector(".custom-vs-name").value = vsName;
+                            section.querySelector(".custom-boxing-ring").value = boxingRing;
+                            section.querySelector(".custom-announcer").value = announcer;
+                        }
+                    });
+
+                    // Show a brief success indicator
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bi bi-check-lg"></i> Copied!';
+                    this.classList.remove("btn-outline-primary");
+                    this.classList.add("btn-success");
+
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.classList.remove("btn-success");
+                        this.classList.add("btn-outline-primary");
+                    }, 1500);
                 });
             });
 
@@ -3286,7 +3414,7 @@ class UIController {
                         modDetails.pathData,
                         fighterName,
                         slotCustomNames,
-                        allAffectedFiles
+                        defaultCustomNames,
                     );
 
                     modal.hide();
@@ -3328,7 +3456,7 @@ class UIController {
         }
     }
 
-    async handleChangeSlots(modPath, slotChanges, slotsToRemove, finalSlots, pathData, fighterName, slotCustomNames = null, allAffectedFiles) {
+    async handleChangeSlots(modPath, slotChanges, slotsToRemove, finalSlots, pathData, fighterName, slotCustomNames, defaultCustomNames) {
         try {
             this.showLoading("Changing character slots...");
 
@@ -3345,7 +3473,7 @@ class UIController {
                 pathData,
                 fighterName,
                 slotCustomNames,
-                allAffectedFiles
+                defaultCustomNames,
             );
 
             this.showSuccess(

@@ -26,7 +26,7 @@ class ModConflictDetector {
 
     /**
      * Add files to ignore list
-     * @param {string|Array<string>} files 
+     * @param {string|Array<string>} files
      */
     addIgnoredFiles(files) {
         if (Array.isArray(files)) {
@@ -38,7 +38,7 @@ class ModConflictDetector {
 
     /**
      * Add patterns to ignore list
-     * @param {RegExp|Array<RegExp>} patterns 
+     * @param {RegExp|Array<RegExp>} patterns
      */
     addIgnoredPatterns(patterns) {
         if (Array.isArray(patterns)) {
@@ -50,7 +50,7 @@ class ModConflictDetector {
 
     /**
      * Remove files from ignore list
-     * @param {string|Array<string>} files 
+     * @param {string|Array<string>} files
      */
     removeIgnoredFiles(files) {
         if (Array.isArray(files)) {
@@ -70,7 +70,7 @@ class ModConflictDetector {
 
     /**
      * Check if a file should be ignored
-     * @param {string} filePath 
+     * @param {string} filePath
      * @returns {boolean}
      */
     isFileIgnored(filePath) {
@@ -104,7 +104,10 @@ class ModConflictDetector {
             try {
                 // Notify progress caller which mod is being analyzed
                 if (typeof onProgress === 'function') {
-                    try { onProgress(mod.name, mod); } catch (_) { }
+                    try {
+                        onProgress(mod.name, mod);
+                    } catch (_) {
+                    }
                 }
 
                 const files = await this.getModFiles(mod.path);
@@ -143,7 +146,7 @@ class ModConflictDetector {
 
     /**
      * Check if file is sensitive to conflicts
-     * @param {string} filePath 
+     * @param {string} filePath
      * @returns {boolean}
      */
     isConflictSensitiveFile(filePath) {
@@ -178,7 +181,7 @@ class ModConflictDetector {
 
     /**
      * Get all files in a mod directory
-     * @param {string} modPath 
+     * @param {string} modPath
      * @returns {Promise<string[]>}
      */
     async getModFiles(modPath) {
@@ -188,7 +191,7 @@ class ModConflictDetector {
 
     /**
      * Get human-readable conflict description
-     * @param {Map} conflicts 
+     * @param {Map} conflicts
      * @returns {Array} Array of conflict descriptions
      */
     getConflictDescriptions() {

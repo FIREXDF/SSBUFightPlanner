@@ -11,7 +11,7 @@ export class ChangeSlots {
         }, null, 4));
     }
 
-    static async changeSlots(modPath, slotChanges, finalSlots, pathData, fighterName, slotCustomNames = null, allAffectedFiles) {
+    static async changeSlots(modPath, slotChanges, finalSlots, pathData, fighterName, slotCustomNames, defaultCustomNames) {
         console.log('[changeSlots] Starting slot change operation');
 
         const changedFiles = [];
@@ -121,35 +121,48 @@ export class ChangeSlots {
 
                     let prcxmlContent = await window.api.modOperations.readModFile(prcxmlTemplatePath);
 
-                    // Build all structs for this fighter first
-                    const structs = [];
+                    // Build all parameters for this fighter's struct
+                    const structParams = [];
+
+                    // Calculate the highest slot number for color_num
+                    const maxSlotNum = Math.max(...finalSlots.map(slot => parseInt(slot.replace('c', ''))));
+                    const colorNum = maxSlotNum + 1;
+
+                    // Add color_num if the highest slot is > 7
+                    if (maxSlotNum > 7) {
+                        structParams.push(`<byte hash="color_num">${colorNum}</byte>`);
+                    }
 
                     for (const slot of finalSlots) {
                         const slotNum = parseInt(slot.replace('c', ''));
 
-                        if (slotNum > 7 || slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].announcer) {
-                            const colorNum = slotNum + 1;
+                        let announcer;
+                        let customAnnouncer;
+
+                        if (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].announcer) {
+                            customAnnouncer = announcer = slotCustomNames[slot].announcer;
+                        } else if (defaultCustomNames[slot] && defaultCustomNames[slot].announcer) {
+                            announcer = defaultCustomNames[slot].announcer;
+                        }
+
+                        if (slotNum > 7 || customAnnouncer) {
                             const nxyIndex = slotNum + 8;
 
-                            // Build the struct with color_num, nXY_index, and optional characall_label
-                            let structContent = `<struct index="${fighterIndex}">` +
-                                (slotNum > 7 ? `<byte hash="color_num">${colorNum}</byte>` : '') +
-                                `<byte hash="n${String(slotNum).padStart(2, '0')}_index">${nxyIndex}</byte>`;
+                            // Add nXY_index parameter
+                            structParams.push(`<byte hash="n${String(slotNum).padStart(2, '0')}_index">${nxyIndex}</byte>`);
 
                             // Add custom announcer call if provided
-                            if (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].announcer) {
-                                structContent += `<hash40 hash="characall_label_c${String(nxyIndex).padStart(2, '0')}">${slotCustomNames[slot].announcer}</hash40>`;
+                            if (announcer) {
+                                structParams.push(`<hash40 hash="characall_label_c${String(nxyIndex).padStart(2, '0')}">${announcer}</hash40>`);
                             }
-
-                            structContent += `</struct>`;
-                            structs.push(structContent);
                         }
                     }
 
-                    // Replace the dummy line once with all structs
-                    if (structs.length > 0) {
+                    // Build a single struct with all parameters
+                    if (structParams.length > 0) {
+                        const structContent = `<struct index="${fighterIndex}">${structParams.join('')}</struct>`;
                         const hashLine = new RegExp(`<hash40 index="${fighterIndex}">dummy<\\/hash40>`, 'g');
-                        prcxmlContent = prcxmlContent.replace(hashLine, structs.join(''));
+                        prcxmlContent = prcxmlContent.replace(hashLine, structContent);
                     }
 
                     // Ensure the directory exists before writing the file
@@ -168,8 +181,8 @@ export class ChangeSlots {
         }
 
         // Update msg_name.xmsbt with custom names if provided (for all slots)
-        if (fighterName && slotCustomNames && Object.keys(slotCustomNames).length > 0) {
-            await ChangeSlots.updateMsgName(modPath, fighterName, finalSlots, slotCustomNames);
+        if (fighterName && hasAnySlotAboveC07 || (slotCustomNames && Object.keys(slotCustomNames).length > 0)) {
+            await ChangeSlots.updateMsgName(modPath, fighterName, finalSlots, slotCustomNames, defaultCustomNames);
         }
 
         if (fighterName) {
@@ -227,6 +240,7 @@ export class ChangeSlots {
             }
 
             let vanillaFiles = [];
+
             if (Array.isArray(vanillaJson.file_array)) {
                 vanillaFiles = vanillaJson.file_array;
             } else {
@@ -238,6 +252,7 @@ export class ChangeSlots {
             }
 
             const configPath = `${modPath}/config.json`;
+
             let config = {};
 
             if (await window.api.modOperations.fileExists(configPath)) {
@@ -255,7 +270,7 @@ export class ChangeSlots {
 
             for (const [, newSlot] of Object.entries(finalSlots)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
-                if (newSlotNum < 7) continue; // Ignore slots below c07
+                if (newSlotNum < 8) continue; // Ignore slots below c07
 
                 for (const vanillaPath of vanillaFiles) {
                     let matchFighter = false;
@@ -298,10 +313,9 @@ export class ChangeSlots {
                     }
 
                     if (!matchFighter) continue;
+
                     // On ne mappe que les fichiers (présence d'une extension)
-
                     if (!/\.[a-z0-9]+$/i.test(vanillaPath)) continue;
-
                     // Remplacement strict de /c00/ ou _c00 ou /c00 (fin de chemin) par le slot custom
                     let customPath = vanillaPath
                         .replace(/\/c00\//g, `/${newSlot}/`)
@@ -313,18 +327,12 @@ export class ChangeSlots {
                             keyOrder.push(vanillaPath);
                             vanillaSet.add(vanillaPath);
                         }
-
-                        if (!config["share-to-vanilla"][vanillaPath]) {
-                            config["share-to-vanilla"][vanillaPath] = [];
-                        }
-
-                        config["share-to-vanilla"][vanillaPath].push(customPath);
+                        config["share-to-vanilla"][vanillaPath] = [customPath];
                     }
                 }
             }
             // On retire toute clé qui n'est pas dans keyOrder (pour éviter les clés parasites)
             const filteredShareToVanilla = {};
-
             for (const k of keyOrder) {
                 if (config["share-to-vanilla"][k]) filteredShareToVanilla[k] = config["share-to-vanilla"][k];
             }
@@ -366,16 +374,19 @@ export class ChangeSlots {
             const vanillaTemplates = [
                 "fighter/{fighter}/{slot}",
                 "fighter/{fighter}/camera/{slot}",
-                "fighter/{fighter}/kirbycopy/{slot}",
                 "fighter/{fighter}/movie/{slot}",
                 "fighter/{fighter}/result/{slot}"
             ];
+
+            if (fighterName !== 'kirby') {
+                vanillaTemplates.push("fighter/{fighter}/kirbycopy/{slot}");
+            }
 
             let keyOrder = [];
 
             for (const [, newSlot] of Object.entries(slotChanges)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
-                if (newSlotNum < 7) continue; // Ignore slots below c07
+                if (newSlotNum < 8) continue; // Ignore slots below c08
 
                 for (const template of vanillaTemplates) {
                     const newDir = template.replace('{fighter}', fighterName).replace('{slot}', newSlot);
@@ -453,7 +464,7 @@ export class ChangeSlots {
 
             for (const [, newSlot] of Object.entries(slotChanges)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
-                if (newSlotNum < 7) continue; // Ignore slots below c07
+                if (newSlotNum < 8) continue; // Ignore slots below c08
 
                 // fighter/{fighter}/{slot}
                 let filesForSlot = [];
@@ -514,10 +525,12 @@ export class ChangeSlots {
                 keyOrder.push(cameraKey);
                 config["new-dir-files"][cameraKey] = filesCamera;
 
-                // fighter/{fighter}/kirbycopy/{slot}
-                const kirbyKey = `fighter/${fighterName}/kirbycopy/${newSlot}`;
-                keyOrder.push(kirbyKey);
-                config["new-dir-files"][kirbyKey] = filesKirby;
+                if (fighterName !== 'kirby') {
+                    // fighter/{fighter}/kirbycopy/{slot}
+                    const kirbyKey = `fighter/${fighterName}/kirbycopy/${newSlot}`;
+                    keyOrder.push(kirbyKey);
+                    config["new-dir-files"][kirbyKey] = filesKirby;
+                }
 
                 // movie/result (empty arrays)
                 const movieKey = `fighter/${fighterName}/movie/${newSlot}`;
@@ -570,7 +583,7 @@ export class ChangeSlots {
 
             for (const [, newSlot] of Object.entries(slotChanges)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
-                if (newSlotNum < 7) continue; // Ignore slots below c07
+                if (newSlotNum < 8) continue; // Ignore slots below c08
 
                 // camera pour slot principal
                 const customCamera = `fighter/${fighterName}/${newSlot}/camera`;
@@ -578,21 +591,23 @@ export class ChangeSlots {
                 config["new-dir-infos-base"][customCamera] = vanillaCamera;
                 keyOrder.push(customCamera);
 
-                // bodymotion/cmn/sound/cmn pour kirbycopy
-                const customKirbyBodymotion = `fighter/${fighterName}/kirbycopy/${newSlot}/bodymotion`;
-                const vanillaKirbyBodymotion = `fighter/${fighterName}/kirbycopy/c00/bodymotion`;
-                config["new-dir-infos-base"][customKirbyBodymotion] = vanillaKirbyBodymotion;
-                keyOrder.push(customKirbyBodymotion);
+                if (fighterName !== 'kirby') {
+                    // bodymotion/cmn/sound/cmn pour kirbycopy
+                    const customKirbyBodymotion = `fighter/${fighterName}/kirbycopy/${newSlot}/bodymotion`;
+                    const vanillaKirbyBodymotion = `fighter/${fighterName}/kirbycopy/c00/bodymotion`;
+                    config["new-dir-infos-base"][customKirbyBodymotion] = vanillaKirbyBodymotion;
+                    keyOrder.push(customKirbyBodymotion);
 
-                const customKirbyCmn = `fighter/${fighterName}/kirbycopy/${newSlot}/cmn`;
-                const vanillaKirbyCmn = `fighter/${fighterName}/kirbycopy/c00/cmn`;
-                config["new-dir-infos-base"][customKirbyCmn] = vanillaKirbyCmn;
-                keyOrder.push(customKirbyCmn);
+                    const customKirbyCmn = `fighter/${fighterName}/kirbycopy/${newSlot}/cmn`;
+                    const vanillaKirbyCmn = `fighter/${fighterName}/kirbycopy/c00/cmn`;
+                    config["new-dir-infos-base"][customKirbyCmn] = vanillaKirbyCmn;
+                    keyOrder.push(customKirbyCmn);
 
-                const customKirbySound = `fighter/${fighterName}/kirbycopy/${newSlot}/sound`;
-                const vanillaKirbySound = `fighter/${fighterName}/kirbycopy/c00/sound`;
-                config["new-dir-infos-base"][customKirbySound] = vanillaKirbySound;
-                keyOrder.push(customKirbySound);
+                    const customKirbySound = `fighter/${fighterName}/kirbycopy/${newSlot}/sound`;
+                    const vanillaKirbySound = `fighter/${fighterName}/kirbycopy/c00/sound`;
+                    config["new-dir-infos-base"][customKirbySound] = vanillaKirbySound;
+                    keyOrder.push(customKirbySound);
+                }
 
                 // cmn pour slot principal
                 const customCmn = `fighter/${fighterName}/${newSlot}/cmn`;
@@ -682,7 +697,7 @@ export class ChangeSlots {
 
             for (const [, newSlot] of Object.entries(slotChanges)) {
                 const newSlotNum = parseInt(newSlot.replace('c', ''));
-                if (newSlotNum < 7) continue; // Ignore slots below c07
+                if (newSlotNum < 8) continue; // Ignore slots below c08
 
                 // 1. Motion, camera, sound
                 for (const vanillaPath of vanillaFiles) {
@@ -798,7 +813,7 @@ export class ChangeSlots {
         await window.api.modOperations.writeModFile(configPath, JSON.stringify(orderedConfig, null, 4));
     }
 
-    static async updateMsgName(modPath, fighterName, slots, slotCustomNames) {
+    static async updateMsgName(modPath, fighterName, slots, slotCustomNames, defaultCustomNames) {
         try {
             console.log('[updateMsgName] called');
 
@@ -808,8 +823,13 @@ export class ChangeSlots {
             for (const slot of slots) {
                 const slotNum = parseInt(slot.replace('c', ''));
 
-                const names = slotCustomNames[slot];
-                if (!names) continue;
+                const names = {
+                    cspName: (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].cspName) || (defaultCustomNames && defaultCustomNames[slot] && defaultCustomNames[slot].cspName),
+                    vsName: (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].vsName) || (defaultCustomNames && defaultCustomNames[slot] && defaultCustomNames[slot].vsName),
+                    boxingRing: (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].boxingRing) || (defaultCustomNames && defaultCustomNames[slot] && defaultCustomNames[slot].boxingRing)
+                };
+
+                if (!names.cspName && !names.vsName && !names.boxingRing) continue;
 
                 // Calculate the label index to match ui_chara_db.prcxml nXY_index value
                 // This should always be slot number + 8 (same as nxyIndex in ui_chara_db.prcxml)
@@ -819,7 +839,10 @@ export class ChangeSlots {
                 const vsName = names.vsName || (cspName ? cspName.toUpperCase() : '');
                 const boxingRingName = names.boxingRing || '';
 
-                // Create entries for this slot
+                xmlEntries.push(`\t<entry label="nam_chr0_${labelIndex}_${fighterName}">`);
+                xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
+                xmlEntries.push(`\t</entry>`);
+
                 xmlEntries.push(`\t<entry label="nam_chr1_${labelIndex}_${fighterName}">`);
                 xmlEntries.push(`\t\t<text>${this.escapeXml(cspName)}</text>`);
                 xmlEntries.push(`\t</entry>`);
@@ -1029,7 +1052,8 @@ export class ChangeSlots {
             return {
                 cspName: cspEntry?.querySelector('text')?.textContent || '',
                 vsName: vsEntry?.querySelector('text')?.textContent || '',
-                boxingRing: boxingRingEntry?.querySelector('text')?.textContent?.replace(/\n/g, ' ') || ''
+                boxingRing: boxingRingEntry?.querySelector('text')?.textContent?.replace(/\n/g, ' ') || '',
+                announcer: 'vc_narration_characall'
             };
         } catch (error) {
             console.error('Error reading messages.data:', error);

@@ -86,13 +86,20 @@ export const SlotScanner = {
         const includesFighterFolder = fighterIndex !== -1;
 
         if (includesFighterFolder && pathParts.length > fighterIndex + 1) {
-            const slotFolderPart = pathParts[fighterIndex + 1];
+            // Search for slot folder at any position after 'fighter'
+            for (let i = fighterIndex + 1; i < pathParts.length; i++) {
+                const part = pathParts[i];
 
-            includesFighterSlotFolder = /^c\d{2,3}$/i.test(slotFolderPart);
-            isFighterSlotFolder = includesFighterSlotFolder && pathParts.length === fighterIndex + 2;
+                if (/c\d{2,3}$/i.test(part)) {
+                    includesFighterSlotFolder = true;
+                    isFighterSlotFolder = (i === pathParts.length - 1);
 
-            if (isFighterSlotFolder && pathParts.length > fighterIndex + 1) {
-                fighterName = pathParts[fighterIndex + 1];
+                    if (includesFighterSlotFolder) {
+                        fighterName = pathParts[fighterIndex + 1];
+                    }
+
+                    break;
+                }
             }
         }
 
@@ -117,7 +124,7 @@ export const SlotScanner = {
             : (dotMatch
                 ? filePath.replace(dotXXMatchRegex, `_$1_${dotMatch[2] || ''}###$4`)
                 : null);
-        
+
         return {
             slot,
             fighterName,
