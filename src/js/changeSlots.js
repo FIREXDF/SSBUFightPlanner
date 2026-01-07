@@ -1,20 +1,90 @@
-export class ChangeSlots {
-    static async resetConfig(modPath) {
-        const configPath = `${modPath}\\config.json`;
+import {SlotScanner} from "./slotScanner.js";
 
-        await window.api.modOperations.writeModFile(configPath, JSON.stringify({
+export class ChangeSlots {
+    static async resetConfig(modPath, fighterName) {
+        const {pathData} = await SlotScanner.scanForSlots(modPath);
+
+        const configPath = `${modPath}/config.json`;
+
+        let config = {
             "new-dir-infos": [],
             "new-dir-infos-base": {},
             "share-to-vanilla": {},
             "new-dir-files": {},
             "share-to-added": {}
-        }, null, 4));
+        };
+
+        const slots = Object.keys(pathData[fighterName] || {});
+
+        for (const slot of slots) {
+            // Préparer les chemins
+            const newDirInfo = `fighter/${fighterName}/${slot}`;
+            const cameraDirInfo = `fighter/${fighterName}/${slot}/camera`;
+            const transplantDirInfo = `fighter/${fighterName}/cmn`;
+            const oldCameraDir = `fighter/${fighterName}/camera/${slot}`;
+
+            // Initialiser les sections si besoin
+            if (!config["new-dir-files"][newDirInfo]) config["new-dir-files"][newDirInfo] = [];
+            if (!config["new-dir-files"][cameraDirInfo]) config["new-dir-files"][cameraDirInfo] = [];
+            if (!config["new-dir-files"][transplantDirInfo]) config["new-dir-files"][transplantDirInfo] = [];
+            if (config["new-dir-files"][oldCameraDir]) delete config["new-dir-files"][oldCameraDir];
+
+            // Extensions custom
+            const customExtensions = [
+                '.nuanmb', '.marker', '.bin', '.tonelabel', '.numatb', '.numdlb', '.nutexb',
+                '.numshb', '.numshexb', '.nus3audio', '.nus3bank', '.nuhlpb', '.numdlb', '.xmb', '.kime', '.eff'
+            ];
+
+            const slotFiles = pathData[fighterName][slot].filesToBeModified.flatMap((f => f.original));
+
+            // Parcours des fichiers
+            for (const file of slotFiles) {
+                // Effets transplantés
+                if (file.includes(`effect/fighter/${fighterName}/transplant/`)) {
+                    if (!config["new-dir-files"][transplantDirInfo].includes(file))
+                        config["new-dir-files"][transplantDirInfo].push(file);
+
+                    continue;
+                }
+
+                // Effets spécifiques au slot
+                if (file.includes(`effect/fighter/${fighterName}/ef_${fighterName}_${slot}`)) {
+                    if (!config["new-dir-files"][newDirInfo].includes(file))
+                        config["new-dir-files"][newDirInfo].push(file);
+
+                    continue;
+                }
+
+                // Caméra
+                if (file.startsWith(`camera/fighter/${fighterName}/${slot}/`) && file.endsWith('.nuanmb')) {
+                    if (!config["new-dir-files"][cameraDirInfo].includes(file))
+                        config["new-dir-files"][cameraDirInfo].push(file);
+
+                    continue;
+                }
+
+                // Fichiers custom dans le slot cible
+                if (file.includes(`/${slot}/`) || file.endsWith(`/${slot}`)) {
+                    const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
+                    const isCustom = customExtensions.includes(ext) ||
+                        ['body', 'face', 'hair', 'eye', 'brs_', 'bust_', 'hand_'].some(marker => file.toLowerCase().includes(marker));
+
+                    if (isCustom && !config["new-dir-files"][newDirInfo].includes(file)) {
+                        config["new-dir-files"][newDirInfo].push(file);
+                    }
+                }
+            }
+        }
+
+        // Réécrire le config.json
+        await window.api.modOperations.writeModFile(configPath, JSON.stringify(config, null, 4));
     }
+
 
     static async changeSlots(modPath, slotChanges, finalSlots, pathData, fighterName, slotCustomNames, defaultCustomNames) {
         console.log('[changeSlots] Starting slot change operation');
 
-        const changedFiles = [];
+        const changedPaths = [];
 
         // Step 1: Move all files to temporary paths first
         const tempMappings = []; // { originalPath, tempPath, finalPath, slot }
@@ -87,7 +157,7 @@ export class ChangeSlots {
 
                 console.log(`[changeSlots] Moved to final: ${mapping.tempPath} -> ${mapping.finalPath}`);
 
-                changedFiles.push(mapping.finalPath);
+                changedPaths.push(mapping.finalPath);
             } catch (error) {
                 console.error(`Error moving file from temp ${mapping.tempPath}:`, error);
                 throw new Error(`Failed to move file from temp ${mapping.tempPath}: ${error.message}`);
@@ -195,7 +265,7 @@ export class ChangeSlots {
         }
 
         if (fighterName) {
-            await ChangeSlots.resetConfig(modPath);
+            await ChangeSlots.resetConfig(modPath, fighterName, finalSlots, changedPaths);
 
             await ChangeSlots.updateShareToVanilla(modPath, fighterName, finalSlots);
             await ChangeSlots.updateNewDirInfos(modPath, fighterName, finalSlots);
@@ -204,7 +274,7 @@ export class ChangeSlots {
             await ChangeSlots.updateShareToAdded(modPath, fighterName, finalSlots);
         }
 
-        return changedFiles.length;
+        return changedPaths.length;
     }
 
     /**

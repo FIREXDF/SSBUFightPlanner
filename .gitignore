@@ -2,3 +2,4 @@ node_modules
 dist
 dist-canary
 .idea
+.DS_Store
