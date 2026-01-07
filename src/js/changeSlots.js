@@ -35,7 +35,7 @@ export class ChangeSlots {
                 '.numshb', '.numshexb', '.nus3audio', '.nus3bank', '.nuhlpb', '.numdlb', '.xmb', '.kime', '.eff'
             ];
 
-            const slotFiles = pathData[fighterName][slot].filesToBeModified.flatMap((f => f.original));
+            const slotFiles = pathData[fighterName][slot].filesToBeModified.flatMap((f => f.original.replace(/\\/g, '/')));
 
             // Parcours des fichiers
             for (const file of slotFiles) {
@@ -264,8 +264,9 @@ export class ChangeSlots {
             await ChangeSlots.updateMsgName(modPath, fighterName, finalSlots, slotCustomNames, defaultCustomNames);
         }
 
+        console.log('fighterName :: ', fighterName)
         if (fighterName) {
-            await ChangeSlots.resetConfig(modPath, fighterName, finalSlots, changedPaths);
+            await ChangeSlots.resetConfig(modPath, fighterName);
 
             await ChangeSlots.updateShareToVanilla(modPath, fighterName, finalSlots);
             await ChangeSlots.updateNewDirInfos(modPath, fighterName, finalSlots);
