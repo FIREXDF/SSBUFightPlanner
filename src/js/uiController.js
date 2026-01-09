@@ -1367,6 +1367,7 @@ class UIController {
 
                     // Wait for the user to close the modal before continuing to the next mod
                     await this.waitForModalClose("changeSlotsModal");
+                    await this.waitForModalClose("confirmRename");
                 } catch (error) {
                     console.error(`Error processing mod ${mod.name}:`, error);
 
@@ -1682,10 +1683,12 @@ class UIController {
                         const match = currentName.match(prefixRegex);
 
                         if (match) {
+                            const nameClone = currentName;
                             // Replace existing prefix with new one
                             defaultName = currentName.replace(prefixRegex, `${prefix} `);
 
-                            if (defaultName === currentName && skipRenameOnPrefixMatch) {
+
+                            if (defaultName === nameClone && skipRenameOnPrefixMatch) {
                                 this.isDialogOpen = false;
                                 return;
                             }
@@ -3550,7 +3553,8 @@ class UIController {
                     // Check if auto-prefix is enabled and prompt for rename only if slots changed
                     const autoPrefixEnabled = await window.api.settings.getAutoPrefixRename();
 
-                    if (autoPrefixEnabled && this.selectedMod) {
+                    if (autoPrefixEnabled) {
+                        this.selectedMod = selectedMod;
                         await this.handleRenameMod(!slotsChanged);
                     } else if (!isBatchMode) {
                         await this.loadMods();

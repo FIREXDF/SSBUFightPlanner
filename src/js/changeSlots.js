@@ -82,7 +82,7 @@ export class ChangeSlots {
 
 
     static async changeSlots(modPath, slotChanges, finalSlots, pathData, fighterName, slotCustomNames, defaultCustomNames) {
-        console.log('[changeSlots] Starting slot change operation');
+        const timestamp = Date.now();
 
         const changedPaths = [];
 
@@ -231,7 +231,7 @@ export class ChangeSlots {
                             structParams.push(`<byte hash="n${String(slotNum).padStart(2, '0')}_index">${nxyIndex}</byte>`);
 
                             // Add custom announcer call if provided
-                            if (announcer) {
+                            if (customAnnouncer) {
                                 structParams.push(`<hash40 hash="characall_label_c${String(nxyIndex).padStart(2, '0')}">${announcer}</hash40>`);
                             }
                         }
@@ -264,7 +264,6 @@ export class ChangeSlots {
             await ChangeSlots.updateMsgName(modPath, fighterName, finalSlots, slotCustomNames, defaultCustomNames);
         }
 
-        console.log('fighterName :: ', fighterName)
         if (fighterName) {
             await ChangeSlots.resetConfig(modPath, fighterName);
 
@@ -416,12 +415,14 @@ export class ChangeSlots {
                     }
                 }
             }
-            // On retire toute clé qui n'est pas dans keyOrder (pour éviter les clés parasites)
-            const filteredShareToVanilla = {};
+            // Merge with existing share-to-vanilla entries instead of replacing
+            const mergedShareToVanilla = {...config["share-to-vanilla"]};
             for (const k of keyOrder) {
-                if (config["share-to-vanilla"][k]) filteredShareToVanilla[k] = config["share-to-vanilla"][k];
+                if (config["share-to-vanilla"][k]) {
+                    mergedShareToVanilla[k] = config["share-to-vanilla"][k];
+                }
             }
-            config["share-to-vanilla"] = filteredShareToVanilla;
+            config["share-to-vanilla"] = mergedShareToVanilla;
 
             await ChangeSlots.writeOrderedConfig(configPath, config);
         } catch (e) {
@@ -479,7 +480,10 @@ export class ChangeSlots {
                 }
             }
 
-            config["new-dir-infos"] = keyOrder;
+            // Merge with existing new-dir-infos instead of replacing
+            const existingDirInfos = config["new-dir-infos"] || [];
+            const mergedDirInfos = [...new Set([...existingDirInfos, ...keyOrder])];
+            config["new-dir-infos"] = mergedDirInfos;
 
             await ChangeSlots.writeOrderedConfig(configPath, config);
         } catch (e) {
@@ -510,12 +514,16 @@ export class ChangeSlots {
             const appPath = await window.api.getAppPath();
             const vanillaJsonPath = `${appPath}/src/resources/reslot/vanilla.json`;
             const vanillaExists = await window.api.modOperations.fileExists(vanillaJsonPath);
+
             if (!vanillaExists) {
                 console.warn('[updateNewDirFiles] vanilla.json not found:', vanillaJsonPath);
                 return;
             }
+
             const vanillaJsonRaw = await window.api.modOperations.readModFile(vanillaJsonPath);
+
             let vanillaJson;
+
             try {
                 vanillaJson = JSON.parse(vanillaJsonRaw);
             } catch (e) {
@@ -524,7 +532,9 @@ export class ChangeSlots {
             }
 
             const configPath = `${modPath}/config.json`;
+
             let config = {};
+
             if (await window.api.modOperations.fileExists(configPath)) {
                 try {
                     config = JSON.parse(await window.api.modOperations.readModFile(configPath));
@@ -532,9 +542,11 @@ export class ChangeSlots {
                     config = {};
                 }
             }
+
             if (!config["new-dir-files"]) config["new-dir-files"] = {};
 
             let vanillaFiles = [];
+
             if (Array.isArray(vanillaJson.file_array)) {
                 vanillaFiles = vanillaJson.file_array;
             } else {
@@ -603,28 +615,31 @@ export class ChangeSlots {
                 // fighter/{fighter}/{slot}
                 const dirKey = `fighter/${fighterName}/${newSlot}`;
                 keyOrder.push(dirKey);
-                config["new-dir-files"][dirKey] = filesForSlot;
+                const existingDirFiles = config["new-dir-files"][dirKey] || [];
+                config["new-dir-files"][dirKey] = [...new Set([...existingDirFiles, ...filesForSlot])].sort();
 
                 // fighter/{fighter}/camera/{slot}
                 const cameraKey = `fighter/${fighterName}/camera/${newSlot}`;
                 keyOrder.push(cameraKey);
-                config["new-dir-files"][cameraKey] = filesCamera;
+                const existingCameraFiles = config["new-dir-files"][cameraKey] || [];
+                config["new-dir-files"][cameraKey] = [...new Set([...existingCameraFiles, ...filesCamera])].sort();
 
                 if (fighterName !== 'kirby') {
                     // fighter/{fighter}/kirbycopy/{slot}
                     const kirbyKey = `fighter/${fighterName}/kirbycopy/${newSlot}`;
                     keyOrder.push(kirbyKey);
-                    config["new-dir-files"][kirbyKey] = filesKirby;
+                    const existingKirbyFiles = config["new-dir-files"][kirbyKey] || [];
+                    config["new-dir-files"][kirbyKey] = [...new Set([...existingKirbyFiles, ...filesKirby])].sort();
                 }
 
-                // movie/result (empty arrays)
+                // movie/result (merge with empty arrays if not existing)
                 const movieKey = `fighter/${fighterName}/movie/${newSlot}`;
                 keyOrder.push(movieKey);
-                config["new-dir-files"][movieKey] = [];
+                if (!config["new-dir-files"][movieKey]) config["new-dir-files"][movieKey] = [];
 
                 const resultKey = `fighter/${fighterName}/result/${newSlot}`;
                 keyOrder.push(resultKey);
-                config["new-dir-files"][resultKey] = [];
+                if (!config["new-dir-files"][resultKey]) config["new-dir-files"][resultKey] = [];
             }
 
             config["new-dir-files"] = ChangeSlots.orderObject(config["new-dir-files"], keyOrder);
@@ -673,31 +688,41 @@ export class ChangeSlots {
                 // camera pour slot principal
                 const customCamera = `fighter/${fighterName}/${newSlot}/camera`;
                 const vanillaCamera = `fighter/${fighterName}/c00/camera`;
-                config["new-dir-infos-base"][customCamera] = vanillaCamera;
+                if (!config["new-dir-infos-base"][customCamera]) {
+                    config["new-dir-infos-base"][customCamera] = vanillaCamera;
+                }
                 keyOrder.push(customCamera);
 
                 if (fighterName !== 'kirby') {
                     // bodymotion/cmn/sound/cmn pour kirbycopy
                     const customKirbyBodymotion = `fighter/${fighterName}/kirbycopy/${newSlot}/bodymotion`;
                     const vanillaKirbyBodymotion = `fighter/${fighterName}/kirbycopy/c00/bodymotion`;
-                    config["new-dir-infos-base"][customKirbyBodymotion] = vanillaKirbyBodymotion;
+                    if (!config["new-dir-infos-base"][customKirbyBodymotion]) {
+                        config["new-dir-infos-base"][customKirbyBodymotion] = vanillaKirbyBodymotion;
+                    }
                     keyOrder.push(customKirbyBodymotion);
 
                     const customKirbyCmn = `fighter/${fighterName}/kirbycopy/${newSlot}/cmn`;
                     const vanillaKirbyCmn = `fighter/${fighterName}/kirbycopy/c00/cmn`;
-                    config["new-dir-infos-base"][customKirbyCmn] = vanillaKirbyCmn;
+                    if (!config["new-dir-infos-base"][customKirbyCmn]) {
+                        config["new-dir-infos-base"][customKirbyCmn] = vanillaKirbyCmn;
+                    }
                     keyOrder.push(customKirbyCmn);
 
                     const customKirbySound = `fighter/${fighterName}/kirbycopy/${newSlot}/sound`;
                     const vanillaKirbySound = `fighter/${fighterName}/kirbycopy/c00/sound`;
-                    config["new-dir-infos-base"][customKirbySound] = vanillaKirbySound;
+                    if (!config["new-dir-infos-base"][customKirbySound]) {
+                        config["new-dir-infos-base"][customKirbySound] = vanillaKirbySound;
+                    }
                     keyOrder.push(customKirbySound);
                 }
 
                 // cmn pour slot principal
                 const customCmn = `fighter/${fighterName}/${newSlot}/cmn`;
                 const vanillaCmn = `fighter/${fighterName}/c00/cmn`;
-                config["new-dir-infos-base"][customCmn] = vanillaCmn;
+                if (!config["new-dir-infos-base"][customCmn]) {
+                    config["new-dir-infos-base"][customCmn] = vanillaCmn;
+                }
                 keyOrder.push(customCmn);
             }
 
@@ -818,7 +843,13 @@ export class ChangeSlots {
                     }
                 }
                 if (kirbyRootExists) {
-                    config["share-to-added"][kirbyRoot] = [kirbyRootNew];
+                    // Merge with existing values instead of replacing
+                    if (!config["share-to-added"][kirbyRoot]) {
+                        config["share-to-added"][kirbyRoot] = [];
+                    }
+                    if (!config["share-to-added"][kirbyRoot].includes(kirbyRootNew)) {
+                        config["share-to-added"][kirbyRoot].push(kirbyRootNew);
+                    }
                 } else {
                     // Supprime la clé si elle existe et le slot custom n'existe pas
                     if (config["share-to-added"].hasOwnProperty(kirbyRoot)) {
@@ -908,13 +939,15 @@ export class ChangeSlots {
             for (const slot of slots) {
                 const slotNum = parseInt(slot.replace('c', ''));
 
+                if (!slotCustomNames[slot] || (!slotCustomNames[slot].cspName && !slotCustomNames[slot].vsName && !slotCustomNames[slot].boxingRing)) {
+                    continue;
+                }
+
                 const names = {
                     cspName: (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].cspName) || (defaultCustomNames && defaultCustomNames[slot] && defaultCustomNames[slot].cspName),
                     vsName: (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].vsName) || (defaultCustomNames && defaultCustomNames[slot] && defaultCustomNames[slot].vsName),
                     boxingRing: (slotCustomNames && slotCustomNames[slot] && slotCustomNames[slot].boxingRing) || (defaultCustomNames && defaultCustomNames[slot] && defaultCustomNames[slot].boxingRing)
                 };
-
-                if (!names.cspName && !names.vsName && !names.boxingRing) continue;
 
                 // Calculate the label index to match ui_chara_db.prcxml nXY_index value
                 // This should always be slot number + 8 (same as nxyIndex in ui_chara_db.prcxml)
@@ -1107,6 +1140,7 @@ export class ChangeSlots {
                                     announcer: ''
                                 };
                             }
+
                             customNames[slot].announcer = announcerText;
                         }
                     }
