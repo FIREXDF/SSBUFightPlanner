@@ -1,0 +1,1761 @@
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 99999;
+  display: none;
+  opacity: 0;
+  justify-content: center;
+  align-items: center;
+  transition:
+    opacity 0.3s ease-in-out,
+    visibility 0.3s ease-in-out;
+  visibility: hidden;
+}
+
+.loading-overlay.minimized {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-overlay.visible {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+}
+
+.loading-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.minimized-loading:hover {
+  background: var(--bs-primary-dark);
+}
+
+.loading-animation-crop {
+  width: 200px;
+  overflow: hidden;
+  border-radius: 100px !important;
+  /* Add rounded corners to the animation container */
+}
+
+.loading-content {
+  text-align: center;
+  color: white;
+  position: relative;
+  /* Add this */
+}
+
+.loading-message {
+  margin-top: 20px;
+  font-size: 1.5em;
+  position: center;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.loading-close-btn {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.loading-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Spinner animation améliorée */
+.conflict-spinner {
+  font-size: 1.3em;
+  color: #ffc107;
+  animation: conflict-spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes conflict-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Affiche le texte au survol */
+#conflictLoadingSpinner:hover .conflict-spinner-text {
+  display: inline;
+  font-size: 0.95em;
+  color: #ffc107;
+  margin-left: 0.3em;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.nav-tabs {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-logo-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.app-logo {
+  height: 30px;
+  width: auto;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.app-logo:hover {
+  transform: scale(1.2) rotate(5deg);
+  opacity: 1;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+}
+
+.app-logo:active {
+  transform: scale(1.1) rotate(0deg);
+  opacity: 0.9;
+}
+
+#creditsModal .credits-section {
+  background-color: rgba(73, 73, 73, 0.05);
+  border-radius: 10px;
+  padding: 5px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.app-logo {
+  transition: transform 0.3s ease;
+}
+
+.app-logo:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.app-logo:active {
+  transform: scale(0.95);
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 300px;
+  border-right: 1px solid #ccc;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+}
+
+.mod-list {
+  height: calc(100% - 60px);
+  overflow-y: auto;
+}
+
+.actions {
+  padding: 10px;
+}
+
+.mod-preview {
+  margin-bottom: 20px;
+  object-fit: contain;
+}
+
+.mod-metadata {
+  padding: 10px;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.mod-list .mod-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mod-list .mod-item:hover {
+  background-color: #f8f9fa;
+}
+
+.mod-list .mod-item.selected {
+  background-color: #e9ecef;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.floating-actions {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+.floating-actions .btn-group .btn {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.mod-list .mod-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mod-list .mod-item:hover {
+  background-color: #f8f9fa;
+}
+
+.mod-list .mod-item.selected {
+  background-color: #e9ecef;
+}
+
+.mod-list .mod-item .mod-status {
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.mod-list .mod-item .mod-status-enabled {
+  color: #28a745;
+}
+
+.mod-list .mod-item .mod-status-disabled {
+  color: #dc3545;
+}
+
+/* Dark mode base styles */
+body {
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+
+/* Form controls */
+.form-control.dark-mode {
+  background-color: #2c2c2c;
+  border-color: #444;
+  color: #ffffff;
+}
+
+.form-control:focus.dark-mode {
+  background-color: #2c2c2c;
+  border-color: #666;
+  color: #ffffff;
+}
+
+/* Dark mode specific styles */
+body.dark-mode {
+  /* Global dark mode background */
+  background-color: #121212;
+  --bs-body-bg: #2c2c2c;
+  /* Match the background color of .form-control:focus.dark-mode */
+  --bs-body-color: #ffffff;
+  /* Match the text color of .form-control:focus.dark-mode */
+
+  /* Tab navigation */
+  .nav-tabs {
+    border-bottom-color: #333;
+  }
+
+  .nav-tabs .nav-link {
+    color: #aaa;
+  }
+
+  .nav-tabs .nav-link.active {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-color: #333 #333 #1e1e1e;
+  }
+
+  .textmuted {
+    color: #999999;
+  }
+
+  .text-muted {
+    color: #999999;
+  }
+
+  /* Cards */
+  .card {
+    background-color: #1e1e1e;
+    border-color: #333;
+    color: #e0e0e0;
+  }
+
+  .card-header {
+    background-color: #2c2c2c;
+    border-bottom-color: #333;
+  }
+
+  /* Mod List */
+  .mod-list .mod-item {
+    background-color: #1e1e1e;
+    border-bottom-color: #333;
+    color: #e0e0e0;
+  }
+
+  .mod-list .mod-item:hover {
+    background-color: #2a2a2a;
+  }
+
+  .mod-list .mod-item.selected {
+    background-color: #3a3a3a;
+  }
+
+  /* Form controls */
+  select {
+    background-color: #2c2c2c;
+    /* Match .form-control.dark-mode */
+    border-color: #444;
+    /* Match .form-control.dark-mode */
+    color: #ffffff;
+    /* Match .form-control.dark-mode */
+    transition:
+      border-color 0.3s ease,
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  select:focus {
+    background-color: #2c2c2c;
+    /* Match .form-control:focus.dark-mode */
+    border-color: #666;
+    /* Match .form-control:focus.dark-mode */
+    color: #ffffff;
+    /* Match .form-control:focus.dark-mode */
+    outline: none;
+    /* Remove default outline */
+  }
+
+  .form-check-input {
+    background-color: #2c2c2c;
+    /* Match dark mode background */
+    border-color: #444;
+    /* Match dark mode border */
+    transition:
+      border-color 0.3s ease,
+      background-color 0.3s ease;
+  }
+
+  .form-check-input:checked {
+    background-color: #666;
+    /* Match focused border color */
+    border-color: #666;
+  }
+
+  .form-control {
+    background-color: #2c2c2c;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+
+  .form-control:focus {
+    background-color: #2c2c2c;
+    border-color: #666;
+    color: #e0e0e0;
+  }
+
+  /* Buttons */
+  .btn-outline-secondary {
+    color: #aaa;
+    border-color: #666;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #333;
+    color: #fff;
+  }
+
+  /* Floating actions */
+  .floating-actions .btn-group .btn {
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    border-color: #444;
+  }
+
+  .floating-actions .btn-group .btn:hover {
+    background-color: #3a3a3a;
+  }
+
+  /* Scrollbar in dark mode */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #2c2c2c;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 6px;
+    border: 3px solid #2c2c2c;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #666;
+  }
+
+  .search-container {
+    position: relative;
+    margin-bottom: 15px;
+  }
+
+  .search-container input {
+    padding-left: 30px;
+  }
+
+  .search-container::before {
+    content: "🔍";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .search-filters {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .mod-item {
+    transition: background-color 0.3s ease;
+  }
+
+  .mod-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+  }
+
+  .drag-over {
+    background-color: rgba(0, 128, 0, 0.1);
+    outline: 3px dashed #28a745;
+    outline-offset: -10px;
+    transition: all 0.3s ease;
+  }
+
+  body {
+    transition:
+      background-color 0.3s ease,
+      outline 0.3s ease;
+  }
+
+  .drag-drop-hint-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .drag-over .drag-drop-hint-container {
+    opacity: 1;
+  }
+
+  .drag-drop-hint {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .drag-drop-hint i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  .toast-container {
+    z-index: 1060;
+  }
+}
+
+/* Add these styles for drag and drop functionality */
+.drag-drop-hint-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.3s ease-in-out;
+  backdrop-filter: blur(5px);
+}
+
+body.dragging .drag-drop-hint-container {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+.drag-drop-hint {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 2rem;
+  border-radius: 1rem;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.dragging .drag-drop-hint {
+  transform: translateY(0);
+}
+
+.drag-drop-hint i {
+  font-size: 3rem;
+  color: #0d6efd;
+  margin-bottom: 1rem;
+  display: block;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.drag-drop-hint p {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+  opacity: 0.9;
+}
+
+/* Dark mode overrides */
+body.dark-mode .drag-drop-hint {
+  background-color: rgba(33, 37, 41, 0.95);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .drag-drop-hint p {
+  color: #fff;
+}
+
+/* Mod link styles */
+.mod-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.mod-link:hover {
+  color: var(--bs-primary);
+  text-decoration: underline;
+}
+
+body.dark-mode .mod-link:hover {
+  color: var(--bs-primary-lighter, #6ea8fe);
+}
+
+/* Update mod link styles with better dark mode support */
+.mod-link {
+  color: var(--bs-body-color);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: -6px;
+}
+
+.mod-link:hover {
+  background-color: rgba(var(--bs-primary-rgb), 0.1);
+  color: var(--bs-primary);
+  text-decoration: none;
+}
+
+body.dark-mode .mod-link {
+  color: #e0e0e0;
+}
+
+body.dark-mode .mod-link:hover {
+  background-color: rgba(var(--bs-primary-rgb), 0.2);
+  color: var(--bs-primary-lighter, #6ea8fe);
+}
+
+.tab-pane {
+  overflow: hidden;
+}
+
+.card-body {
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+}
+
+.loading-message {
+  text-align: center;
+}
+
+.slot-group.removed {
+  background-color: #f8d7da;
+}
+
+.slot-group {
+  position: relative;
+}
+
+.slot-group.removed .overlay {
+  display: block;
+}
+
+.overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 0, 0, 0.5);
+  z-index: 1;
+}
+
+/* Custom names section styling */
+.custom-names-section {
+  background-color: #f8f9fa;
+}
+
+.custom-names-section small {
+  font-size: 0.75rem;
+}
+
+.custom-names-section input::placeholder {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.custom-names-section .form-control-sm {
+  font-size: 0.875rem;
+}
+
+.downloads-panel {
+  position: fixed;
+  bottom: 0;
+  left: 20px;
+  /* Changed from right to left */
+  width: 300px;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1040;
+  transform: translateY(calc(100% - 40px));
+  transition: transform 0.3s ease;
+  color: inherit;
+  /* Change from var(--bs-body-color) to inherit */
+}
+
+.downloads-panel.expanded {
+  transform: translateY(0);
+}
+
+.downloads-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bs-border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.downloads-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.download-item {
+  padding: 8px;
+  border-bottom: 1px solid var(--bs-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: inherit;
+  /* Add this line */
+}
+
+.download-item:last-child {
+  border-bottom: none;
+}
+
+.download-progress {
+  height: 4px;
+}
+
+.download-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.download-actions .btn {
+  padding: 0.25rem 0.5rem;
+  margin-left: 0.25rem;
+}
+
+.download-actions .pause-download {
+  min-width: 32px;
+}
+
+.download-item.paused .progress-bar {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-bar-stripes 1s linear infinite;
+}
+
+.download-item.paused {
+  opacity: 0.8;
+}
+
+@keyframes progress-bar-stripes {
+  from {
+    background-position: 1rem 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
+}
+
+body.dark-mode .downloads-panel,
+body.dark-mode .download-item,
+body.dark-mode .download-info {
+  color: #e0e0e0;
+}
+
+.download-info {
+  color: inherit;
+}
+
+body.dark-mode .downloads-panel {
+  background: #2c2c2c;
+  border-color: #444;
+}
+
+.download-item .mod-name {
+  display: block;
+  font-size: 1.1em;
+  margin-bottom: 4px;
+  color: inherit;
+}
+
+.download-item .message {
+  font-size: 0.9em;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.nodownloadsmessage {
+  font-size: 0.9em;
+  color: #6d6d6d !important;
+}
+
+.log-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 12px;
+  line-height: 1.4;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.log-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-content::-webkit-scrollbar-track {
+  background: #2e2e2e;
+}
+
+.log-content::-webkit-scrollbar-thumb {
+  background: #666;
+  border-radius: 4px;
+}
+
+#modImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  min-height: 200px;
+  object-fit: contain;
+}
+
+#modImage:not([src]) {
+  display: none;
+}
+
+/* Character slots list styling */
+.character-entry {
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 1rem;
+}
+
+.slot-entry {
+  margin: 0.25rem 0;
+}
+
+.slot-id {
+  font-family: monospace;
+  font-weight: bold;
+  margin-right: 1rem;
+  min-width: 40px;
+  display: inline-block;
+}
+
+.slot-mod {
+  color: #666;
+}
+
+/* Character usage list styling */
+#characterSlotsList .list-group-item {
+  transition: background-color 0.2s;
+}
+
+#characterSlotsList .list-group-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+#characterSlotsList h5 {
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+#characterSlotsList ul li {
+  color: var(--bs-secondary);
+  padding: 2px 0;
+}
+
+/* Dark mode adjustments */
+body.dark-mode #characterSlotsList .list-group-item {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+body.dark-mode #characterSlotsList .list-group-item:hover {
+  background-color: #2a2a2a;
+}
+
+/* Character list scrollable container */
+.character-list-container {
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  padding-right: 10px;
+  scrollbar-gutter: stable;
+}
+
+.character-list-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.character-list-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.character-list-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.character-list-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .character-list-container::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+
+body.dark-mode .character-list-container::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+body.dark-mode .character-list-container::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Character list base styling */
+#characterSlotsList .list-group-item {
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+}
+
+#characterSlotsList .list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Dark mode overrides for character list */
+body.dark-mode #characterSlotsList .list-group-item {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #e0e0e0;
+}
+
+body.dark-mode #characterSlotsList .list-group-item:hover {
+  background-color: #2a2a2a;
+}
+
+body.dark-mode {
+  background-color: #121212;
+}
+
+body.dark-mode .nav-tabs {
+  border-bottom-color: #333;
+}
+
+body.dark-mode .nav-tabs .nav-link {
+  color: #aaa;
+}
+
+body.dark-mode .nav-tabs .nav-link.active {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border-color: #333 #333 #1e1e1e;
+}
+
+body.dark-mode .textmuted,
+body.dark-mode .textmuted {
+  color: #999999 !important;
+}
+
+/* Add these styles for clickable images */
+.clickable-image {
+  transition: transform 0.2s ease;
+}
+
+.clickable-image:hover {
+  transform: scale(1.1);
+}
+
+/* Dark mode adjustments for the image modal */
+body.dark-mode #characterImageModal .modal-content {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+body.dark-mode #characterImageModal .modal-header {
+  border-bottom-color: #333;
+}
+
+body.dark-mode #characterImageModal .modal-title {
+  color: #e0e0e0;
+}
+
+/* Character list styles */
+.character-slots-list {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.character-slots-list .list-group-item {
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.character-slots-list .character-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.character-slots-list .character-icon:hover {
+  transform: scale(1.1);
+}
+
+.character-slots-list .character-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--bs-primary);
+}
+
+.character-slots-list .mod-entry {
+  padding: 4px 0;
+}
+
+.character-slots-list .mod-link {
+  color: inherit;
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.character-slots-list .mod-link:hover {
+  background-color: rgba(var(--bs-primary-rgb), 0.1);
+  color: var(--bs-primary);
+}
+
+.character-slots-list .slot-info {
+  font-size: 0.9rem;
+  color: var(--bs-secondary);
+}
+
+/* Dark mode adjustments */
+body.dark-mode .character-slots-list .list-group-item {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+body.dark-mode .character-slots-list .character-name {
+  color: #6ea8fe;
+}
+
+body.dark-mode .character-slots-list .mod-link:hover {
+  background-color: rgba(110, 168, 254, 0.1);
+  color: #6ea8fe;
+}
+
+body.dark-mode .character-slots-list .slot-info {
+  color: #adb5bd;
+}
+
+/* Mod preview tooltip */
+.mod-preview-tooltip {
+  position: fixed;
+  display: none;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 1100;
+  /* Ensure it's above most elements but below modals */
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  max-width: 150px;
+  max-height: 150px;
+  overflow: hidden;
+}
+
+/* Hide tooltip when parent tab is not active */
+.tab-pane:not(.active) .mod-preview-tooltip,
+.tab-pane:not(.show) .mod-preview-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Ensure tooltip is hidden when switching tabs */
+.tab-content:not(:hover) .mod-preview-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.mod-preview-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mod-preview-tooltip img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Maintain aspect ratio */
+  display: block;
+}
+
+/* Make sure tooltip is hidden when changing tabs */
+.tab-pane:not(.active) .mod-preview-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .mod-preview-tooltip {
+  background: #2c2c2c;
+  border-color: #444;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#contextMenu {
+  position: fixed !important;
+  will-change: unset !important;
+  padding: 0.5rem 0;
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+#contextMenu.show {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+#contextMenu .dropdown-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+/* Dark mode context menu */
+body.dark-mode .dropdown-menu {
+  background-color: #2c2c2c;
+  border-color: #444;
+}
+
+body.dark-mode .dropdown-item {
+  color: #e0e0e0;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background-color: #3a3a3a;
+  color: #fff;
+}
+
+/* Dark mode adjustments for context menu */
+body.dark-mode .dropdown-menu {
+  background-color: #2c2c2c;
+  border-color: #444;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .dropdown-item {
+  color: #e0e0e0;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background-color: #3a3a3a;
+  color: #fff;
+}
+
+body.dark-mode .dropdown-divider {
+  border-color: #444;
+}
+
+/* Modal dark mode styles */
+body.dark-mode .modal-content {
+  background-color: #1e1e1e;
+  border-color: #444;
+}
+
+body.dark-mode .modal-header {
+  background-color: #2c2c2c;
+  border-bottom-color: #444;
+  color: #e0e0e0;
+}
+
+body.dark-mode .modal-footer {
+  background-color: #2c2c2c;
+  border-top-color: #444;
+}
+
+body.dark-mode .modal-body {
+  color: #e0e0e0;
+}
+
+body.dark-mode .modal .close {
+  color: #e0e0e0;
+}
+
+body.dark-mode .modal .form-control {
+  background-color: #2c2c2c;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+body.dark-mode .modal .form-control:focus {
+  background-color: #2c2c2c;
+  border-color: #666;
+  color: #e0e0e0;
+}
+
+body.dark-mode .modal .input-group-text {
+  background-color: #2c2c2c;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+/* Slot change modal specific styles */
+body.dark-mode #changeSlotsModal .slot-group {
+  background-color: #2c2c2c;
+}
+
+body.dark-mode #changeSlotsModal .slot-group.removed {
+  background-color: #442326;
+}
+
+body.dark-mode #changeSlotsModal .overlay {
+  background: rgba(220, 53, 69, 0.3);
+}
+
+/* Dark mode custom names section */
+body.dark-mode .custom-names-section {
+  background-color: #252525 !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode .custom-names-section small {
+  color: #b0b0b0 !important;
+}
+
+body.dark-mode .custom-names-section input {
+  background-color: #2c2c2c !important;
+  border-color: #444 !important;
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode .custom-names-section input::placeholder {
+  color: #888 !important;
+}
+
+body.dark-mode .custom-names-section input:focus {
+  background-color: #333 !important;
+  border-color: #666 !important;
+}
+
+/* Download modal specific styles */
+body.dark-mode #gameBananaDownloadModal .form-control {
+  background-color: #2c2c2c;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+/* Confirmation modal specific styles */
+body.dark-mode #confirmationModal .modal-content {
+  background-color: #1e1e1e;
+}
+
+/* Dark Credits Modal Styles */
+.credits-dark {
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+.credits-logo {
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
+  transition: transform 0.3s ease;
+}
+
+.credits-logo:hover {
+  transform: scale(1.05);
+}
+
+.version-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.credits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin: 0 auto;
+  max-width: 800px;
+}
+
+.credits-member {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.credits-member:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.member-role {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.member-name {
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.tester-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.tester-tag {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.tester-tag:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.tech-stack {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.tech-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  transition: transform 0.3s ease;
+}
+
+.tech-item:hover {
+  transform: translateY(-5px);
+}
+
+.tech-item i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.tech-item span {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Credits Modal Close Button */
+.credits-close-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1051;
+}
+
+.credits-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.credits-close-btn i {
+  font-size: 1.2rem;
+}
+
+/* Category filter styles */
+.category-filters {
+  padding: 10px;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.category-buttons .btn {
+  min-width: 80px;
+}
+
+.category-buttons .btn.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .category-filters {
+  border-color: #444;
+}
+
+body.dark-mode .category-buttons .btn-outline-primary {
+  color: #6ea8fe;
+  border-color: #6ea8fe;
+}
+
+body.dark-mode .category-buttons .btn-outline-primary.active {
+  background-color: #6ea8fe;
+  color: #1e1e1e;
+}
+
+/* Add these styles for the animation */
+.category-filters {
+  transition: all 0.3s ease;
+  overflow: hidden;
+  opacity: 0;
+  max-height: 0;
+}
+
+.category-filters.show {
+  opacity: 1;
+  max-height: 500px;
+}
+
+#toggleCategories {
+  transition: all 0.3s ease;
+}
+
+#toggleCategories.active {
+  background-color: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
+}
+
+/* Category filter styles */
+#categoryFilters {
+  min-width: 200px;
+}
+
+.category-buttons .btn {
+  text-align: left;
+  width: 100%;
+}
+
+.category-buttons .btn.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* Dark mode adjustments */
+body.dark-mode #categoryFilters {
+  background-color: #2c2c2c;
+  border-color: #444;
+}
+
+body.dark-mode .category-buttons .btn-outline-primary {
+  color: #6ea8fe;
+  border-color: #6ea8fe;
+}
+
+body.dark-mode .category-buttons .btn-outline-primary.active {
+  background-color: #6ea8fe;
+  color: #1e1e1e;
+}
+
+/* Category dropdown styles */
+#categoryFilters {
+  min-width: 200px;
+}
+
+#categoryFilters .dropdown-item {
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+}
+
+#categoryFilters .dropdown-item.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* Dark mode adjustments */
+body.dark-mode #categoryFilters {
+  background-color: #2c2c2c;
+  border-color: #444;
+}
+
+body.dark-mode #categoryFilters .dropdown-item {
+  color: #e0e0e0;
+}
+
+body.dark-mode #categoryFilters .dropdown-item:hover {
+  background-color: #3a3a3a;
+}
+
+body.dark-mode #categoryFilters .dropdown-item.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+.mod-item {
+  user-select: none;
+  /* Prevent text selection while clicking */
+}
+
+.mod-item.selected {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+body.dark-mode .mod-item.selected {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+/* Mod Info Editor Styles */
+#editModInfo {
+  transition: opacity 0.2s;
+}
+
+#editModInfo:hover {
+  opacity: 0.8;
+}
+
+input.form-control.form-control-sm::placeholder {
+  color: #999999;
+  opacity: 1;
+}
+
+#modInfoForm .form-control.is-invalid,
+#modInfoForm .form-select.is-invalid {
+  border-color: var(--bs-danger);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* Dark mode adjustments */
+body.dark-mode #editModInfoModal .modal-content {
+  background-color: var(#2c2c2c);
+  color: var(--bs-light);
+}
+
+body.dark-mode #modInfoForm .form-control,
+body.dark-mode #modInfoForm .form-select {
+  background-color: var(#2c2c2c);
+  color: var(--bs-light);
+  border-color: var(--bs-secondary);
+}
+
+/* Add these styles for category dropdown dark mode */
+body.dark-mode .dropdown-menu {
+  background-color: #2b2b2b;
+  border-color: #404040;
+}
+
+body.dark-mode .dropdown-header {
+  color: #adb5bd;
+}
+
+body.dark-mode .dropdown-divider {
+  border-top-color: #404040;
+}
+
+body.dark-mode .dropdown-item {
+  color: #e9ecef;
+}
+
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+  background-color: #404040;
+  color: #fff;
+}
+
+body.dark-mode .dropdown-item.active {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+/* Theme selectors styles */
+.theme-option {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.theme-option:hover {
+  transform: translateY(-2px);
+}
+
+.theme-option.active {
+  opacity: 1;
+  border-color: var(--bs-primary);
+}
+
+.theme-image {
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .theme-image {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#showConflictsBtn {
+  display: none;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.toast {
+  opacity: 0;
+  transition:
+    opacity 0.4s ease-in-out,
+    transform 0.4s ease-in-out;
+  transform: translateX(40px);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast.fade-in {
+  animation: toastFadeIn 0.4s;
+}
+
+.toast.fade-out {
+  animation: toastFadeOut 0.4s forwards;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}

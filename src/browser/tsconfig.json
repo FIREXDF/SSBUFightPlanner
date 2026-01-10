@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/browser",
+    "rootDir": ".",
+    "module": "ES2020",
+    "composite": true
+  },
+  "include": ["**/*.ts", "../types/global.d.ts"]
+}

@@ -3,7 +3,7 @@
   "version": "3.3.26",
   "description": "A SSBU Mod Manager",
   "author": "Shattered Chaos",
-  "main": "dist/main.js",
+  "main": "dist/server/main.js",
   "license": "FOSS",
   "keywords": [
     "mod",
@@ -17,7 +17,7 @@
   "scripts": {
     "start": "electron .",
     "watch": "npm run build:ts -- --watch",
-    "build:ts": "tsc && tsc --project src/tsconfig.json",
+    "build:ts": "tsc --build",
     "pack": "npm run build:ts && electron-builder --dir",
     "dist": "npm run build:ts && electron-builder",
     "build": "npm run build:ts && electron-builder --win --x64",

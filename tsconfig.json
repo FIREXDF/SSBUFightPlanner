@@ -16,7 +16,8 @@
     "noImplicitAny": false,
     "strictNullChecks": false,
     "sourceMap": true,
-    "declaration": false,
+    "declaration": true,
+    "declarationMap": true,
     "allowJs": true,
     "checkJs": false,
     "noUnusedLocals": false,
@@ -24,13 +25,5 @@
     "noImplicitReturns": false,
     "noImplicitThis": true
   },
-  "include": ["*.ts", "src/types/global.d.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "dist-canary",
-    "build",
-    "src/windows",
-    "Files"
-  ]
+  "references": [{ "path": "./src/browser" }, { "path": "./src/server" }]
 }
