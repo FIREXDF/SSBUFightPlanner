@@ -2438,7 +2438,7 @@ class UIController {
     if (this.conflictButton) {
       this.conflictButton.addEventListener("click", () => {
         if (this.conflicts && this.conflicts.size > 0) {
-          this.showConflictsWarning(this.conflicts);
+          this.showConflictsWarning();
         }
       });
     }
@@ -3207,12 +3207,15 @@ class UIController {
           const slotAssignments: Record<string, string> = {};
           const slotChanges: Record<string, string> = {};
           const slotsToRemove: string[] = [];
-          const slotCustomNames: Record<string, {
+          const slotCustomNames: Record<
+            string,
+            {
               cspName?: string;
               vsName?: string;
               boxingRing?: string;
               announcer?: string;
-            }> = {};
+            }
+          > = {};
 
           document
             .querySelectorAll(".target-slot")
