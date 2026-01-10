@@ -2,76 +2,83 @@
 <audio id="audioError" src="./sounds/error.mp3" type="audio/mpeg"></audio>
 <audio id="audioOff" src="./sound/off.mp3" type="audio/mpeg"></audio>
 <audio id="audioOn" src="./sounds/on.mp3" type="audio/mpeg"></audio>
-<audio id="audioLoading" src="./sounds/loading.mp3" type="audio/mpeg" loop></audio>
+<audio
+  id="audioLoading"
+  src="./sounds/loading.mp3"
+  type="audio/mpeg"
+  loop
+></audio>
 <audio id="audioConflict" src="./sounds/conflict.mp3" type="audio/mpeg"></audio>
 
 <script>
-  const audioPlayer = document.getElementById('audioPlayer');
-  
+  const audioPlayer = document.getElementById("audioPlayer");
+
   // Set initial volume if stored
-  const volume = localStorage.getItem('volume') || 1;
+  const volume = localStorage.getItem("volume") || 1;
   audioFinish.volume = volume;
   audioError.volume = volume;
 
   function playFinish() {
     audioFinish.currentTime = 0; // Reset to start
-    audioFinish.play().catch(function(error) {
-      console.error('Error playing audio:', error);
+    audioFinish.play().catch(function (error) {
+      console.error("Error playing audio:", error);
     });
   }
 
   function playError() {
     audioError.currentTime = 0; // Reset to start
-    audioError.play().catch(function(error) {
-      console.error('Error playing audio:', error);
+    audioError.play().catch(function (error) {
+      console.error("Error playing audio:", error);
     });
-
-  }  function playOn() {
+  }
+  function playOn() {
     audioOn.currentTime = 0; // Reset to start
-    audioOn.play().catch(function(error) {
-      console.error('Error playing audio:', error);
+    audioOn.play().catch(function (error) {
+      console.error("Error playing audio:", error);
     });
-
-  }  function playOff() {
+  }
+  function playOff() {
     audioOff.currentTime = 0; // Reset to start
-    audioOff.play().catch(function(error) {
-      console.error('Error playing audio:', error);
+    audioOff.play().catch(function (error) {
+      console.error("Error playing audio:", error);
     });
-
-  }  function playLoading() {
+  }
+  function playLoading() {
     audioLoading.currentTime = 0; // Reset to start
-    audioLoading.play().catch(function(error) {
-      console.error('Error playing audio:', error);
+    audioLoading.play().catch(function (error) {
+      console.error("Error playing audio:", error);
     });
-
-  } function playConflict() {
+  }
+  function playConflict() {
     audioConflict.currentTime = 0; // Reset to start
-    audioConflict.play().catch(function(error) {
-      console.error('Error playing audio:', error);
+    audioConflict.play().catch(function (error) {
+      console.error("Error playing audio:", error);
     });
   }
 
   function stopLoading() {
-  const fadeDuration = 500;
-  const steps = 20;
-  const stepTime = fadeDuration / steps;
-  let currentStep = 0;
+    const fadeDuration = 500;
+    const steps = 20;
+    const stepTime = fadeDuration / steps;
+    let currentStep = 0;
 
-  const originalVolume = audioLoading.volume;
+    const originalVolume = audioLoading.volume;
 
-  const fadeOut = setInterval(() => {
-    currentStep++;
-    audioLoading.volume = Math.max(0, originalVolume * (1 - currentStep / steps));
+    const fadeOut = setInterval(() => {
+      currentStep++;
+      audioLoading.volume = Math.max(
+        0,
+        originalVolume * (1 - currentStep / steps),
+      );
 
-    if (currentStep >= steps) {
-      clearInterval(fadeOut);
-      audioLoading.pause();
-      audioLoading.currentTime = 0;
-      audioLoading.volume = originalVolume;
-    }
-  }, stepTime);
-}
-
+      if (currentStep >= steps) {
+        clearInterval(fadeOut);
+        audioLoading.pause();
+        audioLoading.currentTime = 0;
+        audioLoading.volume = originalVolume;
+      }
+    }, stepTime);
+  }
 
   // Function to set volume (0-1)
   function setVolume(value) {
@@ -82,8 +89,8 @@
     audioOn.volume = volume;
     audioLoading.volume = volume;
     audioConflict.volume = volume;
-    localStorage.setItem('volume', volume);
-    console.log('Volume set to:', volume);
+    localStorage.setItem("volume", volume);
+    console.log("Volume set to:", volume);
     return true;
   }
 </script>

@@ -51,6 +51,7 @@
     "electron": "^36.3.2",
     "electron-builder": "^24.0.0",
     "node-gyp": "^11.2.0",
+    "prettier": "3.7.4",
     "typescript": "^5.9.3"
   },
   "build": {

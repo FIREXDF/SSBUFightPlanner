@@ -4,30 +4,22 @@
   "directories": {
     "output": "dist-canary"
   },
-  "files": [
-    "!dist/**"
-  ],
+  "files": ["!dist/**"],
   "extraResources": [
     {
       "from": "./build",
       "to": "build",
-      "filter": [
-        "**/*"
-      ]
+      "filter": ["**/*"]
     },
     {
       "from": "src/resources",
       "to": "src/resources",
-      "filter": [
-        "**/*"
-      ]
+      "filter": ["**/*"]
     },
     {
       "from": "./Files",
       "to": "Files",
-      "filter": [
-        "**/*"
-      ]
+      "filter": ["**/*"]
     }
   ],
   "publish": [

@@ -8,21 +8,21 @@
 // @grant        none
 // ==/UserScript==
 
-(function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    const links = document.querySelectorAll('a[href^="quasar:"]');
+  const links = document.querySelectorAll('a[href^="quasar:"]');
 
-    links.forEach(link => {
-        link.href = link.href.replace(/^quasar:/, 'fightplanner:');
+  links.forEach((link) => {
+    link.href = link.href.replace(/^quasar:/, "fightplanner:");
+  });
+
+  const observer = new MutationObserver(() => {
+    const newLinks = document.querySelectorAll('a[href^="quasar:"]');
+    newLinks.forEach((link) => {
+      link.href = link.href.replace(/^quasar:/, "fightplanner:");
     });
+  });
 
-    const observer = new MutationObserver(() => {
-        const newLinks = document.querySelectorAll('a[href^="quasar:"]');
-        newLinks.forEach(link => {
-            link.href = link.href.replace(/^quasar:/, 'fightplanner:');
-        });
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, { childList: true, subtree: true });
 })();

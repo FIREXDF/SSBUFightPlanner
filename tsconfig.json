@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "outDir": "./dist",
     "rootDir": "./",
     "removeComments": true,
@@ -28,10 +24,7 @@
     "noImplicitReturns": false,
     "noImplicitThis": true
   },
-  "include": [
-    "*.ts",
-    "src/types/global.d.ts"
-  ],
+  "include": ["*.ts", "src/types/global.d.ts"],
   "exclude": [
     "node_modules",
     "dist",
@@ -41,4 +34,3 @@
     "Files"
   ]
 }
-

@@ -1,41 +1,41 @@
 body {
-    position: relative;
+  position: relative;
 }
 
 body::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('https://images8.alphacoders.com/136/thumb-1920-1368290.jpeg');
-    filter: blur(5px);
-    z-index: -1;
-    opacity: 0.5;
-    transition: opacity 0.5s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-size: cover;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("https://images8.alphacoders.com/136/thumb-1920-1368290.jpeg");
+  filter: blur(5px);
+  z-index: -1;
+  opacity: 0.5;
+  transition: opacity 0.5s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
 }
 .card {
-    background-color: #682a00 !important;
-    border-color: #a04000 !important;
-    color: #e0e0e0;
+  background-color: #682a00 !important;
+  border-color: #a04000 !important;
+  color: #e0e0e0;
 }
 .card-header {
-    background-color: #6b3000 !important;
-    border-bottom-color: #a04000 !important;
+  background-color: #6b3000 !important;
+  border-bottom-color: #a04000 !important;
 }
 .mod-list .mod-item {
-    background-color: #682a00 !important;
-    border-bottom-color: #a04000 !important;
-    color: #e0e0e0;
+  background-color: #682a00 !important;
+  border-bottom-color: #a04000 !important;
+  color: #e0e0e0;
 }
 .mod-list .mod-item:hover {
-    background-color: #773000 !important;
+  background-color: #773000 !important;
 }
 .mod-list .mod-item.selected {
-    background-color: #a14100 !important;
+  background-color: #a14100 !important;
 }
