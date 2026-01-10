@@ -1,6 +1,24 @@
-const DiscordRPC = require('discord-rpc');
+import * as DiscordRPC from 'discord-rpc';
+
+interface PresenceActivity {
+    details?: string;
+    state?: string;
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+    startTimestamp?: Date;
+    instance?: boolean;
+}
 
 class DiscordRichPresence {
+    private client: any;
+    private clientId: string;
+    private startTimestamp: Date;
+    private reconnectTries: number;
+    private maxReconnectTries: number;
+    private states: any;
+
     constructor() {
         this.client = null;
         this.clientId = '1304806839115972628'; // Replace with your Discord application Client ID
@@ -40,7 +58,7 @@ class DiscordRichPresence {
         if (this.client) return;
 
         try {
-            this.client = new DiscordRPC.Client({ transport: 'ipc' });
+            this.client = new DiscordRPC.Client({transport: 'ipc'});
 
             this.client.on('disconnected', () => {
                 console.warn('Discord RPC disconnected, attempting reconnect...');
@@ -51,7 +69,7 @@ class DiscordRichPresence {
                 }
             });
 
-            await this.client.login({ clientId: this.clientId });
+            await this.client.login({clientId: this.clientId});
             this.reconnectTries = 0;
 
             // Set initial activity
@@ -91,7 +109,7 @@ class DiscordRichPresence {
         if (typeof this.states[stateKey] === 'function') {
             activity = this.states[stateKey](...params);
         } else {
-            activity = { ...this.states[stateKey] };
+            activity = {...this.states[stateKey]};
         }
         activity.largeImageKey = 'app_logo';
         activity.largeImageText = 'FightPlanner';
@@ -134,4 +152,4 @@ class DiscordRichPresence {
     }
 }
 
-module.exports = new DiscordRichPresence();
+export default new DiscordRichPresence();
