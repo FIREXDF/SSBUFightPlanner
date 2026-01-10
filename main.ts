@@ -683,7 +683,7 @@ ipcMain.handle("load-mods", async () => {
   const removeDot = store.get("removeDot", false);
 
   try {
-    const mods: Array<Mod> = [];
+    const mods: Mod[] = [];
 
     // Read main mods folder
     const files = await fsp.readdir(modsPath);

@@ -20,6 +20,7 @@ export class ModManager {
 
       // Additional validation or processing if needed
       if (!result.success) {
+        // Handle installation failure
       }
 
       return result;

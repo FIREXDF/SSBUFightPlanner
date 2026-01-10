@@ -10,11 +10,11 @@ import { getInternalFighterName } from "./fighterNames.js";
 class UIController {
   modManager: ModManager;
   selectedMod: string | null;
-  downloadQueue: Array<string>;
+  downloadQueue: string[];
   isDownloading: boolean;
-  mods: Array<Mod>;
+  mods: Mod[];
   conflictDetector: ModConflictDetector;
-  conflicts: Map<string, Array<string>>;
+  conflicts: Map<string, string[]>;
   downloadModal: any;
   characterScanner: CharacterScanner;
   selectedCategories: Set<string>;
@@ -511,7 +511,7 @@ class UIController {
         this.conflicts = conflicts;
 
         if (conflicts.size > 0) {
-          this.showConflictsWarning?.(conflicts);
+          this.showConflictsWarning();
           this.conflictButton.style.display = "inline-block";
 
           window.electron.ipcRenderer.send("play-conflict-audio");
@@ -1622,7 +1622,7 @@ class UIController {
       const modalId = "renameModal";
 
       // Remove existing modal if it exists
-      let existingModal = document.getElementById(modalId);
+      const existingModal = document.getElementById(modalId);
       if (existingModal) {
         existingModal.remove();
       }
@@ -1729,7 +1729,7 @@ class UIController {
   }
 
   async showLoading(message = "Loading...") {
-    let loadingOverlay = document.getElementById("loading-overlay");
+    const loadingOverlay = document.getElementById("loading-overlay");
     console.log("Showing loading message:", message);
 
     if (!loadingOverlay) return;
@@ -2681,7 +2681,7 @@ class UIController {
     downloadFieldsContainer.appendChild(newField);
   }
 
-  showConflictsWarning(conflicts) {
+  showConflictsWarning() {
     const descriptions = this.conflictDetector.getConflictDescriptions();
 
     if (descriptions.length === 0) {
@@ -3204,17 +3204,15 @@ class UIController {
 
       confirmBtn.onclick = async () => {
         try {
-          const slotAssignments: { [slot: string]: string } = {};
-          const slotChanges: { [slot: string]: string } = {};
-          const slotsToRemove: Array<string> = [];
-          const slotCustomNames: {
-            [slot: string]: {
+          const slotAssignments: Record<string, string> = {};
+          const slotChanges: Record<string, string> = {};
+          const slotsToRemove: string[] = [];
+          const slotCustomNames: Record<string, {
               cspName?: string;
               vsName?: string;
               boxingRing?: string;
               announcer?: string;
-            };
-          } = {};
+            }> = {};
 
           document
             .querySelectorAll(".target-slot")
@@ -3342,7 +3340,7 @@ class UIController {
     modPath,
     slotChanges,
     slotsToRemove,
-    finalSlots: Array<string>,
+    finalSlots: string[],
     pathData,
     fighterName,
     slotCustomNames,
@@ -4196,7 +4194,6 @@ class UIController {
   }
 
   initializeCategoryFilters() {
-    const categoryDropdown = document.getElementById("categoryFilters");
     const dropdownToggle = document.getElementById("toggleCategories");
 
     // Initialize the Bootstrap dropdown with options

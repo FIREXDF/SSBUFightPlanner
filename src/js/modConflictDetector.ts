@@ -1,7 +1,7 @@
 class ModConflictDetector {
-  conflicts: Map<string, Array<string>>;
+  conflicts: Map<string, string[]>;
   ignoredFiles: Set<string>;
-  ignoredPatterns: Array<RegExp>;
+  ignoredPatterns: RegExp[];
 
   constructor() {
     this.conflicts = new Map();
@@ -103,7 +103,9 @@ class ModConflictDetector {
           if (typeof onProgress === "function") {
             try {
               onProgress(mod.name, mod);
-            } catch (_) {}
+            } catch (_e) {
+              // Ignore errors from progress callback
+            }
           }
 
           const files = await this.getModFiles(mod.path);

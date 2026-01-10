@@ -3,12 +3,9 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as child_process from "child_process";
-import Store from "electron-store";
 import Seven from "node-7z";
 
 import { app } from "electron";
-
-const store = new Store();
 
 export interface LoadingCallbacks {
   onStart?: (status: string, modName?: string) => void;
@@ -140,7 +137,7 @@ class GameBananaDownloader {
       }
 
       // Find the extracted content
-      let extractedContents = fs
+      const extractedContents = fs
         .readdirSync(this.tempFolder)
         .filter(
           (f) =>
@@ -355,9 +352,9 @@ class GameBananaDownloader {
 
       // Move all extracted folders to final destination
       for (const folder of extractedContents) {
-        let extractedPath = path.join(this.tempFolder, folder);
-        let finalFolderName = folder.replace(/\.+$/, ""); // Enlève les points finaux
-        let finalPath = path.join(finalArchivePath, finalFolderName);
+        const extractedPath = path.join(this.tempFolder, folder);
+        const finalFolderName = folder.replace(/\.+$/, ""); // Enlève les points finaux
+        const finalPath = path.join(finalArchivePath, finalFolderName);
 
         if (fs.existsSync(finalPath)) {
           fs.rmSync(finalPath, { recursive: true });
@@ -617,7 +614,7 @@ class GameBananaDownloader {
     return new Promise<void>((resolve, reject) => {
       child_process.exec(
         `tar -xf "${filePath}" -C "${extractTo}"`,
-        async (error, stdout, stderr) => {
+        async (error) => {
           if (error) {
             console.error("Tar extraction error:", error);
             reject(error);
@@ -746,7 +743,7 @@ class GameBananaDownloader {
 
       console.log("Creating directory structure...");
       const allPaths = Array.from(fileStructure.values());
-      const directories: Set<string> = new Set();
+      const directories = new Set<string>();
 
       allPaths.forEach((filePath) => {
         const dir = path.dirname(filePath);
@@ -988,7 +985,7 @@ class GameBananaDownloader {
     if (this.currentWriter) {
       this.currentWriter.uncork();
       // Resume from last downloaded chunk
-      for (const [offset, chunk] of this.downloadedChunks) {
+      for (const [, chunk] of this.downloadedChunks) {
         this.currentWriter.write(chunk);
       }
       this.downloadedChunks.clear();

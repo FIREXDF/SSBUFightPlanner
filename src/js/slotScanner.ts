@@ -1,11 +1,7 @@
-export interface PathData {
-  [fighterName: string]: {
-    [slot: string]: {
-      pathsToBeModified: Array<PathDataEntry>;
-      filesToBeModified: Array<PathDataEntry>;
-    };
-  };
-}
+export type PathData = Record<string, Record<string, {
+      pathsToBeModified: PathDataEntry[];
+      filesToBeModified: PathDataEntry[];
+    }>>;
 
 export interface PathDataEntry {
   original: string;
@@ -18,7 +14,7 @@ export const SlotScanner = {
       const files = await window.api.modOperations.getModFiles(modPath);
 
       const pathData: PathData = {};
-      const slots: Set<string> = new Set();
+      const slots = new Set<string>();
 
       files.forEach((fileOrDirectory) => {
         function _createPathDataEntry(fighterName: string, slot: string) {

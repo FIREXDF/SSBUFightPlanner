@@ -25,7 +25,7 @@ interface ModOperations {
   openModFolder: (modId: string) => Promise<any>;
   openModsFolder: () => Promise<any>;
   loadMods: () => Promise<any>;
-  getModFiles: (modPath: string) => Promise<Array<string>>;
+  getModFiles: (modPath: string) => Promise<string[]>;
   checkConflicts: () => Promise<any>;
   createDirectory: (path: string) => Promise<any>;
   renameModFile: (
@@ -98,7 +98,7 @@ interface DiscordRpc {
 interface DialogOptions {
   title?: string;
   properties?: string[];
-  filters?: Array<{ name: string; extensions: string[] }>;
+  filters?: { name: string; extensions: string[] }[];
   defaultPath?: string;
   buttonLabel?: string;
 }

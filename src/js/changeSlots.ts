@@ -1,4 +1,5 @@
 import { PathData, SlotScanner } from "./slotScanner.js";
+import { CreateNewConfigJSON } from "./createNewConfigJSON.js";
 
 export class ChangeSlots {
   static async resetConfig(modPath, fighterName) {
@@ -6,7 +7,7 @@ export class ChangeSlots {
 
     const configPath = `${modPath}/config.json`;
 
-    let config = {
+    const config = {
       "new-dir-infos": [],
       "new-dir-infos-base": {},
       "share-to-vanilla": {},
@@ -116,7 +117,7 @@ export class ChangeSlots {
   static async changeSlots(
     modPath,
     slotChanges,
-    finalSlots: Array<string>,
+    finalSlots: string[],
     pathData: PathData,
     fighterName,
     slotCustomNames,
@@ -365,13 +366,16 @@ export class ChangeSlots {
     }
 
     if (fighterName) {
-      await ChangeSlots.resetConfig(modPath, fighterName);
+      await CreateNewConfigJSON.init();
+      const jsonCreator = new CreateNewConfigJSON(modPath, fighterName);
 
-      await ChangeSlots.updateShareToVanilla(modPath, fighterName, finalSlots);
-      await ChangeSlots.updateNewDirInfos(modPath, fighterName, finalSlots);
-      await ChangeSlots.updateNewDirFiles(modPath, fighterName, finalSlots);
-      await ChangeSlots.updateNewDirInfosBase(modPath, fighterName, finalSlots);
-      await ChangeSlots.updateShareToAdded(modPath, fighterName, finalSlots);
+      // await ChangeSlots.resetConfig(modPath, fighterName);
+      //
+      // await ChangeSlots.updateShareToVanilla(modPath, fighterName, finalSlots);
+      // await ChangeSlots.updateNewDirInfos(modPath, fighterName, finalSlots);
+      // await ChangeSlots.updateNewDirFiles(modPath, fighterName, finalSlots);
+      // await ChangeSlots.updateNewDirInfosBase(modPath, fighterName, finalSlots);
+      // await ChangeSlots.updateShareToAdded(modPath, fighterName, finalSlots);
     }
 
     return changedPaths.length;
@@ -385,7 +389,7 @@ export class ChangeSlots {
   static async updateShareToVanilla(
     modPath,
     fighterName,
-    finalSlots: Array<string>,
+    finalSlots: string[],
   ) {
     try {
       console.log("[updateShareToVanilla] called");
@@ -461,8 +465,8 @@ export class ChangeSlots {
 
       if (!config["share-to-vanilla"]) config["share-to-vanilla"] = {};
 
-      let keyOrder = [];
-      let vanillaSet = new Set();
+      const keyOrder = [];
+      const vanillaSet = new Set();
 
       for (const [, newSlot] of Object.entries(finalSlots)) {
         const newSlotNum = parseInt(newSlot.replace("c", ""));
@@ -515,7 +519,7 @@ export class ChangeSlots {
           if (!/\.[a-z0-9]+$/i.test(vanillaPath)) continue;
 
           // Remplacement strict de /c00/ ou _c00 ou /c00 (fin de chemin) par le slot custom
-          let customPath = vanillaPath
+          const customPath = vanillaPath
             .replace(/\/c00\//g, `/${newSlot}/`)
             .replace(/\/c00$/g, `/${newSlot}`)
             .replace(/_c00/g, `_${newSlot}`);
@@ -556,7 +560,7 @@ export class ChangeSlots {
   static async updateNewDirInfos(
     modPath,
     fighterName,
-    slotChanges: Array<string>,
+    slotChanges: string[],
   ) {
     try {
       // Si pas trouvé, tente de déduire le nom du fighter depuis le chemin ou fallback "link"
@@ -621,7 +625,7 @@ export class ChangeSlots {
   static async updateNewDirFiles(
     modPath,
     fighterName,
-    slotChanges: Array<string>,
+    slotChanges: string[],
   ) {
     try {
       console.log("[updateNewDirFiles] called");
@@ -685,7 +689,7 @@ export class ChangeSlots {
         }
       }
 
-      let keyOrder = [];
+      const keyOrder = [];
 
       for (const [, newSlot] of Object.entries(slotChanges)) {
         const newSlotNum = parseInt(newSlot.replace("c", ""));
@@ -800,7 +804,7 @@ export class ChangeSlots {
   static async updateNewDirInfosBase(
     modPath,
     fighterName,
-    slotChanges: Array<string>,
+    slotChanges: string[],
   ) {
     try {
       console.log("[updateNewDirInfosBase] called");
@@ -827,7 +831,7 @@ export class ChangeSlots {
 
       // Ordre attendu pour new-dir-infos-base
       // Pour coller à l'exemple fourni
-      let keyOrder = [];
+      const keyOrder = [];
 
       for (const [, newSlot] of Object.entries(slotChanges)) {
         const newSlotNum = parseInt(newSlot.replace("c", ""));
@@ -924,7 +928,7 @@ export class ChangeSlots {
   static async updateShareToAdded(
     modPath,
     fighterName,
-    slotChanges: Array<string>,
+    slotChanges: string[],
   ) {
     try {
       console.log("[updateShareToAdded] called");
@@ -1147,7 +1151,7 @@ export class ChangeSlots {
       console.log("[updateMsgName] called");
 
       // Prepare XML content
-      let xmlEntries = [];
+      const xmlEntries = [];
 
       for (const slot of slots) {
         const slotNum = parseInt(slot.replace("c", ""));

@@ -1,4 +1,4 @@
-type TranslationRecord = { [k: string]: string | TranslationRecord }; // okay
+interface TranslationRecord { [k: string]: string | TranslationRecord } // okay
 
 class LanguageService {
   public currentLanguage: string;

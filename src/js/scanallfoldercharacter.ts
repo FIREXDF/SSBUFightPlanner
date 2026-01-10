@@ -681,7 +681,7 @@ export class CharacterScanner {
       });
 
       // Extract slots from filenames
-      const slots: Set<string> = new Set();
+      const slots = new Set<string>();
 
       slotFiles.forEach((file) => {
         const pathParts = file.split(/[/\\]/);
@@ -760,14 +760,14 @@ export class CharacterScanner {
 
           // Process fighter folders
           const fighterFolders = files.filter((file) => {
-            const parts = file.split(/[\/\\]/);
+            const parts = file.split(/[/\\]/);
             return parts.length >= 2 && parts[0] === "fighter";
           });
 
           if (fighterFolders.length > 0) {
             const characters = new Set(
               fighterFolders
-                .map((file) => file.split(/[\/\\]/)[1])
+                .map((file) => file.split(/[/\\]/)[1])
                 .filter(
                   (char) =>
                     char &&
@@ -943,7 +943,7 @@ export class CharacterScanner {
                     <div class="mod-list">
                         ${mods
                           .map((modName) => {
-                            let modObj = Array.isArray(modList)
+                            const modObj = Array.isArray(modList)
                               ? modList.find((m) => m.name === modName)
                               : null;
                             let modClass = "";

@@ -1,9 +1,9 @@
 export class Tutorial {
-  steps: Array<{
+  steps: {
     element: string;
     title: string;
     content: string;
-  }>;
+  }[];
 
   constructor() {
     this.steps = [

@@ -15,9 +15,8 @@
     "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
   },
   "scripts": {
-    "start": "npm run build:ts && electron .",
-    "dev": "tsc && tsc --project src/tsconfig.json && electron .",
-    "watch": "tsc && tsc --project src/tsconfig.json --watch",
+    "start": "electron .",
+    "watch": "npm run build:ts -- --watch",
     "build:ts": "tsc && tsc --project src/tsconfig.json",
     "pack": "npm run build:ts && electron-builder --dir",
     "dist": "npm run build:ts && electron-builder",
@@ -44,15 +43,18 @@
     "toml": "^3.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/adm-zip": "^0.5.7",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.5",
     "@types/sanitize-html": "^2.16.0",
     "electron": "^36.3.2",
     "electron-builder": "^24.0.0",
+    "eslint": "^9.39.2",
     "node-gyp": "^11.2.0",
     "prettier": "3.7.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0"
   },
   "build": {
     "appId": "com.shatteredchaos.fightplanner",
