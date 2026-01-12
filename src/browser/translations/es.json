@@ -1,16 +1,9 @@
 {
-  "nav": {
-    "mods": "Mods",
-    "plugins": "Complementos",
-    "settings": "Ajustes"
-  },
+  "nav": { "mods": "Mods", "plugins": "Complementos", "settings": "Ajustes" },
   "mods": {
     "title": "Lista de mods",
     "search": "Buscar mods...",
-    "filters": {
-      "enabled": "Activado",
-      "disabled": "Desactivado"
-    },
+    "filters": { "enabled": "Activado", "disabled": "Desactivado" },
     "details": {
       "title": "Detalles del mod",
       "selectToView": "Selecciona un mod para ver detalles",
@@ -95,9 +88,7 @@
       "unknown": "Autor desconocido",
       "multiple": "Múltiples autores"
     },
-    "description": {
-      "title": "Descripción"
-    },
+    "description": { "title": "Descripción" },
     "version": {
       "label": "Versión",
       "unknown": "Versión desconocida",

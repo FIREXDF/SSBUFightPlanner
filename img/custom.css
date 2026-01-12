@@ -3,13 +3,13 @@ body {
 }
 
 body::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url("https://images8.alphacoders.com/136/thumb-1920-1368290.jpeg");
+  background-image: url('https://images8.alphacoders.com/136/thumb-1920-1368290.jpeg');
   filter: blur(5px);
   z-index: -1;
   opacity: 0.5;

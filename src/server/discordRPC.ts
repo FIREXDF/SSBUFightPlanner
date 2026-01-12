@@ -1,4 +1,4 @@
-import * as DiscordRPC from "discord-rpc";
+import * as DiscordRPC from 'discord-rpc';
 
 interface PresenceActivity {
   details?: string;
@@ -21,37 +21,34 @@ class DiscordRichPresence {
 
   constructor() {
     this.client = null;
-    this.clientId = "1304806839115972628"; // Replace with your Discord application Client ID
+    this.clientId = '1304806839115972628'; // Replace with your Discord application Client ID
     this.startTimestamp = new Date();
     this.reconnectTries = 0;
     this.maxReconnectTries = 5;
 
     this.states = {
       BROWSING: {
-        details: "🔍 Browsing Mods",
-        state: "Ready to discover new content!",
+        details: '🔍 Browsing Mods',
+        state: 'Ready to discover new content!',
       },
       MANAGING: (modCount) => ({
-        details: "🗂️ Managing Mods",
+        details: '🗂️ Managing Mods',
         state:
-          modCount === 1 ? "1 Mod Installed" : `${modCount} Mods Installed`,
+          modCount === 1 ? '1 Mod Installed' : `${modCount} Mods Installed`,
       }),
       INSTALLING: (modName) => ({
-        details: "⬇️ Installing Mod",
-        state: modName ? `Installing "${modName}"` : "Installing a new mod...",
-        smallImageKey: "install_icon",
-        smallImageText: modName ? `Installing ${modName}` : "Installing",
+        details: '⬇️ Installing Mod',
+        state: modName ? `Installing "${modName}"` : 'Installing a new mod...',
+        smallImageKey: 'install_icon',
+        smallImageText: modName ? `Installing ${modName}` : 'Installing',
       }),
       VIEWING: (modName, author) => ({
-        details: "📄 Mod Details",
-        state: modName ? `Viewing "${modName}"` : "No Mod Selected",
-        smallImageKey: modName ? "mod_icon" : undefined,
+        details: '📄 Mod Details',
+        state: modName ? `Viewing "${modName}"` : 'No Mod Selected',
+        smallImageKey: modName ? 'mod_icon' : undefined,
         smallImageText: author ? `By ${author}` : undefined,
       }),
-      IDLE: {
-        details: "💤 Idle",
-        state: "Taking a break",
-      },
+      IDLE: { details: '💤 Idle', state: 'Taking a break' },
     };
   }
 
@@ -59,10 +56,10 @@ class DiscordRichPresence {
     if (this.client) return;
 
     try {
-      this.client = new DiscordRPC.Client({ transport: "ipc" });
+      this.client = new DiscordRPC.Client({ transport: 'ipc' });
 
-      this.client.on("disconnected", () => {
-        console.warn("Discord RPC disconnected, attempting reconnect...");
+      this.client.on('disconnected', () => {
+        console.warn('Discord RPC disconnected, attempting reconnect...');
         this.client = null;
         if (this.reconnectTries < this.maxReconnectTries) {
           setTimeout(() => this.connect(), 3000);
@@ -75,16 +72,16 @@ class DiscordRichPresence {
 
       // Set initial activity
       this.setActivity({
-        details: "Browsing Mods",
-        state: "Getting Started",
-        largeImageKey: "app_logo",
-        largeImageText: "FightPlanner",
+        details: 'Browsing Mods',
+        state: 'Getting Started',
+        largeImageKey: 'app_logo',
+        largeImageText: 'FightPlanner',
         startTimestamp: this.startTimestamp,
       });
 
-      console.log("Discord RPC connected successfully");
+      console.log('Discord RPC connected successfully');
     } catch (error) {
-      console.error("Discord RPC connection failed:", error);
+      console.error('Discord RPC connection failed:', error);
       // Ensure client is null if connection fails
       this.client = null;
     }
@@ -100,43 +97,43 @@ class DiscordRichPresence {
         instance: false,
       });
     } catch (error) {
-      console.error("Failed to set Discord RPC activity:", error);
+      console.error('Failed to set Discord RPC activity:', error);
     }
   }
 
   // Nouvelle méthode générique pour changer d'état par identifiant
   setState(stateKey, ...params) {
     let activity;
-    if (typeof this.states[stateKey] === "function") {
+    if (typeof this.states[stateKey] === 'function') {
       activity = this.states[stateKey](...params);
     } else {
       activity = { ...this.states[stateKey] };
     }
-    activity.largeImageKey = "app_logo";
-    activity.largeImageText = "FightPlanner";
+    activity.largeImageKey = 'app_logo';
+    activity.largeImageText = 'FightPlanner';
     activity.startTimestamp = this.startTimestamp;
     this.setActivity(activity);
   }
 
   // Methods for different app states
   updateModBrowsing(modCount = 0) {
-    this.setState("MANAGING", modCount);
+    this.setState('MANAGING', modCount);
   }
 
   updateModInstalling(modName = null) {
-    this.setState("INSTALLING", modName);
+    this.setState('INSTALLING', modName);
   }
 
-  updateModDetails(modName = "No Mod Selected", author = null) {
+  updateModDetails(modName = 'No Mod Selected', author = null) {
     // Correction : vérifie que modName et author sont bien transmis depuis l'appelant
     // et que la méthode est bien appelée avec les bons arguments lors du clic sur un mod.
     // Si tu utilises cette méthode dans ton code, assure-toi de faire :
     // discordRPC.updateModDetails(nomDuMod, auteurDuMod);
-    this.setState("VIEWING", modName, author);
+    this.setState('VIEWING', modName, author);
   }
 
   updateIdle() {
-    this.setState("IDLE");
+    this.setState('IDLE');
   }
 
   disconnect() {
@@ -145,9 +142,9 @@ class DiscordRichPresence {
         this.client.clearActivity();
         this.client.destroy();
         this.client = null;
-        console.log("Discord RPC disconnected");
+        console.log('Discord RPC disconnected');
       } catch (error) {
-        console.error("Error disconnecting Discord RPC:", error);
+        console.error('Error disconnecting Discord RPC:', error);
       }
     }
   }

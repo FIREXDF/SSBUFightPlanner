@@ -1,18 +1,18 @@
-console.log("Tutorial module loaded");
+console.log('Tutorial module loaded');
 
-document.addEventListener("DOMContentLoaded", () => {
-  const steps = document.querySelectorAll(".tutorial-step");
-  const prevBtn = document.getElementById("prevBtn") as HTMLButtonElement;
-  const nextBtn = document.getElementById("nextBtn");
-  const finishContainer = document.getElementById("finishContainer");
+document.addEventListener('DOMContentLoaded', () => {
+  const steps = document.querySelectorAll('.tutorial-step');
+  const prevBtn = document.getElementById('prevBtn') as HTMLButtonElement;
+  const nextBtn = document.getElementById('nextBtn');
+  const finishContainer = document.getElementById('finishContainer');
   const setModsPathBtn = document.getElementById(
-    "setModsPathBtn",
+    'setModsPathBtn',
   ) as HTMLButtonElement;
   const finishTutorialBtn = document.getElementById(
-    "finishTutorialBtn",
+    'finishTutorialBtn',
   ) as HTMLButtonElement;
-  const currentStepEl = document.getElementById("currentStep");
-  const totalStepsEl = document.getElementById("totalSteps") as HTMLElement;
+  const currentStepEl = document.getElementById('currentStep');
+  const totalStepsEl = document.getElementById('totalSteps') as HTMLElement;
 
   let currentStepIndex = 0;
 
@@ -21,12 +21,12 @@ document.addEventListener("DOMContentLoaded", () => {
     steps.forEach((step: HTMLElement, index) => {
       if (index === newIndex) {
         // Show current step
-        step.style.display = "block";
-        step.classList.add("active");
+        step.style.display = 'block';
+        step.classList.add('active');
       } else {
         // Hide other steps
-        step.style.display = "none";
-        step.classList.remove("active");
+        step.style.display = 'none';
+        step.classList.remove('active');
       }
     });
 
@@ -38,16 +38,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Show/hide finish button on last step
     if (newIndex === steps.length - 1) {
-      nextBtn.style.display = "none";
-      finishContainer.style.display = "block";
+      nextBtn.style.display = 'none';
+      finishContainer.style.display = 'block';
     } else {
-      nextBtn.style.display = "block";
-      finishContainer.style.display = "none";
+      nextBtn.style.display = 'block';
+      finishContainer.style.display = 'none';
     }
   }
 
   // Next button
-  nextBtn.addEventListener("click", () => {
+  nextBtn.addEventListener('click', () => {
     if (currentStepIndex < steps.length - 1) {
       currentStepIndex++;
       updateStep(currentStepIndex);
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Previous button
-  prevBtn.addEventListener("click", () => {
+  prevBtn.addEventListener('click', () => {
     if (currentStepIndex > 0) {
       currentStepIndex--;
       updateStep(currentStepIndex);
@@ -63,10 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Set Mods Path button
-  setModsPathBtn.addEventListener("click", async () => {
+  setModsPathBtn.addEventListener('click', async () => {
     try {
       const result = await window.api.dialog.showOpenDialog({
-        properties: ["openDirectory", "createDirectory"],
+        properties: ['openDirectory', 'createDirectory'],
       });
 
       if (!result.canceled && result.filePaths.length > 0) {
@@ -74,19 +74,19 @@ document.addEventListener("DOMContentLoaded", () => {
         await window.api.settings.setModsPath(newPath);
 
         // Update button state
-        setModsPathBtn.textContent = "Mods Path Set!";
+        setModsPathBtn.textContent = 'Mods Path Set!';
         setModsPathBtn.disabled = true;
-        setModsPathBtn.classList.remove("btn-primary");
-        setModsPathBtn.classList.add("btn-success");
+        setModsPathBtn.classList.remove('btn-primary');
+        setModsPathBtn.classList.add('btn-success');
       }
     } catch (error) {
-      console.error("Error setting mods path:", error);
-      alert("Failed to set mods path");
+      console.error('Error setting mods path:', error);
+      alert('Failed to set mods path');
     }
   });
 
   // Finish Tutorial button
-  finishTutorialBtn.addEventListener("click", async () => {
+  finishTutorialBtn.addEventListener('click', async () => {
     try {
       // Disable button and show loading
       finishTutorialBtn.disabled = true;
@@ -101,11 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
       // Finish tutorial and show main window
       await window.api.tutorial.finishTutorial();
     } catch (error) {
-      console.error("Initialization error:", error);
+      console.error('Initialization error:', error);
 
       // Reset button state
       finishTutorialBtn.disabled = false;
-      finishTutorialBtn.textContent = "Got It!";
+      finishTutorialBtn.textContent = 'Got It!';
 
       // Show error to user
       alert(`Initialization failed: ${error.message}`);
@@ -113,37 +113,37 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Theme selection handling
-  const themeOptions = document.querySelectorAll(".theme-option");
+  const themeOptions = document.querySelectorAll('.theme-option');
   themeOptions.forEach((option: HTMLElement) => {
-    option.addEventListener("click", async () => {
+    option.addEventListener('click', async () => {
       // Remove active class from all options
-      themeOptions.forEach((opt) => opt.classList.remove("active"));
+      themeOptions.forEach((opt) => opt.classList.remove('active'));
 
       // Add active class to selected option
-      option.classList.add("active");
+      option.classList.add('active');
 
       // Get the theme value
-      const isDark = option.dataset.theme === "dark";
+      const isDark = option.dataset.theme === 'dark';
 
       try {
         // Save theme preference
         await window.api.settings.setDarkMode(isDark);
 
         // Apply theme immediately
-        document.body.classList.toggle("dark-mode", isDark);
+        document.body.classList.toggle('dark-mode', isDark);
       } catch (error) {
-        console.error("Error setting theme:", error);
+        console.error('Error setting theme:', error);
       }
     });
   });
 
   // Load current theme setting
   window.api.settings.getDarkMode().then((isDark) => {
-    const activeTheme = isDark ? "dark" : "light";
+    const activeTheme = isDark ? 'dark' : 'light';
     themeOptions.forEach((option: HTMLElement) => {
-      option.classList.toggle("active", option.dataset.theme === activeTheme);
+      option.classList.toggle('active', option.dataset.theme === activeTheme);
     });
-    document.body.classList.toggle("dark-mode", isDark);
+    document.body.classList.toggle('dark-mode', isDark);
   });
 
   // Set initial state
@@ -151,6 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
   totalStepsEl.textContent = `${steps.length}`;
 });
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   // loadMedia();
 });

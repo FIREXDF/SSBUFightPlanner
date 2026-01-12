@@ -16,7 +16,7 @@ class ModConflictDetector {
    */
   initializeDefaultIgnoreList() {
     // Common files that shouldn't be considered conflicts
-    const defaultIgnoredFiles = ["desktop.ini"];
+    const defaultIgnoredFiles = ['desktop.ini'];
 
     // Patterns to ignore (regex patterns)
     const defaultIgnoredPatterns = [/^readme\./i];
@@ -100,7 +100,7 @@ class ModConflictDetector {
 
         try {
           // Notify progress caller which mod is being analyzed
-          if (typeof onProgress === "function") {
+          if (typeof onProgress === 'function') {
             try {
               onProgress(mod.name, mod);
             } catch (_e) {
@@ -112,7 +112,7 @@ class ModConflictDetector {
 
           for (const file of files) {
             // Skip if the path has no extension (likely a directory)
-            if (!file.includes(".")) continue;
+            if (!file.includes('.')) continue;
 
             // Skip ignored files
             if (this.isFileIgnored(file)) continue;
@@ -204,7 +204,7 @@ class ModConflictDetector {
       descriptions.push({
         file: fileName,
         mods: mods,
-        description: `File "${fileName}" is present in multiple mods: ${mods.join(", ")}`,
+        description: `File "${fileName}" is present in multiple mods: ${mods.join(', ')}`,
       });
     });
 
@@ -232,7 +232,7 @@ class ModConflictDetector {
     }
     if (settings.ignoredPatterns) {
       const patterns = settings.ignoredPatterns.map(
-        (pattern) => new RegExp(pattern, "i"),
+        (pattern) => new RegExp(pattern, 'i'),
       );
       this.addIgnoredPatterns(patterns);
     }

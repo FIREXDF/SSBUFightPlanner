@@ -1,8 +1,8 @@
 ---
 name: Feature request
 about: Suggest an idea for FightPlanner
-title: ""
-labels: ""
+title: ''
+labels: ''
 assignees: FIREXDF
 ---
 

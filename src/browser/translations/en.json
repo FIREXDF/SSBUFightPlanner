@@ -8,10 +8,7 @@
   "mods": {
     "title": "Mod List",
     "search": "Search mods...",
-    "filters": {
-      "enabled": "Enabled",
-      "disabled": "Disabled"
-    },
+    "filters": { "enabled": "Enabled", "disabled": "Disabled" },
     "details": {
       "title": "Mod Details",
       "selectToView": "Select a mod to view details",
@@ -99,10 +96,7 @@
       "multiple": "Multiple authors"
     },
     "unknown": "Did not find any information",
-    "description": {
-      "title": "Description",
-      "empty": "No details available"
-    },
+    "description": { "title": "Description", "empty": "No details available" },
     "version": {
       "label": "Version",
       "unknown": "Unknown version",

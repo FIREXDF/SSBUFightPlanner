@@ -11,48 +11,48 @@
 <audio id="audioConflict" src="./sounds/conflict.mp3" type="audio/mpeg"></audio>
 
 <script>
-  const audioPlayer = document.getElementById("audioPlayer");
+  const audioPlayer = document.getElementById('audioPlayer');
 
   // Set initial volume if stored
-  const volume = localStorage.getItem("volume") || 1;
+  const volume = localStorage.getItem('volume') || 1;
   audioFinish.volume = volume;
   audioError.volume = volume;
 
   function playFinish() {
     audioFinish.currentTime = 0; // Reset to start
     audioFinish.play().catch(function (error) {
-      console.error("Error playing audio:", error);
+      console.error('Error playing audio:', error);
     });
   }
 
   function playError() {
     audioError.currentTime = 0; // Reset to start
     audioError.play().catch(function (error) {
-      console.error("Error playing audio:", error);
+      console.error('Error playing audio:', error);
     });
   }
   function playOn() {
     audioOn.currentTime = 0; // Reset to start
     audioOn.play().catch(function (error) {
-      console.error("Error playing audio:", error);
+      console.error('Error playing audio:', error);
     });
   }
   function playOff() {
     audioOff.currentTime = 0; // Reset to start
     audioOff.play().catch(function (error) {
-      console.error("Error playing audio:", error);
+      console.error('Error playing audio:', error);
     });
   }
   function playLoading() {
     audioLoading.currentTime = 0; // Reset to start
     audioLoading.play().catch(function (error) {
-      console.error("Error playing audio:", error);
+      console.error('Error playing audio:', error);
     });
   }
   function playConflict() {
     audioConflict.currentTime = 0; // Reset to start
     audioConflict.play().catch(function (error) {
-      console.error("Error playing audio:", error);
+      console.error('Error playing audio:', error);
     });
   }
 
@@ -89,8 +89,8 @@
     audioOn.volume = volume;
     audioLoading.volume = volume;
     audioConflict.volume = volume;
-    localStorage.setItem("volume", volume);
-    console.log("Volume set to:", volume);
+    localStorage.setItem('volume', volume);
+    console.log('Volume set to:', volume);
     return true;
   }
 </script>

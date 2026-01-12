@@ -1,7 +1,7 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { promises as fs } from 'fs';
+import path from 'path';
 
-import { getHash } from "./hash";
+import { getHash } from './hash';
 
 export class PresetManager {
   workspacePath: string;
@@ -9,22 +9,22 @@ export class PresetManager {
 
   constructor(workspacePath: string) {
     this.workspacePath = workspacePath;
-    this.presetFile = path.join(workspacePath, "presets");
+    this.presetFile = path.join(workspacePath, 'presets');
   }
 
   async init() {
     try {
       await fs.access(this.presetFile);
     } catch {
-      await fs.writeFile(this.presetFile, "[]");
+      await fs.writeFile(this.presetFile, '[]');
     }
   }
 
   async getDisabledMods() {
     try {
-      const content = await fs.readFile(this.presetFile, "utf8");
+      const content = await fs.readFile(this.presetFile, 'utf8');
       const matches = content.match(/\[(.*?)\]/);
-      return matches && matches[1] ? matches[1].split(",").filter(Boolean) : [];
+      return matches && matches[1] ? matches[1].split(',').filter(Boolean) : [];
     } catch {
       return [];
     }
@@ -42,7 +42,7 @@ export class PresetManager {
       ? disabledHashes.filter((hash) => hash !== modHash)
       : [...disabledHashes, modHash];
 
-    await fs.writeFile(this.presetFile, `[${newHashes.join(",")}]`);
+    await fs.writeFile(this.presetFile, `[${newHashes.join(',')}]`);
 
     // Return true if the mod is now enabled
     return isCurrentlyDisabled;

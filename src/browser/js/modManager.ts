@@ -3,7 +3,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.loadMods();
     } catch (error) {
-      console.error("Failed to load mods:", error);
+      console.error('Failed to load mods:', error);
       throw error;
     }
   }
@@ -12,7 +12,7 @@ export class ModManager {
     try {
       // Validate file path
       if (!filePath) {
-        throw new Error("Invalid file path");
+        throw new Error('Invalid file path');
       }
 
       // Call the API method to install the mod
@@ -25,7 +25,7 @@ export class ModManager {
 
       return result;
     } catch (error) {
-      console.error("Mod installation error:", error);
+      console.error('Mod installation error:', error);
       throw error;
     }
   }
@@ -34,7 +34,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.uninstall(modId);
     } catch (error) {
-      console.error("Failed to uninstall mod:", error);
+      console.error('Failed to uninstall mod:', error);
       throw error;
     }
   }
@@ -43,7 +43,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.openModFolder(modId);
     } catch (error) {
-      console.error("Failed to open mod folder:", error);
+      console.error('Failed to open mod folder:', error);
       throw error;
     }
   }
@@ -52,7 +52,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.openModsFolder();
     } catch (error) {
-      console.error("Failed to open mods folder:", error);
+      console.error('Failed to open mods folder:', error);
       throw error;
     }
   }
@@ -61,7 +61,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.toggle(modId);
     } catch (error) {
-      console.error("Failed to toggle mod:", error);
+      console.error('Failed to toggle mod:', error);
       throw error;
     }
   }
@@ -70,7 +70,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.enableAllMods();
     } catch (error) {
-      console.error("Failed to enable all mods:", error);
+      console.error('Failed to enable all mods:', error);
       throw error;
     }
   }
@@ -79,7 +79,7 @@ export class ModManager {
     try {
       return await window.api.modOperations.disableAllMods();
     } catch (error) {
-      console.error("Failed to disable all mods:", error);
+      console.error('Failed to disable all mods:', error);
       throw error;
     }
   }
@@ -88,21 +88,21 @@ export class ModManager {
     try {
       return await window.api.modOperations.renameMod(modId, newName);
     } catch (error) {
-      console.error("Failed to rename mod:", error);
+      console.error('Failed to rename mod:', error);
       throw error;
     }
   }
 
   async getMod(modId: string) {
-    console.log("Getting mod with ID:", modId);
+    console.log('Getting mod with ID:', modId);
     try {
       const mods = await this.loadMods();
-      console.log("All mods:", mods);
+      console.log('All mods:', mods);
       const mod = mods.find((m) => m.id === modId);
-      console.log("Found mod:", mod);
+      console.log('Found mod:', mod);
       return mod;
     } catch (error) {
-      console.error("Error getting mod:", error);
+      console.error('Error getting mod:', error);
       throw error;
     }
   }

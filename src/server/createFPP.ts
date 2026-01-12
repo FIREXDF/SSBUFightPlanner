@@ -1,8 +1,8 @@
-import path from "path";
-import { promises as fs } from "fs";
-import fse from "fs-extra";
-import AdmZip from "adm-zip";
-import os from "os";
+import path from 'path';
+import { promises as fs } from 'fs';
+import fse from 'fs-extra';
+import AdmZip from 'adm-zip';
+import os from 'os';
 
 interface CreateFPPOptions {
   name: string;
@@ -24,7 +24,7 @@ async function createFPP({
   // Create temp directory for package
   const tempDir = path.join(os.tmpdir(), `fpp-${Date.now()}`);
   await fs.mkdir(tempDir, { recursive: true });
-  await fs.mkdir(path.join(tempDir, "data"), { recursive: true });
+  await fs.mkdir(path.join(tempDir, 'data'), { recursive: true });
 
   // Create manifest
   const manifest = {
@@ -38,7 +38,7 @@ async function createFPP({
   try {
     // Copy mods
     if (mods?.length > 0) {
-      const modsDir = path.join(tempDir, "data", "mods");
+      const modsDir = path.join(tempDir, 'data', 'mods');
       await fs.mkdir(modsDir, { recursive: true });
 
       for (const modId of mods) {
@@ -52,7 +52,7 @@ async function createFPP({
 
     // Copy plugins
     if (plugins?.length > 0) {
-      const pluginsDir = path.join(tempDir, "data", "plugins");
+      const pluginsDir = path.join(tempDir, 'data', 'plugins');
       await fs.mkdir(pluginsDir, { recursive: true });
 
       for (const pluginId of plugins) {
@@ -66,7 +66,7 @@ async function createFPP({
 
     // Write manifest
     await fs.writeFile(
-      path.join(tempDir, "manifest.json"),
+      path.join(tempDir, 'manifest.json'),
       JSON.stringify(manifest, null, 2),
     );
 
@@ -79,7 +79,7 @@ async function createFPP({
     for (const filePath of allFiles) {
       const relative = path.relative(tempDir, filePath);
       if ((await fs.stat(filePath)).isDirectory()) {
-        zip.addFile(relative + "/", Buffer.alloc(0));
+        zip.addFile(relative + '/', Buffer.alloc(0));
       } else {
         zip.addLocalFile(filePath, path.dirname(relative));
       }

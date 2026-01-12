@@ -1,4 +1,4 @@
-import * as crc32 from "crc-32";
+import * as crc32 from 'crc-32';
 
 function hash40(text: string): string {
   const lengthShifted = BigInt(text.length) << BigInt(32);

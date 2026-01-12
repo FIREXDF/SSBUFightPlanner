@@ -1,16 +1,9 @@
 {
-  "nav": {
-    "mods": "模組",
-    "plugins": "插件",
-    "settings": "設定"
-  },
+  "nav": { "mods": "模組", "plugins": "插件", "settings": "設定" },
   "mods": {
     "title": "模組清單",
     "search": "搜尋模組...",
-    "filters": {
-      "enabled": "已啟用",
-      "disabled": "已停用"
-    },
+    "filters": { "enabled": "已啟用", "disabled": "已停用" },
     "details": {
       "title": "模組屬性",
       "selectToView": "選擇一個項目查看屬性",
@@ -36,19 +29,11 @@
   "plugins": {
     "title": "插件清單",
     "noPlugin": "找不到插件",
-    "actions": {
-      "install": "安裝插件",
-      "openFolder": "開啟插件資料夾"
-    }
+    "actions": { "install": "安裝插件", "openFolder": "開啟插件資料夾" }
   },
   "settings": {
     "discordRpc": "Discord 動態",
-    "setup": {
-      "title": "test",
-      "directory": {
-        "title": "test"
-      }
-    },
+    "setup": { "title": "test", "directory": { "title": "test" } },
     "paths": {
       "title": "設定",
       "modsDir": "模組 Directory",
@@ -102,9 +87,7 @@
       "unknown": "未知作者",
       "multiple": "多人團隊"
     },
-    "description": {
-      "title": "說明"
-    },
+    "description": { "title": "說明" },
     "version": {
       "label": "版本",
       "unknown": "未知版本",

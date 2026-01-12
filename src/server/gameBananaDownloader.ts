@@ -1,11 +1,11 @@
-import axios from "axios";
-import * as fs from "fs";
-import * as fse from "fs-extra";
-import * as path from "path";
-import * as child_process from "child_process";
-import Seven from "node-7z";
+import axios from 'axios';
+import * as fs from 'fs';
+import * as fse from 'fs-extra';
+import * as path from 'path';
+import * as child_process from 'child_process';
+import Seven from 'node-7z';
 
-import { app } from "electron";
+import { app } from 'electron';
 
 export interface LoadingCallbacks {
   onStart?: (status: string, modName?: string) => void;
@@ -57,11 +57,11 @@ export class GameBananaDownloader {
       this.isCleaningUp = true;
       if (this.tempFolder && fs.existsSync(this.tempFolder)) {
         await fse.remove(this.tempFolder);
-        console.log("Cleaned up temporary files after cancellation");
+        console.log('Cleaned up temporary files after cancellation');
       }
       this.isCleaningUp = false;
     } catch (error) {
-      console.error("Error during download cancellation:", error);
+      console.error('Error during download cancellation:', error);
       throw error;
     }
   }
@@ -77,11 +77,11 @@ export class GameBananaDownloader {
     for (const pattern of patterns) {
       const match = downloadLink.match(pattern);
       if (match) {
-        return [match[1], match[2] || ""];
+        return [match[1], match[2] || ''];
       }
     }
 
-    throw new Error("Invalid download link");
+    throw new Error('Invalid download link');
   }
 
   async downloadMod(downloadLink) {
@@ -92,24 +92,24 @@ export class GameBananaDownloader {
       this.isCancelled = false;
 
       const [modId, fileId] = GameBananaDownloader.extractModAndFileId(
-        typeof downloadLink === "string"
+        typeof downloadLink === 'string'
           ? downloadLink
           : downloadLink.downloadLink,
       );
       modName = await this.getModNameFromApi(modId); // Assign to outer variable
 
-      this.loadingCallbacks.onStart("Starting download...", modName);
+      this.loadingCallbacks.onStart('Starting download...', modName);
 
       // If cancelled early, handle it
       if (this.isCancelled) {
-        this.loadingCallbacks.onFinish("Download cancelled", modName);
+        this.loadingCallbacks.onFinish('Download cancelled', modName);
         return { cancelled: true, modName };
       }
 
-      this.loadingCallbacks.onProgress("Getting mod information...");
+      this.loadingCallbacks.onProgress('Getting mod information...');
 
       const filename = await this.getFilenameFromApi(modId, fileId);
-      this.loadingCallbacks.onProgress("Downloading mod files...");
+      this.loadingCallbacks.onProgress('Downloading mod files...');
 
       const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
 
@@ -120,16 +120,16 @@ export class GameBananaDownloader {
       const tempArchivePath = path.join(this.tempFolder, filename);
       await this.downloadFileWithProgress(downloadUrl, tempArchivePath);
 
-      this.loadingCallbacks.onProgress("Extracting files...");
+      this.loadingCallbacks.onProgress('Extracting files...');
       // Extract to temp folder
       await this.extractFile(tempArchivePath, this.tempFolder);
 
       // Clean up archive files right after extraction
       const archiveFiles = fs.readdirSync(this.tempFolder).filter((f) => {
         const ext = path.extname(f).toLowerCase();
-        return [".7z", ".rar", ".zip"].includes(ext);
+        return ['.7z', '.rar', '.zip'].includes(ext);
       });
-      this.loadingCallbacks.onProgress("Cleaning temporary files...");
+      this.loadingCallbacks.onProgress('Cleaning temporary files...');
       // Remove all archive files
       for (const file of archiveFiles) {
         fs.unlinkSync(path.join(this.tempFolder, file));
@@ -145,17 +145,17 @@ export class GameBananaDownloader {
             fs.statSync(path.join(this.tempFolder, f)).isDirectory(),
         );
 
-      console.log("Extracted folders:", extractedContents);
+      console.log('Extracted folders:', extractedContents);
 
       if (extractedContents.length === 0) {
         console.error(
-          "Extraction error: No folder found after extraction. Try to install it manually.",
+          'Extraction error: No folder found after extraction. Try to install it manually.',
         );
         console.error(
-          "Contents of temp folder:",
+          'Contents of temp folder:',
           fs.readdirSync(this.tempFolder),
         );
-        throw new Error("No folder found after extraction");
+        throw new Error('No folder found after extraction');
       }
 
       // Rechercher d'abord un fichier .fpt dans tous les sous-dossiers
@@ -166,7 +166,7 @@ export class GameBananaDownloader {
           if (fs.statSync(fullPath).isDirectory()) {
             const fptInSubdir = findFptFile(fullPath);
             if (fptInSubdir) return fptInSubdir;
-          } else if (item === ".fpt") {
+          } else if (item === '.fpt') {
             return fullPath;
           }
         }
@@ -178,7 +178,7 @@ export class GameBananaDownloader {
       for (const folder of extractedContents) {
         const fptPath = findFptFile(path.join(this.tempFolder, folder));
         if (fptPath) {
-          console.log("Found .fpt file at:", fptPath);
+          console.log('Found .fpt file at:', fptPath);
           await this.organizeFptStructure(this.tempFolder);
           fptFound = true;
           break;
@@ -187,38 +187,38 @@ export class GameBananaDownloader {
 
       // Si aucun .fpt trouvé, utiliser la méthode standard
       if (!fptFound) {
-        console.log("No .fpt file found, using standard folder structure");
+        console.log('No .fpt file found, using standard folder structure');
         // Check if required folders and files are in the root
         const requiredFolders = [
-          "append",
-          "assist",
-          "boss",
-          "camera",
-          "campaign",
-          "common",
-          "effect",
-          "enemy",
-          "fighter",
-          "finalsmash",
-          "item",
-          "miihat",
-          "pokemon",
-          "prebuilt;",
-          "render",
-          "snapshot",
-          "sound",
-          "spirits",
-          "stage",
-          "standard",
-          "stream;",
-          "ui",
+          'append',
+          'assist',
+          'boss',
+          'camera',
+          'campaign',
+          'common',
+          'effect',
+          'enemy',
+          'fighter',
+          'finalsmash',
+          'item',
+          'miihat',
+          'pokemon',
+          'prebuilt;',
+          'render',
+          'snapshot',
+          'sound',
+          'spirits',
+          'stage',
+          'standard',
+          'stream;',
+          'ui',
         ];
         const requiredFiles = [
-          "preview.webp",
-          "config.json",
-          "info.toml",
-          "victory.toml",
-          "Preview.webp",
+          'preview.webp',
+          'config.json',
+          'info.toml',
+          'victory.toml',
+          'Preview.webp',
         ];
         const missingFolders = requiredFolders.filter(
           (folder) => !extractedContents.includes(folder),
@@ -233,8 +233,8 @@ export class GameBananaDownloader {
         );
 
         if (missingFolders.length > 0 || missingFiles.length > 0) {
-          console.log("Missing folders in root:", missingFolders);
-          console.log("Missing files in root:", missingFiles);
+          console.log('Missing folders in root:', missingFolders);
+          console.log('Missing files in root:', missingFiles);
 
           // Recursively scan subfolders
           const findAndMoveItems = (currentPath) => {
@@ -265,7 +265,7 @@ export class GameBananaDownloader {
                     fs.renameSync(fullPath, destinationPath);
                     console.log(`Moved file ${item} to root`);
                   }
-                } else if (item.toLowerCase().endsWith(".nro")) {
+                } else if (item.toLowerCase().endsWith('.nro')) {
                   // Move .nro files to temp root
                   const destinationPath = path.join(this.tempFolder, item);
                   if (!fs.existsSync(destinationPath)) {
@@ -294,8 +294,8 @@ export class GameBananaDownloader {
       const modVersion = await this.getModVersionFromApi(modId);
 
       // Handle info.toml and preview.webp while in temp folder
-      const tempInfoPath = path.join(this.tempFolder, "info.toml");
-      const tempPreviewPath = path.join(this.tempFolder, "preview.webp");
+      const tempInfoPath = path.join(this.tempFolder, 'info.toml');
+      const tempPreviewPath = path.join(this.tempFolder, 'preview.webp');
 
       // Handle preview.webp download if needed
       if (!fs.existsSync(tempPreviewPath)) {
@@ -304,28 +304,28 @@ export class GameBananaDownloader {
 
       // Handle info.toml url, author, category and version addition
       if (fs.existsSync(tempInfoPath)) {
-        let existingContent = fs.readFileSync(tempInfoPath, "utf-8");
+        let existingContent = fs.readFileSync(tempInfoPath, 'utf-8');
         // Supprime toutes les lignes qui commencent par la clé (avec ou sans espaces)
         const removeKey = (content, key) =>
           content
-            .split("\n")
+            .split('\n')
             .filter(
               (line) =>
                 !line
                   .trim()
                   .toLowerCase()
-                  .startsWith(key + "=") &&
+                  .startsWith(key + '=') &&
                 !line
                   .trim()
                   .toLowerCase()
-                  .startsWith(key + " ="),
+                  .startsWith(key + ' ='),
             )
-            .join("\n");
+            .join('\n');
 
-        existingContent = removeKey(existingContent, "url");
-        existingContent = removeKey(existingContent, "authors");
-        existingContent = removeKey(existingContent, "category");
-        existingContent = removeKey(existingContent, "version");
+        existingContent = removeKey(existingContent, 'url');
+        existingContent = removeKey(existingContent, 'authors');
+        existingContent = removeKey(existingContent, 'category');
+        existingContent = removeKey(existingContent, 'version');
 
         // Ajoute les nouvelles valeurs à la fin
         existingContent += `\nurl = "${modProfileUrl}"\n`;
@@ -333,16 +333,16 @@ export class GameBananaDownloader {
         existingContent += `category = "${modCategory}"\n`;
         existingContent += `version = "${modVersion}"\n`;
 
-        fs.writeFileSync(tempInfoPath, existingContent.trim() + "\n");
+        fs.writeFileSync(tempInfoPath, existingContent.trim() + '\n');
         console.log(
-          "Updated existing info.toml with URL, author, category and version",
+          'Updated existing info.toml with URL, author, category and version',
         );
       }
 
       // Check for cancellation before finalizing
       if (this.isCancelled) {
         await this.cleanup();
-        this.loadingCallbacks.onFinish("Download cancelled", modName);
+        this.loadingCallbacks.onFinish('Download cancelled', modName);
         return { cancelled: true, modName };
       }
 
@@ -353,7 +353,7 @@ export class GameBananaDownloader {
       // Move all extracted folders to final destination
       for (const folder of extractedContents) {
         const extractedPath = path.join(this.tempFolder, folder);
-        const finalFolderName = folder.replace(/\.+$/, ""); // Enlève les points finaux
+        const finalFolderName = folder.replace(/\.+$/, ''); // Enlève les points finaux
         const finalPath = path.join(finalArchivePath, finalFolderName);
 
         if (fs.existsSync(finalPath)) {
@@ -383,16 +383,16 @@ export class GameBananaDownloader {
       if (finalContents.length === 0) {
         fs.rmSync(finalArchivePath, { recursive: true });
         throw new Error(
-          "Installation failed: Mod folder was empty after processing",
+          'Installation failed: Mod folder was empty after processing',
         );
       }
 
       // Clean up temp folder - Add timeout and proper status updates
-      this.loadingCallbacks.onProgress("Cleaning temporary files...", 95);
+      this.loadingCallbacks.onProgress('Cleaning temporary files...', 95);
       await new Promise<void>((resolve) => {
         setTimeout(async () => {
           await fse.remove(this.tempFolder);
-          this.loadingCallbacks.onProgress("Finalizing...", 100);
+          this.loadingCallbacks.onProgress('Finalizing...', 100);
 
           resolve();
         }, 500);
@@ -400,7 +400,7 @@ export class GameBananaDownloader {
 
       // Notify completion properly
       this.loadingCallbacks.onFinish(
-        "Download completed successfully",
+        'Download completed successfully',
         modName,
       );
 
@@ -410,23 +410,23 @@ export class GameBananaDownloader {
         await this.cleanup();
         // Now modName is available here
         this.loadingCallbacks.onFinish(
-          "Download cancelled",
-          modName || "Unknown Mod",
+          'Download cancelled',
+          modName || 'Unknown Mod',
         );
-        return { cancelled: true, modName: modName || "Unknown Mod" };
+        return { cancelled: true, modName: modName || 'Unknown Mod' };
       }
       this.loadingCallbacks.onError(`Download failed: ${error.message}`);
-      console.error("Mod download error:", error);
+      console.error('Mod download error:', error);
       throw error;
     } finally {
       if (this.tempFolder) {
         try {
           if (fs.existsSync(this.tempFolder)) {
             await fse.remove(this.tempFolder);
-            console.log("Cleaned up temporary folder in finally block");
+            console.log('Cleaned up temporary folder in finally block');
           }
         } catch (cleanupError) {
-          console.error("Error during cleanup:", cleanupError);
+          console.error('Error during cleanup:', cleanupError);
         }
       }
     }
@@ -440,9 +440,9 @@ export class GameBananaDownloader {
     while (attempt <= retries) {
       try {
         const response = await axios({
-          method: "get",
+          method: 'get',
           url: url,
-          responseType: "stream",
+          responseType: 'stream',
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
         });
@@ -452,19 +452,19 @@ export class GameBananaDownloader {
         return new Promise((resolve, reject) => {
           response.data.pipe(writer);
 
-          writer.on("finish", () => {
+          writer.on('finish', () => {
             writer.close();
 
             // Verify file size
             const stats = fs.statSync(destPath);
             if (stats.size === 0) {
-              reject(new Error("Downloaded file is empty"));
+              reject(new Error('Downloaded file is empty'));
             }
 
             resolve(destPath);
           });
 
-          writer.on("error", reject);
+          writer.on('error', reject);
         });
       } catch (error) {
         attempt++;
@@ -491,31 +491,29 @@ export class GameBananaDownloader {
     while (attempt < retries) {
       try {
         const response = await axios({
-          method: "get",
+          method: 'get',
           url: url,
-          responseType: "stream",
+          responseType: 'stream',
           headers:
             this.downloadedChunks.size > 0
-              ? {
-                  Range: `bytes=${this.lastDownloadedBytes}-`,
-                }
+              ? { Range: `bytes=${this.lastDownloadedBytes}-` }
               : {},
         });
 
-        const totalLength = response.headers["content-length"];
+        const totalLength = response.headers['content-length'];
         let downloadedLength = this.lastDownloadedBytes;
 
         return await new Promise((resolve, reject) => {
           const writer = fs.createWriteStream(destPath, {
-            flags: this.downloadedChunks.size > 0 ? "a" : "w",
+            flags: this.downloadedChunks.size > 0 ? 'a' : 'w',
           });
           this.currentWriter = writer;
 
-          response.data.on("data", (chunk) => {
+          response.data.on('data', (chunk) => {
             if (this.isCancelled) {
               response.data.destroy();
               writer.end();
-              reject(new Error("Download cancelled"));
+              reject(new Error('Download cancelled'));
               return;
             }
 
@@ -528,13 +526,13 @@ export class GameBananaDownloader {
 
             downloadedLength += chunk.length;
             const progress = Math.round((downloadedLength / totalLength) * 100);
-            this.loadingCallbacks.onProgress("Downloading...", progress);
+            this.loadingCallbacks.onProgress('Downloading...', progress);
           });
 
           response.data.pipe(writer);
 
-          writer.on("finish", resolve);
-          writer.on("error", reject);
+          writer.on('finish', resolve);
+          writer.on('error', reject);
         });
       } catch (error) {
         attempt++;
@@ -564,34 +562,34 @@ export class GameBananaDownloader {
 
           console.log(`Downloading image from: ${imageUrl}`);
           const imgResponse = await axios({
-            method: "get",
+            method: 'get',
             url: imageUrl,
-            responseType: "stream",
+            responseType: 'stream',
           });
 
           const writer = fs.createWriteStream(tempImageDestPath);
           imgResponse.data.pipe(writer);
 
           return new Promise<void>((resolve, reject) => {
-            writer.on("finish", () => {
+            writer.on('finish', () => {
               writer.close();
 
               // Move and rename the image to preview.webp in the mod folder
-              const finalImageDestPath = path.join(modFolder, "preview.webp");
+              const finalImageDestPath = path.join(modFolder, 'preview.webp');
               fs.renameSync(tempImageDestPath, finalImageDestPath);
 
               console.log(`Image downloaded and moved as preview.webp`);
               resolve();
             });
 
-            writer.on("error", reject);
+            writer.on('error', reject);
           });
         } else {
-          console.log("No image found for the mod.");
+          console.log('No image found for the mod.');
         }
       }
     } catch (error) {
-      console.error("Image download error:", error);
+      console.error('Image download error:', error);
     }
   }
 
@@ -599,7 +597,7 @@ export class GameBananaDownloader {
     try {
       const ext = path.extname(filePath).toLowerCase();
 
-      if ([".rar", ".7z", ".zip"].includes(ext)) {
+      if (['.rar', '.7z', '.zip'].includes(ext)) {
         return this.extractWith7Zip(filePath, extractTo);
       } else {
         return this.extractWithTar(filePath, extractTo);
@@ -616,13 +614,13 @@ export class GameBananaDownloader {
         `tar -xf "${filePath}" -C "${extractTo}"`,
         async (error) => {
           if (error) {
-            console.error("Tar extraction error:", error);
+            console.error('Tar extraction error:', error);
             reject(error);
             return;
           }
 
           if (!this.verifyExtraction(extractTo)) {
-            reject(new Error("No files found after extraction"));
+            reject(new Error('No files found after extraction'));
             return;
           }
 
@@ -637,29 +635,29 @@ export class GameBananaDownloader {
     return new Promise<void>((resolve, reject) => {
       const sevenZipPath = path.join(
         app.getAppPath(),
-        "src",
-        "resources",
-        "bin",
-        process.platform === "win32" ? "7z.exe" : "7z",
+        'src',
+        'resources',
+        'bin',
+        process.platform === 'win32' ? '7z.exe' : '7z',
       );
 
-      console.log("Using 7-Zip from:", sevenZipPath);
+      console.log('Using 7-Zip from:', sevenZipPath);
 
       const seven = Seven.extractFull(filePath, extractTo, {
         $progress: false,
         $bin: sevenZipPath,
       });
 
-      seven.on("end", () => {
+      seven.on('end', () => {
         if (!this.verifyExtraction(extractTo)) {
-          reject(new Error("No files found after extraction"));
+          reject(new Error('No files found after extraction'));
           return;
         }
 
         resolve();
       });
 
-      seven.on("error", (err) => {
+      seven.on('error', (err) => {
         console.error(`7-Zip extraction failed: ${err}`);
         reject(err);
       });
@@ -673,7 +671,7 @@ export class GameBananaDownloader {
         const items = fs.readdirSync(dir);
 
         const fptFile = items.find(
-          (item) => item === ".fpt" || item === "tree_structure.fpt",
+          (item) => item === '.fpt' || item === 'tree_structure.fpt',
         );
 
         if (fptFile) {
@@ -696,20 +694,20 @@ export class GameBananaDownloader {
       return result;
     };
 
-    console.log("Searching for FPT file in:", extractTo);
+    console.log('Searching for FPT file in:', extractTo);
     const fptPath = findFptFile(extractTo);
 
     if (!fptPath) {
-      console.log("No .fpt or tree_structure.fpt file found in any directory");
+      console.log('No .fpt or tree_structure.fpt file found in any directory');
       return;
     }
 
     try {
-      console.log("Found FPT file at:", fptPath);
-      const fptContent = fs.readFileSync(fptPath, "utf-8");
+      console.log('Found FPT file at:', fptPath);
+      const fptContent = fs.readFileSync(fptPath, 'utf-8');
 
       const parseIndentedStructure = (content) => {
-        const lines = content.split("\n");
+        const lines = content.split('\n');
         const structure = new Map();
         let currentPath = [];
         let lastIndentLevel = 0;
@@ -726,10 +724,10 @@ export class GameBananaDownloader {
             currentPath = currentPath.slice(0, -1);
           }
 
-          if (item.endsWith("/")) {
+          if (item.endsWith('/')) {
             currentPath.push(item);
           } else {
-            const fullPath = [...currentPath, item].join("");
+            const fullPath = [...currentPath, item].join('');
             structure.set(path.basename(item), fullPath);
           }
 
@@ -741,18 +739,18 @@ export class GameBananaDownloader {
 
       const fileStructure = parseIndentedStructure(fptContent);
 
-      console.log("Creating directory structure...");
+      console.log('Creating directory structure...');
       const allPaths = Array.from(fileStructure.values());
       const directories = new Set<string>();
 
       allPaths.forEach((filePath) => {
         const dir = path.dirname(filePath);
-        const parts = dir.split("/");
-        let currentPath = "";
+        const parts = dir.split('/');
+        let currentPath = '';
 
         for (const part of parts) {
           if (part) {
-            currentPath += part + "/";
+            currentPath += part + '/';
             directories.add(path.join(extractTo, currentPath));
           }
         }
@@ -765,9 +763,9 @@ export class GameBananaDownloader {
         }
       }
 
-      console.log("Moving files to their destinations...");
+      console.log('Moving files to their destinations...');
       const currentFiles = new Map();
-      this.mapFiles(extractTo, "", currentFiles);
+      this.mapFiles(extractTo, '', currentFiles);
 
       for (const [fileName, targetRelativePath] of fileStructure) {
         const sourcePath = currentFiles.get(fileName);
@@ -787,9 +785,9 @@ export class GameBananaDownloader {
       }
 
       fs.unlinkSync(fptPath);
-      console.log("File organization completed according to .fpt structure");
+      console.log('File organization completed according to .fpt structure');
     } catch (error) {
-      console.error("Error organizing files according to .fpt:", error);
+      console.error('Error organizing files according to .fpt:', error);
       throw error;
     }
   }
@@ -817,10 +815,10 @@ export class GameBananaDownloader {
         );
       });
 
-      console.log("Extracted contents:", contents);
+      console.log('Extracted contents:', contents);
       return contents.length > 0;
     } catch (error) {
-      console.error("Verification error:", error);
+      console.error('Verification error:', error);
       return false;
     }
   }
@@ -836,7 +834,7 @@ export class GameBananaDownloader {
         : files[0];
 
       if (!fileInfo) {
-        throw new Error("Filename not found");
+        throw new Error('Filename not found');
       }
 
       // Sanitize filename and ensure correct extension
@@ -847,36 +845,36 @@ export class GameBananaDownloader {
       // Ensure correct extension
       const ext = path.extname(filename);
       if (!ext) {
-        filename += ".zip";
+        filename += '.zip';
       }
 
       return filename;
     } catch (error) {
-      console.error("Filename retrieval error:", error);
+      console.error('Filename retrieval error:', error);
       // Fallback filename
       return `mod_${modId}.zip`;
     }
   }
 
   sanitizeFilename(filename) {
-    console.log("Sanitizing filename:", filename);
+    console.log('Sanitizing filename:', filename);
     return filename
-      .replace(/[/\\?%*:|"<>]/g, " ") // Replace special chars with dash
-      .replace(/\s+/g, " ") // Replace spaces with underscore
-      .replace(/\|/g, " ") // Replace pipe with dash
-      .replace(/--+/g, " ") // Replace multiple dashes with single dash
-      .replace(/^-+|-+$/g, " ") // Remove dashes from start and end
+      .replace(/[/\\?%*:|"<>]/g, ' ') // Replace special chars with dash
+      .replace(/\s+/g, ' ') // Replace spaces with underscore
+      .replace(/\|/g, ' ') // Replace pipe with dash
+      .replace(/--+/g, ' ') // Replace multiple dashes with single dash
+      .replace(/^-+|-+$/g, ' ') // Remove dashes from start and end
       .trim();
   }
 
   sanitizePath(pathName) {
-    console.log("Sanitizing path:", pathName);
+    console.log('Sanitizing path:', pathName);
     return pathName
-      .replace(/[/\\?%*:|"<>]/g, " ") // Replace special chars with dash
-      .replace(/\s*\|\s*/g, " ") // Replace pipe with dash, including surrounding spaces
-      .replace(/\s+/g, " ") // Replace spaces with underscore
-      .replace(/--+/g, " ") // Replace multiple dashes with single dash
-      .replace(/^-+|-+$/g, " ") // Remove dashes from start and end
+      .replace(/[/\\?%*:|"<>]/g, ' ') // Replace special chars with dash
+      .replace(/\s*\|\s*/g, ' ') // Replace pipe with dash, including surrounding spaces
+      .replace(/\s+/g, ' ') // Replace spaces with underscore
+      .replace(/--+/g, ' ') // Replace multiple dashes with single dash
+      .replace(/^-+|-+$/g, ' ') // Remove dashes from start and end
       .trim();
   }
 
@@ -884,9 +882,9 @@ export class GameBananaDownloader {
     if (this.tempFolder && fs.existsSync(this.tempFolder)) {
       try {
         await fse.remove(this.tempFolder);
-        console.log("Cleaned up temporary folder");
+        console.log('Cleaned up temporary folder');
       } catch (error) {
-        console.error("Error cleaning up:", error);
+        console.error('Error cleaning up:', error);
       }
     }
   }
@@ -918,10 +916,10 @@ export class GameBananaDownloader {
       const response = await axios.get(apiUrl);
       let modName = response.data._sName || `mod_${modId}`;
       // Supprime le point final si présent (ex: "PS5 R.O.B." -> "PS5 R.O.B")
-      modName = modName.replace(/\.$/, "");
+      modName = modName.replace(/\.$/, '');
       return this.sanitizePath(modName);
     } catch (error) {
-      console.error("Mod name retrieval error:", error);
+      console.error('Mod name retrieval error:', error);
       return `mod_${modId}`;
     }
   }
@@ -931,10 +929,10 @@ export class GameBananaDownloader {
     try {
       const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
       const response = await axios.get(apiUrl);
-      return response.data._aSubmitter?._sName || "Unknown Author";
+      return response.data._aSubmitter?._sName || 'Unknown Author';
     } catch (error) {
-      console.error("Author retrieval error:", error);
-      return "Unknown Author";
+      console.error('Author retrieval error:', error);
+      return 'Unknown Author';
     }
   }
 
@@ -944,13 +942,13 @@ export class GameBananaDownloader {
       const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
       const response = await axios.get(apiUrl);
       const category =
-        response.data._aSuperCategory?._sName || "Unknown Category";
+        response.data._aSuperCategory?._sName || 'Unknown Category';
 
       // Convert "Skins" to "Fighter"
-      return category === "Skins" ? "Fighter" : category;
+      return category === 'Skins' ? 'Fighter' : category;
     } catch (error) {
-      console.error("Category retrieval error:", error);
-      return "Unknown Category";
+      console.error('Category retrieval error:', error);
+      return 'Unknown Category';
     }
   }
 
@@ -959,17 +957,17 @@ export class GameBananaDownloader {
     try {
       const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
       const response = await axios.get(apiUrl);
-      const version = response.data._aAdditionalInfo?._sVersion || "";
+      const version = response.data._aAdditionalInfo?._sVersion || '';
 
       // Si la version est vide ou ne contient pas de chiffres, retourner "1.0"
       if (!version || !/\d/.test(version)) {
-        return "1.0";
+        return '1.0';
       }
 
       return version;
     } catch (error) {
-      console.error("Version retrieval error:", error);
-      return "1.0";
+      console.error('Version retrieval error:', error);
+      return '1.0';
     }
   }
 

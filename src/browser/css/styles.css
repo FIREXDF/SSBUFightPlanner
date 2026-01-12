@@ -471,7 +471,7 @@ body.dark-mode {
   }
 
   .search-container::before {
-    content: "🔍";
+    content: '🔍';
     position: absolute;
     left: 10px;
     top: 50%;

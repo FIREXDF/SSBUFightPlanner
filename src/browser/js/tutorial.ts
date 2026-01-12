@@ -1,21 +1,17 @@
 export class Tutorial {
-  steps: {
-    element: string;
-    title: string;
-    content: string;
-  }[];
+  steps: { element: string; title: string; content: string }[];
 
   constructor() {
     this.steps = [
       {
-        element: "#modList",
-        title: "Mod List",
-        content: "This is where your mods will appear",
+        element: '#modList',
+        title: 'Mod List',
+        content: 'This is where your mods will appear',
       },
       {
-        element: "#installMod",
-        title: "Install Mods",
-        content: "Click here to install new mods",
+        element: '#installMod',
+        title: 'Install Mods',
+        content: 'Click here to install new mods',
       },
       // Add more tutorial steps
     ];
@@ -29,6 +25,6 @@ export class Tutorial {
 
   isFirstTime() {
     // Check if this is the first time running the application
-    return !localStorage.getItem("tutorialShown");
+    return !localStorage.getItem('tutorialShown');
   }
 }

@@ -1,7 +1,10 @@
-export type PathData = Record<string, Record<string, {
-      pathsToBeModified: PathDataEntry[];
-      filesToBeModified: PathDataEntry[];
-    }>>;
+export type PathData = Record<
+  string,
+  Record<
+    string,
+    { pathsToBeModified: PathDataEntry[]; filesToBeModified: PathDataEntry[] }
+  >
+>;
 
 export interface PathDataEntry {
   original: string;
@@ -43,7 +46,7 @@ export const SlotScanner = {
 
           _createPathDataEntry(fighterName, slot);
 
-          if (fileOrDirectory.includes(".")) {
+          if (fileOrDirectory.includes('.')) {
             pathData[fighterName][slot].filesToBeModified.push({
               original: fileOrDirectory,
               normalized: normalizedPath,
@@ -64,18 +67,15 @@ export const SlotScanner = {
       });
 
       const currentSlots = Array.from(slots).sort((a, b) => {
-        const numA = parseInt(a.replace("c", ""));
-        const numB = parseInt(b.replace("c", ""));
+        const numA = parseInt(a.replace('c', ''));
+        const numB = parseInt(b.replace('c', ''));
 
         return numA - numB;
       });
 
-      return {
-        pathData,
-        currentSlots,
-      };
+      return { pathData, currentSlots };
     } catch (error) {
-      console.error("Error scanning for slots:", error);
+      console.error('Error scanning for slots:', error);
       throw error;
     }
   },
@@ -89,7 +89,7 @@ export const SlotScanner = {
     let includesFighterSlotFolder = false;
 
     const pathParts = filePath.split(/[/\\]/);
-    const fighterIndex = pathParts.indexOf("fighter");
+    const fighterIndex = pathParts.indexOf('fighter');
     const includesFighterFolder = fighterIndex !== -1;
 
     if (includesFighterFolder && pathParts.length > fighterIndex + 1) {
@@ -125,13 +125,13 @@ export const SlotScanner = {
     const slot = cMatch
       ? cMatch[0].toLowerCase()
       : dotMatch
-        ? "c" + dotMatch[3]
+        ? 'c' + dotMatch[3]
         : null;
 
     const normalizedPath = cMatch
-      ? filePath.replace(cXXMatchRegex, "$1###")
+      ? filePath.replace(cXXMatchRegex, '$1###')
       : dotMatch
-        ? filePath.replace(dotXXMatchRegex, `_$1_${dotMatch[2] || ""}###$4`)
+        ? filePath.replace(dotXXMatchRegex, `_$1_${dotMatch[2] || ''}###$4`)
         : null;
 
     return {

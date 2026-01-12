@@ -6,7 +6,7 @@ export class CharacterScanner {
   characterSlots: Map<string, Set<string>>;
 
   constructor() {
-    const style = document.createElement("style");
+    const style = document.createElement('style');
     style.innerHTML = `
         #characterSearchInput::placeholder {
             color: #888 !important;
@@ -28,615 +28,615 @@ export class CharacterScanner {
     // Update character name mapping to include display name and image path
     this.characterNames = new Map([
       [
-        "mario",
+        'mario',
         [
-          "Mario",
-          "https://www.smashbros.com/assets_v2/img/fighter/mario/main.png",
+          'Mario',
+          'https://www.smashbros.com/assets_v2/img/fighter/mario/main.png',
         ],
       ],
       [
-        "donkey",
+        'donkey',
         [
-          "Donkey Kong",
-          "https://www.smashbros.com/assets_v2/img/fighter/donkey_kong/main.png",
+          'Donkey Kong',
+          'https://www.smashbros.com/assets_v2/img/fighter/donkey_kong/main.png',
         ],
       ],
       [
-        "link",
+        'link',
         [
-          "Link",
-          "https://www.smashbros.com/assets_v2/img/fighter/link/main.png",
+          'Link',
+          'https://www.smashbros.com/assets_v2/img/fighter/link/main.png',
         ],
       ],
       [
-        "samus",
+        'samus',
         [
-          "Samus",
-          "https://www.smashbros.com/assets_v2/img/fighter/samus/main.png",
+          'Samus',
+          'https://www.smashbros.com/assets_v2/img/fighter/samus/main.png',
         ],
       ],
       [
-        "samusd",
+        'samusd',
         [
-          "Dark Samus",
-          "https://www.smashbros.com/assets_v2/img/fighter/dark_samus/main.png",
+          'Dark Samus',
+          'https://www.smashbros.com/assets_v2/img/fighter/dark_samus/main.png',
         ],
       ],
       [
-        "yoshi",
+        'yoshi',
         [
-          "Yoshi",
-          "https://www.smashbros.com/assets_v2/img/fighter/yoshi/main.png",
+          'Yoshi',
+          'https://www.smashbros.com/assets_v2/img/fighter/yoshi/main.png',
         ],
       ],
       [
-        "kirby",
+        'kirby',
         [
-          "Kirby",
-          "https://www.smashbros.com/assets_v2/img/fighter/kirby/main.png",
+          'Kirby',
+          'https://www.smashbros.com/assets_v2/img/fighter/kirby/main.png',
         ],
       ],
       [
-        "fox",
-        ["Fox", "https://www.smashbros.com/assets_v2/img/fighter/fox/main.png"],
+        'fox',
+        ['Fox', 'https://www.smashbros.com/assets_v2/img/fighter/fox/main.png'],
       ],
       [
-        "pikachu",
+        'pikachu',
         [
-          "Pikachu",
-          "https://www.smashbros.com/assets_v2/img/fighter/pikachu/main.png",
+          'Pikachu',
+          'https://www.smashbros.com/assets_v2/img/fighter/pikachu/main.png',
         ],
       ],
       [
-        "luigi",
+        'luigi',
         [
-          "Luigi",
-          "https://www.smashbros.com/assets_v2/img/fighter/luigi/main.png",
+          'Luigi',
+          'https://www.smashbros.com/assets_v2/img/fighter/luigi/main.png',
         ],
       ],
       [
-        "ness",
+        'ness',
         [
-          "Ness",
-          "https://www.smashbros.com/assets_v2/img/fighter/ness/main.png",
+          'Ness',
+          'https://www.smashbros.com/assets_v2/img/fighter/ness/main.png',
         ],
       ],
       [
-        "captain",
+        'captain',
         [
-          "Captain Falcon",
-          "https://www.smashbros.com/assets_v2/img/fighter/captain_falcon/main.png",
+          'Captain Falcon',
+          'https://www.smashbros.com/assets_v2/img/fighter/captain_falcon/main.png',
         ],
       ],
       [
-        "purin",
+        'purin',
         [
-          "Jigglypuff",
-          "https://www.smashbros.com/assets_v2/img/fighter/jigglypuff/main.png",
+          'Jigglypuff',
+          'https://www.smashbros.com/assets_v2/img/fighter/jigglypuff/main.png',
         ],
       ],
       [
-        "peach",
+        'peach',
         [
-          "Peach",
-          "https://www.smashbros.com/assets_v2/img/fighter/peach/main.png",
+          'Peach',
+          'https://www.smashbros.com/assets_v2/img/fighter/peach/main.png',
         ],
       ],
       [
-        "daisy",
+        'daisy',
         [
-          "Daisy",
-          "https://www.smashbros.com/assets_v2/img/fighter/daisy/main.png",
+          'Daisy',
+          'https://www.smashbros.com/assets_v2/img/fighter/daisy/main.png',
         ],
       ],
       [
-        "koopa",
+        'koopa',
         [
-          "Bowser",
-          "https://www.smashbros.com/assets_v2/img/fighter/bowser/main.png",
+          'Bowser',
+          'https://www.smashbros.com/assets_v2/img/fighter/bowser/main.png',
         ],
       ],
       [
-        "sheik",
+        'sheik',
         [
-          "Sheik",
-          "https://www.smashbros.com/assets_v2/img/fighter/sheik/main.png",
+          'Sheik',
+          'https://www.smashbros.com/assets_v2/img/fighter/sheik/main.png',
         ],
       ],
       [
-        "zelda",
+        'zelda',
         [
-          "Zelda",
-          "https://www.smashbros.com/assets_v2/img/fighter/zelda/main.png",
+          'Zelda',
+          'https://www.smashbros.com/assets_v2/img/fighter/zelda/main.png',
         ],
       ],
       [
-        "mariod",
+        'mariod',
         [
-          "Dr. Mario",
-          "https://www.smashbros.com/assets_v2/img/fighter/dr_mario/main.png",
+          'Dr. Mario',
+          'https://www.smashbros.com/assets_v2/img/fighter/dr_mario/main.png',
         ],
       ],
       [
-        "pichu",
+        'pichu',
         [
-          "Pichu",
-          "https://www.smashbros.com/assets_v2/img/fighter/pichu/main.png",
+          'Pichu',
+          'https://www.smashbros.com/assets_v2/img/fighter/pichu/main.png',
         ],
       ],
       [
-        "falco",
+        'falco',
         [
-          "Falco",
-          "https://www.smashbros.com/assets_v2/img/fighter/falco/main.png",
+          'Falco',
+          'https://www.smashbros.com/assets_v2/img/fighter/falco/main.png',
         ],
       ],
       [
-        "marth",
+        'marth',
         [
-          "Marth",
-          "https://www.smashbros.com/assets_v2/img/fighter/marth/main.png",
+          'Marth',
+          'https://www.smashbros.com/assets_v2/img/fighter/marth/main.png',
         ],
       ],
       [
-        "lucina",
+        'lucina',
         [
-          "Lucina",
-          "https://www.smashbros.com/assets_v2/img/fighter/lucina/main.png",
+          'Lucina',
+          'https://www.smashbros.com/assets_v2/img/fighter/lucina/main.png',
         ],
       ],
       [
-        "younglink",
+        'younglink',
         [
-          "Young Link",
-          "https://www.smashbros.com/assets_v2/img/fighter/young_link/main.png",
+          'Young Link',
+          'https://www.smashbros.com/assets_v2/img/fighter/young_link/main.png',
         ],
       ],
       [
-        "ganon",
+        'ganon',
         [
-          "Ganondorf",
-          "https://www.smashbros.com/assets_v2/img/fighter/ganondorf/main.png",
+          'Ganondorf',
+          'https://www.smashbros.com/assets_v2/img/fighter/ganondorf/main.png',
         ],
       ],
       [
-        "mewtwo",
+        'mewtwo',
         [
-          "Mewtwo",
-          "https://www.smashbros.com/assets_v2/img/fighter/mewtwo/main.png",
+          'Mewtwo',
+          'https://www.smashbros.com/assets_v2/img/fighter/mewtwo/main.png',
         ],
       ],
       [
-        "roy",
-        ["Roy", "https://www.smashbros.com/assets_v2/img/fighter/roy/main.png"],
+        'roy',
+        ['Roy', 'https://www.smashbros.com/assets_v2/img/fighter/roy/main.png'],
       ],
       [
-        "chrom",
+        'chrom',
         [
-          "Chrom",
-          "https://www.smashbros.com/assets_v2/img/fighter/chrom/main.png",
+          'Chrom',
+          'https://www.smashbros.com/assets_v2/img/fighter/chrom/main.png',
         ],
       ],
       [
-        "gamewatch",
+        'gamewatch',
         [
-          "Mr. Game & Watch",
-          "https://www.smashbros.com/assets_v2/img/fighter/mr_game_and_watch/main.png",
+          'Mr. Game & Watch',
+          'https://www.smashbros.com/assets_v2/img/fighter/mr_game_and_watch/main.png',
         ],
       ],
       [
-        "metaknight",
+        'metaknight',
         [
-          "Meta Knight",
-          "https://www.smashbros.com/assets_v2/img/fighter/meta_knight/main.png",
+          'Meta Knight',
+          'https://www.smashbros.com/assets_v2/img/fighter/meta_knight/main.png',
         ],
       ],
       [
-        "pit",
-        ["Pit", "https://www.smashbros.com/assets_v2/img/fighter/pit/main.png"],
+        'pit',
+        ['Pit', 'https://www.smashbros.com/assets_v2/img/fighter/pit/main.png'],
       ],
       [
-        "pitb",
+        'pitb',
         [
-          "Dark Pit",
-          "https://www.smashbros.com/assets_v2/img/fighter/dark_pit/main.png",
+          'Dark Pit',
+          'https://www.smashbros.com/assets_v2/img/fighter/dark_pit/main.png',
         ],
       ],
       [
-        "szerosuit",
+        'szerosuit',
         [
-          "Zero Suit Samus",
-          "https://www.smashbros.com/assets_v2/img/fighter/zero_suit_samus/main.png",
+          'Zero Suit Samus',
+          'https://www.smashbros.com/assets_v2/img/fighter/zero_suit_samus/main.png',
         ],
       ],
       [
-        "wario",
+        'wario',
         [
-          "Wario",
-          "https://www.smashbros.com/assets_v2/img/fighter/wario/main.png",
+          'Wario',
+          'https://www.smashbros.com/assets_v2/img/fighter/wario/main.png',
         ],
       ],
       [
-        "snake",
+        'snake',
         [
-          "Snake",
-          "https://www.smashbros.com/assets_v2/img/fighter/snake/main.png",
+          'Snake',
+          'https://www.smashbros.com/assets_v2/img/fighter/snake/main.png',
         ],
       ],
       [
-        "ike",
-        ["Ike", "https://www.smashbros.com/assets_v2/img/fighter/ike/main.png"],
+        'ike',
+        ['Ike', 'https://www.smashbros.com/assets_v2/img/fighter/ike/main.png'],
       ],
       [
-        "pzenigame",
+        'pzenigame',
         [
-          "Pokémon Trainer (Squirtle)",
-          "https://www.smashbros.com/assets_v2/img/fighter/pokemon_trainer/main.png",
+          'Pokémon Trainer (Squirtle)',
+          'https://www.smashbros.com/assets_v2/img/fighter/pokemon_trainer/main.png',
         ],
       ],
       [
-        "pfushigisou",
+        'pfushigisou',
         [
-          "Pokémon Trainer (Ivysaur)",
-          "https://www.smashbros.com/assets_v2/img/fighter/pokemon_trainer/main.png",
+          'Pokémon Trainer (Ivysaur)',
+          'https://www.smashbros.com/assets_v2/img/fighter/pokemon_trainer/main.png',
         ],
       ],
       [
-        "plizardon",
+        'plizardon',
         [
-          "Pokémon Trainer (Charizard)",
-          "https://www.smashbros.com/assets_v2/img/fighter/pokemon_trainer/main.png",
+          'Pokémon Trainer (Charizard)',
+          'https://www.smashbros.com/assets_v2/img/fighter/pokemon_trainer/main.png',
         ],
       ],
       [
-        "diddy",
+        'diddy',
         [
-          "Diddy Kong",
-          "https://www.smashbros.com/assets_v2/img/fighter/diddy_kong/main.png",
+          'Diddy Kong',
+          'https://www.smashbros.com/assets_v2/img/fighter/diddy_kong/main.png',
         ],
       ],
       [
-        "lucas",
+        'lucas',
         [
-          "Lucas",
-          "https://www.smashbros.com/assets_v2/img/fighter/lucas/main.png",
+          'Lucas',
+          'https://www.smashbros.com/assets_v2/img/fighter/lucas/main.png',
         ],
       ],
       [
-        "sonic",
+        'sonic',
         [
-          "Sonic",
-          "https://www.smashbros.com/assets_v2/img/fighter/sonic/main.png",
+          'Sonic',
+          'https://www.smashbros.com/assets_v2/img/fighter/sonic/main.png',
         ],
       ],
       [
-        "dedede",
+        'dedede',
         [
-          "King Dedede",
-          "https://www.smashbros.com/assets_v2/img/fighter/king_dedede/main.png",
+          'King Dedede',
+          'https://www.smashbros.com/assets_v2/img/fighter/king_dedede/main.png',
         ],
       ],
       [
-        "pikmin",
+        'pikmin',
         [
-          "Olimar",
-          "https://www.smashbros.com/assets_v2/img/fighter/olimar/main.png",
+          'Olimar',
+          'https://www.smashbros.com/assets_v2/img/fighter/olimar/main.png',
         ],
       ],
       [
-        "lucario",
+        'lucario',
         [
-          "Lucario",
-          "https://www.smashbros.com/assets_v2/img/fighter/lucario/main.png",
+          'Lucario',
+          'https://www.smashbros.com/assets_v2/img/fighter/lucario/main.png',
         ],
       ],
       [
-        "robot",
+        'robot',
         [
-          "R.O.B.",
-          "https://www.smashbros.com/assets_v2/img/fighter/rob/main.png",
+          'R.O.B.',
+          'https://www.smashbros.com/assets_v2/img/fighter/rob/main.png',
         ],
       ],
       [
-        "toonlink",
+        'toonlink',
         [
-          "Toon Link",
-          "https://www.smashbros.com/assets_v2/img/fighter/toon_link/main.png",
+          'Toon Link',
+          'https://www.smashbros.com/assets_v2/img/fighter/toon_link/main.png',
         ],
       ],
       [
-        "wolf",
+        'wolf',
         [
-          "Wolf",
-          "https://www.smashbros.com/assets_v2/img/fighter/wolf/main.png",
+          'Wolf',
+          'https://www.smashbros.com/assets_v2/img/fighter/wolf/main.png',
         ],
       ],
       [
-        "murabito",
+        'murabito',
         [
-          "Villager",
-          "https://www.smashbros.com/assets_v2/img/fighter/villager/main.png",
+          'Villager',
+          'https://www.smashbros.com/assets_v2/img/fighter/villager/main.png',
         ],
       ],
       [
-        "rockman",
+        'rockman',
         [
-          "Mega Man",
-          "https://www.smashbros.com/assets_v2/img/fighter/mega_man/main.png",
+          'Mega Man',
+          'https://www.smashbros.com/assets_v2/img/fighter/mega_man/main.png',
         ],
       ],
       [
-        "wiifit",
+        'wiifit',
         [
-          "Wii Fit Trainer",
-          "https://www.smashbros.com/assets_v2/img/fighter/wii_fit_trainer/main.png",
+          'Wii Fit Trainer',
+          'https://www.smashbros.com/assets_v2/img/fighter/wii_fit_trainer/main.png',
         ],
       ],
       [
-        "rosetta",
+        'rosetta',
         [
-          "Rosalina & Luma",
-          "https://www.smashbros.com/assets_v2/img/fighter/rosalina_and_luma/main.png",
+          'Rosalina & Luma',
+          'https://www.smashbros.com/assets_v2/img/fighter/rosalina_and_luma/main.png',
         ],
       ],
       [
-        "littlemac",
+        'littlemac',
         [
-          "Little Mac",
-          "https://www.smashbros.com/assets_v2/img/fighter/little_mac/main.png",
+          'Little Mac',
+          'https://www.smashbros.com/assets_v2/img/fighter/little_mac/main.png',
         ],
       ],
       [
-        "gekkouga",
+        'gekkouga',
         [
-          "Greninja",
-          "https://www.smashbros.com/assets_v2/img/fighter/greninja/main.png",
+          'Greninja',
+          'https://www.smashbros.com/assets_v2/img/fighter/greninja/main.png',
         ],
       ],
       [
-        "miifighter",
+        'miifighter',
         [
-          "Mii Brawler",
-          "https://www.smashbros.com/assets_v2/img/fighter/mii_brawler/main.png",
+          'Mii Brawler',
+          'https://www.smashbros.com/assets_v2/img/fighter/mii_brawler/main.png',
         ],
       ],
       [
-        "miiswordsman",
+        'miiswordsman',
         [
-          "Mii Swordfighter",
-          "https://www.smashbros.com/assets_v2/img/fighter/mii_swordfighter/main.png",
+          'Mii Swordfighter',
+          'https://www.smashbros.com/assets_v2/img/fighter/mii_swordfighter/main.png',
         ],
       ],
       [
-        "miigunner",
+        'miigunner',
         [
-          "Mii Gunner",
-          "https://www.smashbros.com/assets_v2/img/fighter/mii_gunner/main.png",
+          'Mii Gunner',
+          'https://www.smashbros.com/assets_v2/img/fighter/mii_gunner/main.png',
         ],
       ],
       [
-        "palutena",
+        'palutena',
         [
-          "Palutena",
-          "https://www.smashbros.com/assets_v2/img/fighter/palutena/main.png",
+          'Palutena',
+          'https://www.smashbros.com/assets_v2/img/fighter/palutena/main.png',
         ],
       ],
       [
-        "pacman",
+        'pacman',
         [
-          "Pac-Man",
-          "https://www.smashbros.com/assets_v2/img/fighter/pac_man/main.png",
+          'Pac-Man',
+          'https://www.smashbros.com/assets_v2/img/fighter/pac_man/main.png',
         ],
       ],
       [
-        "reflet",
+        'reflet',
         [
-          "Robin",
-          "https://www.smashbros.com/assets_v2/img/fighter/robin/main.png",
+          'Robin',
+          'https://www.smashbros.com/assets_v2/img/fighter/robin/main.png',
         ],
       ],
       [
-        "shulk",
+        'shulk',
         [
-          "Shulk",
-          "https://www.smashbros.com/assets_v2/img/fighter/shulk/main.png",
+          'Shulk',
+          'https://www.smashbros.com/assets_v2/img/fighter/shulk/main.png',
         ],
       ],
       [
-        "koopajr",
+        'koopajr',
         [
-          "Bowser Jr.",
-          "https://www.smashbros.com/assets_v2/img/fighter/bowser_jr/main.png",
+          'Bowser Jr.',
+          'https://www.smashbros.com/assets_v2/img/fighter/bowser_jr/main.png',
         ],
       ],
       [
-        "duckhunt",
+        'duckhunt',
         [
-          "Duck Hunt",
-          "https://www.smashbros.com/assets_v2/img/fighter/duck_hunt/main.png",
+          'Duck Hunt',
+          'https://www.smashbros.com/assets_v2/img/fighter/duck_hunt/main.png',
         ],
       ],
       [
-        "ryu",
-        ["Ryu", "https://www.smashbros.com/assets_v2/img/fighter/ryu/main.png"],
+        'ryu',
+        ['Ryu', 'https://www.smashbros.com/assets_v2/img/fighter/ryu/main.png'],
       ],
       [
-        "ken",
-        ["Ken", "https://www.smashbros.com/assets_v2/img/fighter/ken/main.png"],
+        'ken',
+        ['Ken', 'https://www.smashbros.com/assets_v2/img/fighter/ken/main.png'],
       ],
       [
-        "cloud",
+        'cloud',
         [
-          "Cloud",
-          "https://www.smashbros.com/assets_v2/img/fighter/cloud/main.png",
+          'Cloud',
+          'https://www.smashbros.com/assets_v2/img/fighter/cloud/main.png',
         ],
       ],
       [
-        "kamui",
+        'kamui',
         [
-          "Corrin",
-          "https://www.smashbros.com/assets_v2/img/fighter/corrin/main.png",
+          'Corrin',
+          'https://www.smashbros.com/assets_v2/img/fighter/corrin/main.png',
         ],
       ],
       [
-        "bayonetta",
+        'bayonetta',
         [
-          "Bayonetta",
-          "https://www.smashbros.com/assets_v2/img/fighter/bayonetta/main.png",
+          'Bayonetta',
+          'https://www.smashbros.com/assets_v2/img/fighter/bayonetta/main.png',
         ],
       ],
       [
-        "inkling",
+        'inkling',
         [
-          "Inkling",
-          "https://www.smashbros.com/assets_v2/img/fighter/inkling/main.png",
+          'Inkling',
+          'https://www.smashbros.com/assets_v2/img/fighter/inkling/main.png',
         ],
       ],
       [
-        "ridley",
+        'ridley',
         [
-          "Ridley",
-          "https://www.smashbros.com/assets_v2/img/fighter/ridley/main.png",
+          'Ridley',
+          'https://www.smashbros.com/assets_v2/img/fighter/ridley/main.png',
         ],
       ],
       [
-        "simon",
+        'simon',
         [
-          "Simon",
-          "https://www.smashbros.com/assets_v2/img/fighter/simon/main.png",
+          'Simon',
+          'https://www.smashbros.com/assets_v2/img/fighter/simon/main.png',
         ],
       ],
       [
-        "richter",
+        'richter',
         [
-          "Richter",
-          "https://www.smashbros.com/assets_v2/img/fighter/richter/main.png",
+          'Richter',
+          'https://www.smashbros.com/assets_v2/img/fighter/richter/main.png',
         ],
       ],
       [
-        "krool",
+        'krool',
         [
-          "King K. Rool",
-          "https://www.smashbros.com/assets_v2/img/fighter/king_k_rool/main.png",
+          'King K. Rool',
+          'https://www.smashbros.com/assets_v2/img/fighter/king_k_rool/main.png',
         ],
       ],
       [
-        "shizue",
+        'shizue',
         [
-          "Isabelle",
-          "https://www.smashbros.com/assets_v2/img/fighter/isabelle/main.png",
+          'Isabelle',
+          'https://www.smashbros.com/assets_v2/img/fighter/isabelle/main.png',
         ],
       ],
       [
-        "gaogaen",
+        'gaogaen',
         [
-          "Incineroar",
-          "https://www.smashbros.com/assets_v2/img/fighter/incineroar/main.png",
+          'Incineroar',
+          'https://www.smashbros.com/assets_v2/img/fighter/incineroar/main.png',
         ],
       ],
       [
-        "packun",
+        'packun',
         [
-          "Piranha Plant",
-          "https://www.smashbros.com/assets_v2/img/fighter/piranha_plant/main.png",
+          'Piranha Plant',
+          'https://www.smashbros.com/assets_v2/img/fighter/piranha_plant/main.png',
         ],
       ],
       [
-        "jack",
+        'jack',
         [
-          "Joker",
-          "https://www.smashbros.com/assets_v2/img/fighter/joker/main.png",
+          'Joker',
+          'https://www.smashbros.com/assets_v2/img/fighter/joker/main.png',
         ],
       ],
       [
-        "brave",
+        'brave',
         [
-          "Hero",
-          "https://www.smashbros.com/assets_v2/img/fighter/dq_hero/main.png",
+          'Hero',
+          'https://www.smashbros.com/assets_v2/img/fighter/dq_hero/main.png',
         ],
       ],
       [
-        "buddy",
+        'buddy',
         [
-          "Banjo & Kazooie",
-          "https://www.smashbros.com/assets_v2/img/fighter/banjo_and_kazooie/main.png",
+          'Banjo & Kazooie',
+          'https://www.smashbros.com/assets_v2/img/fighter/banjo_and_kazooie/main.png',
         ],
       ],
       [
-        "dolly",
+        'dolly',
         [
-          "Terry",
-          "https://www.smashbros.com/assets_v2/img/fighter/terry/main.png",
+          'Terry',
+          'https://www.smashbros.com/assets_v2/img/fighter/terry/main.png',
         ],
       ],
       [
-        "master",
+        'master',
         [
-          "Byleth",
-          "https://www.smashbros.com/assets_v2/img/fighter/byleth/main.png",
+          'Byleth',
+          'https://www.smashbros.com/assets_v2/img/fighter/byleth/main.png',
         ],
       ],
       [
-        "tantan",
+        'tantan',
         [
-          "Min Min",
-          "https://www.smashbros.com/assets_v2/img/fighter/minmin/main.png",
+          'Min Min',
+          'https://www.smashbros.com/assets_v2/img/fighter/minmin/main.png',
         ],
       ],
       [
-        "pickel",
+        'pickel',
         [
-          "Steve",
-          "https://www.smashbros.com/assets_v2/img/fighter/steve/main.png",
+          'Steve',
+          'https://www.smashbros.com/assets_v2/img/fighter/steve/main.png',
         ],
       ],
       [
-        "edge",
+        'edge',
         [
-          "Sephiroth",
-          "https://www.smashbros.com/assets_v2/img/fighter/sephiroth/main.png",
+          'Sephiroth',
+          'https://www.smashbros.com/assets_v2/img/fighter/sephiroth/main.png',
         ],
       ],
       [
-        "eflame",
+        'eflame',
         [
-          "Pyra",
-          "https://static.wikia.nocookie.net/heros/images/4/48/Art_Pyra_Ultimate.png/revision/latest?cb=20210409204604&path-prefix=fr",
+          'Pyra',
+          'https://static.wikia.nocookie.net/heros/images/4/48/Art_Pyra_Ultimate.png/revision/latest?cb=20210409204604&path-prefix=fr',
         ],
       ],
       [
-        "elight",
+        'elight',
         [
-          "Mythra",
-          "https://static.wikia.nocookie.net/heroes-fr/images/1/12/Art_Mythra_Ultimate.png/revision/latest?cb=20210219142112&path-prefix=fr",
+          'Mythra',
+          'https://static.wikia.nocookie.net/heroes-fr/images/1/12/Art_Mythra_Ultimate.png/revision/latest?cb=20210219142112&path-prefix=fr',
         ],
       ],
       [
-        "demon",
+        'demon',
         [
-          "Kazuya",
-          "https://www.smashbros.com/assets_v2/img/fighter/kazuya/main.png",
+          'Kazuya',
+          'https://www.smashbros.com/assets_v2/img/fighter/kazuya/main.png',
         ],
       ],
       [
-        "trail",
+        'trail',
         [
-          "Sora",
-          "https://www.smashbros.com/assets_v2/img/fighter/sora/main.png",
+          'Sora',
+          'https://www.smashbros.com/assets_v2/img/fighter/sora/main.png',
         ],
       ],
       [
-        "popo",
+        'popo',
         [
-          "Popo (Ice Climbers)",
-          "https://www.smashbros.com/assets_v2/img/fighter/ice_climbers/main.png",
+          'Popo (Ice Climbers)',
+          'https://www.smashbros.com/assets_v2/img/fighter/ice_climbers/main.png',
         ],
       ],
       [
-        "nana",
+        'nana',
         [
-          "Nana (Ice Climbers)",
-          "https://www.smashbros.com/assets_v2/img/fighter/ice_climbers/main.png",
+          'Nana (Ice Climbers)',
+          'https://www.smashbros.com/assets_v2/img/fighter/ice_climbers/main.png',
         ],
       ],
     ]);
@@ -692,24 +692,21 @@ export class CharacterScanner {
         } else {
           const match = part.match(/0\d/);
           if (match) {
-            slots.add("c" + match[0]); // Store as c0X internally
+            slots.add('c' + match[0]); // Store as c0X internally
           }
         }
       });
 
       // Sort slots numerically (c00, c01, c02, etc.)
       const sortedSlots = Array.from(slots).sort((a, b) => {
-        const numA = parseInt(a.replace("c0", ""));
-        const numB = parseInt(b.replace("c0", ""));
+        const numA = parseInt(a.replace('c0', ''));
+        const numB = parseInt(b.replace('c0', ''));
         return numA - numB;
       });
 
-      return {
-        currentSlots: sortedSlots,
-        affectedFiles: slotFiles,
-      };
+      return { currentSlots: sortedSlots, affectedFiles: slotFiles };
     } catch (error) {
-      console.error("Error scanning for slots:", error);
+      console.error('Error scanning for slots:', error);
       throw error;
     }
   }
@@ -717,7 +714,7 @@ export class CharacterScanner {
   async scanMods(force = false) {
     if (this.hasScanned && !force) return;
 
-    const container = document.getElementById("characterSlotsList");
+    const container = document.getElementById('characterSlotsList');
     if (!container) return;
 
     try {
@@ -750,7 +747,7 @@ export class CharacterScanner {
 
         try {
           scannedCount++;
-          const progress = document.getElementById("scan-progress") as
+          const progress = document.getElementById('scan-progress') as
             | HTMLSpanElement
             | undefined;
           if (progress) progress.textContent = `${scannedCount}`;
@@ -761,7 +758,7 @@ export class CharacterScanner {
           // Process fighter folders
           const fighterFolders = files.filter((file) => {
             const parts = file.split(/[/\\]/);
-            return parts.length >= 2 && parts[0] === "fighter";
+            return parts.length >= 2 && parts[0] === 'fighter';
           });
 
           if (fighterFolders.length > 0) {
@@ -771,7 +768,7 @@ export class CharacterScanner {
                 .filter(
                   (char) =>
                     char &&
-                    !["common", "effect", "sound"].includes(char.toLowerCase()),
+                    !['common', 'effect', 'sound'].includes(char.toLowerCase()),
                 ),
             );
 
@@ -817,14 +814,14 @@ export class CharacterScanner {
       this.hasScanned = true;
       this.renderList();
     } catch (error) {
-      console.error("Scan error:", error);
+      console.error('Scan error:', error);
       container.innerHTML = `<div class="alert alert-danger">Error scanning mods: ${error.message}</div>`;
     }
   }
 
   isSystemFolder(name) {
-    const systemFolders = ["common", "effect", "sound"];
-    return systemFolders.includes(name.toLowerCase()) || name.includes(".");
+    const systemFolders = ['common', 'effect', 'sound'];
+    return systemFolders.includes(name.toLowerCase()) || name.includes('.');
   }
 
   addCharacterUsage(character, modName) {
@@ -837,10 +834,10 @@ export class CharacterScanner {
   }
 
   renderList() {
-    const container = document.getElementById("characterSlotsList");
+    const container = document.getElementById('characterSlotsList');
     if (!container) return;
 
-    const isDarkMode = document.body.classList.contains("dark-mode");
+    const isDarkMode = document.body.classList.contains('dark-mode');
 
     if (!this.hasScanned) {
       container.innerHTML = `
@@ -852,11 +849,11 @@ export class CharacterScanner {
     }
 
     // Sauvegarde la valeur et la position du curseur
-    let filterValue = "";
+    let filterValue = '';
     let selectionStart = 0;
     let selectionEnd = 0;
 
-    const existingInput = container.querySelector("#characterSearchInput") as
+    const existingInput = container.querySelector('#characterSearchInput') as
       | HTMLInputElement
       | undefined;
 
@@ -870,7 +867,7 @@ export class CharacterScanner {
         <div class="mb-3 sticky-search-bar">
             <input type="text" id="characterSearchInput" class="form-control" placeholder="Search a characters" value="${filterValue.replace(
               /"/g,
-              "&quot;",
+              '&quot;',
             )}">
         </div>
     `;
@@ -893,7 +890,7 @@ export class CharacterScanner {
         searchBar +
         `
             <div class="alert ${
-              isDarkMode ? "alert-dark" : "alert-info"
+              isDarkMode ? 'alert-dark' : 'alert-info'
             } bg-opacity-10">
                 <i class="bi bi-info-circle me-2"></i>Characters not found.
             </div>`;
@@ -936,7 +933,7 @@ export class CharacterScanner {
                                 data-character="${displayName}"
                                 data-image="${imagePath}">
                         `
-                            : ""
+                            : ''
                         }
                         <h5 class="character-name mb-0">${displayName}</h5>
                     </div>
@@ -946,12 +943,12 @@ export class CharacterScanner {
                             const modObj = Array.isArray(modList)
                               ? modList.find((m) => m.name === modName)
                               : null;
-                            let modClass = "";
+                            let modClass = '';
                             if (modObj) {
                               if (modObj.enabled === false) {
-                                modClass = "text-danger";
+                                modClass = 'text-danger';
                               } else if (modObj.hasConflict) {
-                                modClass = "text-warning";
+                                modClass = 'text-warning';
                               }
                             }
                             return `
@@ -964,31 +961,31 @@ export class CharacterScanner {
                                           this.getModSlots(
                                             character,
                                             modName,
-                                          ).join(", ") || "Unknown"
+                                          ).join(', ') || 'Unknown'
                                         })
                                     </span>
                                 </div>
                             `;
                           })
-                          .join("")}
+                          .join('')}
                     </div>
                 </div>
             `,
               )
-              .join("")}
+              .join('')}
         </div>
     `;
     container.innerHTML = html;
     this.addEventListeners(container);
 
     // Ajoute l'écouteur sur la barre de recherche
-    const searchInput = container.querySelector("#characterSearchInput") as
+    const searchInput = container.querySelector('#characterSearchInput') as
       | HTMLInputElement
       | undefined;
 
     if (searchInput) {
       searchInput.value = filterValue;
-      searchInput.addEventListener("input", () => this.renderList());
+      searchInput.addEventListener('input', () => this.renderList());
 
       // Restaure la position du curseur
       searchInput.setSelectionRange(selectionStart, selectionEnd);
@@ -998,15 +995,15 @@ export class CharacterScanner {
 
   addEventListeners(container) {
     // Image click handlers
-    container.querySelectorAll(".clickable-image").forEach((img) => {
-      img.addEventListener("click", (e) => {
+    container.querySelectorAll('.clickable-image').forEach((img) => {
+      img.addEventListener('click', (e) => {
         const modal = new bootstrap.Modal(
-          document.getElementById("characterImageModal"),
+          document.getElementById('characterImageModal'),
         );
         const modalImg = document.getElementById(
-          "characterImageLarge",
+          'characterImageLarge',
         ) as HTMLImageElement;
-        const modalTitle = document.getElementById("characterImageModalLabel");
+        const modalTitle = document.getElementById('characterImageModalLabel');
 
         modalImg.src = e.target.dataset.image;
         modalTitle.textContent = e.target.dataset.character;
@@ -1015,35 +1012,33 @@ export class CharacterScanner {
     });
 
     // Ensure tooltip element exists
-    let tooltip = document.getElementById("modPreviewTooltip");
+    let tooltip = document.getElementById('modPreviewTooltip');
     if (!tooltip) {
-      tooltip = document.createElement("div");
-      tooltip.id = "modPreviewTooltip";
-      tooltip.className = "mod-preview-tooltip";
+      tooltip = document.createElement('div');
+      tooltip.id = 'modPreviewTooltip';
+      tooltip.className = 'mod-preview-tooltip';
       tooltip.innerHTML = '<img src="" alt="Mod Preview">';
       document.body.appendChild(tooltip);
     }
 
-    const tooltipImg = tooltip.querySelector("img");
+    const tooltipImg = tooltip.querySelector('img');
     let tooltipTimeout;
 
     // Mod link handlers with preview tooltip
-    container.querySelectorAll(".mod-link").forEach((link) => {
-      link.addEventListener("click", (e) => {
+    container.querySelectorAll('.mod-link').forEach((link) => {
+      link.addEventListener('click', (e) => {
         e.preventDefault();
-        const modName = e.target.closest(".mod-link").dataset.modName;
+        const modName = e.target.closest('.mod-link').dataset.modName;
         window.dispatchEvent(
-          new CustomEvent("select-mod-from-character", {
-            detail: { modName },
-          }),
+          new CustomEvent('select-mod-from-character', { detail: { modName } }),
         );
       });
 
       // Mouse enter handler
-      link.addEventListener("mouseenter", async (e) => {
+      link.addEventListener('mouseenter', async (e) => {
         if (!tooltip) return;
 
-        const modName = e.target.closest(".mod-link").dataset.modName;
+        const modName = e.target.closest('.mod-link').dataset.modName;
         const mods = await window.api.modOperations.loadMods();
         const mod = mods.find((m) => m.name === modName);
 
@@ -1052,16 +1047,16 @@ export class CharacterScanner {
             const preview = await window.api.modDetails.getPreview(mod.path);
             if (preview && tooltipImg) {
               tooltipImg.src = preview;
-              tooltip.style.display = "block";
-              requestAnimationFrame(() => tooltip.classList.add("visible"));
+              tooltip.style.display = 'block';
+              requestAnimationFrame(() => tooltip.classList.add('visible'));
             }
           }, 500);
         }
       });
 
       // Mouse move handler
-      link.addEventListener("mousemove", (e) => {
-        if (!tooltip || tooltip.style.display !== "block") return;
+      link.addEventListener('mousemove', (e) => {
+        if (!tooltip || tooltip.style.display !== 'block') return;
 
         const padding = 10;
         const tooltipRect = tooltip.getBoundingClientRect();
@@ -1081,12 +1076,12 @@ export class CharacterScanner {
       });
 
       // Mouse leave handler
-      link.addEventListener("mouseleave", () => {
+      link.addEventListener('mouseleave', () => {
         if (!tooltip) return;
         clearTimeout(tooltipTimeout);
-        tooltip.classList.remove("visible");
+        tooltip.classList.remove('visible');
         setTimeout(() => {
-          if (tooltip) tooltip.style.display = "none";
+          if (tooltip) tooltip.style.display = 'none';
         }, 200);
       });
     });
@@ -1106,8 +1101,8 @@ export class CharacterScanner {
 
     return slots.sort((a, b) => {
       // Sort slots numerically (c00, c01, c02, etc.)
-      const numA = parseInt(a.replace("c0", ""));
-      const numB = parseInt(b.replace("c0", ""));
+      const numA = parseInt(a.replace('c0', ''));
+      const numB = parseInt(b.replace('c0', ''));
       return numA - numB;
     });
   }
@@ -1120,11 +1115,11 @@ export class CharacterScanner {
 
   // Log slots for debugging
   logSlots() {
-    console.log("Character Slots Usage:");
+    console.log('Character Slots Usage:');
     this.characterSlots.forEach((slots, character) => {
       console.log(`\n${character}:`);
       slots.forEach((mods, slot) => {
-        console.log(`  ${slot}: ${Array.from(mods).join(", ")}`);
+        console.log(`  ${slot}: ${Array.from(mods).join(', ')}`);
       });
     });
   }

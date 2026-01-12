@@ -1,8 +1,8 @@
-import path from "path";
-import AdmZip from "adm-zip";
-import { promises as fs } from "fs";
-import fse from "fs-extra";
-import os from "os";
+import path from 'path';
+import AdmZip from 'adm-zip';
+import { promises as fs } from 'fs';
+import fse from 'fs-extra';
+import os from 'os';
 
 interface ExtractFPPOptions {
   modsPath: string;
@@ -23,16 +23,16 @@ async function extractFPP(
     zip.extractAllTo(tempDir, true);
 
     // Read and validate manifest
-    const manifestPath = path.join(tempDir, "manifest.json");
-    const manifestContent = await fs.readFile(manifestPath, "utf8");
+    const manifestPath = path.join(tempDir, 'manifest.json');
+    const manifestContent = await fs.readFile(manifestPath, 'utf8');
     const manifest = JSON.parse(manifestContent);
 
     if (!manifest.version || manifest.version !== 1) {
-      throw new Error("Invalid or unsupported FPP version");
+      throw new Error('Invalid or unsupported FPP version');
     }
 
     // Copy mods
-    const modsDir = path.join(tempDir, "data", "mods");
+    const modsDir = path.join(tempDir, 'data', 'mods');
     if (await fse.pathExists(modsDir)) {
       const mods = await fs.readdir(modsDir);
       for (const mod of mods) {
@@ -43,7 +43,7 @@ async function extractFPP(
     }
 
     // Copy plugins
-    const pluginsDir = path.join(tempDir, "data", "plugins");
+    const pluginsDir = path.join(tempDir, 'data', 'plugins');
     if (await fse.pathExists(pluginsDir)) {
       const plugins = await fs.readdir(pluginsDir);
       for (const plugin of plugins) {

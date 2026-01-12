@@ -1397,35 +1397,35 @@ Loading logs...</pre
       type="module"
     ></script>
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener('DOMContentLoaded', () => {
         // Auth page switching
-        const loginPage = document.getElementById("socialLoginPage");
-        const signupPage = document.getElementById("socialSignupPage");
-        const signOutBtn = document.getElementById("socialSignOutSidebarBtn");
+        const loginPage = document.getElementById('socialLoginPage');
+        const signupPage = document.getElementById('socialSignupPage');
+        const signOutBtn = document.getElementById('socialSignOutSidebarBtn');
         const sidebarContent = document.querySelector(
-          ".tab-content.p-3.overflow-auto",
+          '.tab-content.p-3.overflow-auto',
         );
-        const authContainer = document.getElementById("socialAuthContainer");
+        const authContainer = document.getElementById('socialAuthContainer');
 
         function showPage(page) {
-          loginPage.style.display = page === "login" ? "" : "none";
-          signupPage.style.display = page === "signup" ? "" : "none";
+          loginPage.style.display = page === 'login' ? '' : 'none';
+          signupPage.style.display = page === 'signup' ? '' : 'none';
         }
 
-        document.getElementById("socialShowSignup").onclick = (e) => {
+        document.getElementById('socialShowSignup').onclick = (e) => {
           e.preventDefault();
-          showPage("signup");
+          showPage('signup');
         };
-        document.getElementById("socialReturnToLogin1").onclick = (e) => {
+        document.getElementById('socialReturnToLogin1').onclick = (e) => {
           e.preventDefault();
-          showPage("login");
+          showPage('login');
         };
 
         // Forgot password alert
-        document.getElementById("socialShowForgot").onclick = (e) => {
+        document.getElementById('socialShowForgot').onclick = (e) => {
           e.preventDefault();
           const forgotModal = new bootstrap.Modal(
-            document.getElementById("forgotPasswordModal"),
+            document.getElementById('forgotPasswordModal'),
           );
           forgotModal.show();
         };
@@ -1433,80 +1433,80 @@ Loading logs...</pre
         // Show/hide sign out button based on login state
         function updateSignOutBtn() {
           // Sidebar is open if right is '0px'
-          const sidebarOpen = sidebar.style.right === "0px";
+          const sidebarOpen = sidebar.style.right === '0px';
           // Signed in if sidebarContent is visible (not display: none)
           const signedIn =
-            sidebarContent && sidebarContent.style.display !== "none";
+            sidebarContent && sidebarContent.style.display !== 'none';
           // Auth container is visible if not display: none
           const authVisible =
-            authContainer && authContainer.style.display !== "none";
+            authContainer && authContainer.style.display !== 'none';
           if (sidebarOpen && signedIn && !authVisible) {
-            signOutBtn.style.display = "";
+            signOutBtn.style.display = '';
           } else {
-            signOutBtn.style.display = "none";
+            signOutBtn.style.display = 'none';
           }
         }
 
         // Show confirmation modal on click
-        signOutBtn.addEventListener("click", () => {
+        signOutBtn.addEventListener('click', () => {
           const modal = new bootstrap.Modal(
-            document.getElementById("signOutConfirmModal"),
+            document.getElementById('signOutConfirmModal'),
           );
           modal.show();
         });
 
         // Handle actual sign out
         document
-          .getElementById("confirmSignOutBtn")
-          .addEventListener("click", () => {
+          .getElementById('confirmSignOutBtn')
+          .addEventListener('click', () => {
             // Hide sidebar content, show auth
-            authContainer.style.display = "";
-            sidebarContent.style.display = "none";
+            authContainer.style.display = '';
+            sidebarContent.style.display = 'none';
             sidebarContent.style.opacity = 0;
-            document.getElementById("socialLoginForm").reset();
+            document.getElementById('socialLoginForm').reset();
             // Hide modal
             bootstrap.Modal.getInstance(
-              document.getElementById("signOutConfirmModal"),
+              document.getElementById('signOutConfirmModal'),
             ).hide();
             updateSignOutBtn();
           });
 
         const storedCreds = JSON.parse(
-          localStorage.getItem("socialCreds") || "{}",
+          localStorage.getItem('socialCreds') || '{}',
         );
         if (storedCreds.username && storedCreds.password) {
           // Auto-fill and auto-login
-          document.getElementById("socialLoginUsername").value =
+          document.getElementById('socialLoginUsername').value =
             storedCreds.username;
-          document.getElementById("socialLoginPassword").value =
+          document.getElementById('socialLoginPassword').value =
             storedCreds.password;
-          document.getElementById("socialStaySignedIn").checked = true;
+          document.getElementById('socialStaySignedIn').checked = true;
           // Optionally, auto-submit the form:
           // document.getElementById('socialLoginForm').dispatchEvent(new Event('submit'));
         }
 
         // On login, store credentials if "Stay signed in" is checked
-        document.getElementById("socialLoginForm").onsubmit = (e) => {
+        document.getElementById('socialLoginForm').onsubmit = (e) => {
           e.preventDefault();
-          const username = document.getElementById("socialLoginUsername").value;
-          const password = document.getElementById("socialLoginPassword").value;
+          const username = document.getElementById('socialLoginUsername').value;
+          const password = document.getElementById('socialLoginPassword').value;
           const staySignedIn =
-            document.getElementById("socialStaySignedIn").checked;
+            document.getElementById('socialStaySignedIn').checked;
 
           if (staySignedIn) {
             localStorage.setItem(
-              "socialCreds",
+              'socialCreds',
               JSON.stringify({ username, password }),
             );
           } else {
-            localStorage.removeItem("socialCreds");
+            localStorage.removeItem('socialCreds');
           }
 
           // ...existing login logic...
-          authContainer.style.display = "none";
+          authContainer.style.display = 'none';
           sidebarContent.style.opacity = 0;
-          sidebarContent.style.display = "";
-          sidebarContent.style.transition = "opacity 0.5s";
+          sidebarContent.style.display = '';
+          sidebarContent.style.transition = 'opacity 0.5s';
           setTimeout(() => {
             sidebarContent.style.opacity = 1;
             updateSignOutBtn();
@@ -1515,49 +1515,49 @@ Loading logs...</pre
 
         // On sign out, clear stored credentials
         document
-          .getElementById("confirmSignOutBtn")
-          .addEventListener("click", () => {
-            localStorage.removeItem("socialCreds");
+          .getElementById('confirmSignOutBtn')
+          .addEventListener('click', () => {
+            localStorage.removeItem('socialCreds');
             // ...existing sign out logic...
-            authContainer.style.display = "";
-            sidebarContent.style.display = "none";
+            authContainer.style.display = '';
+            sidebarContent.style.display = 'none';
             sidebarContent.style.opacity = 0;
-            document.getElementById("socialLoginForm").reset();
+            document.getElementById('socialLoginForm').reset();
             bootstrap.Modal.getInstance(
-              document.getElementById("signOutConfirmModal"),
+              document.getElementById('signOutConfirmModal'),
             ).hide();
             updateSignOutBtn();
           });
 
-        const sidebar = document.getElementById("socialSidebar");
-        const openBtn = document.getElementById("openSocialSidebarBtn");
-        const closeBtn = document.getElementById("closeSocialSidebarBtn");
-        const sidebarBtns = document.querySelectorAll(".social-sidebar-btn");
+        const sidebar = document.getElementById('socialSidebar');
+        const openBtn = document.getElementById('openSocialSidebarBtn');
+        const closeBtn = document.getElementById('closeSocialSidebarBtn');
+        const sidebarBtns = document.querySelectorAll('.social-sidebar-btn');
 
         function openSidebar() {
-          sidebar.style.right = "0";
-          openBtn.classList.add("open");
-          openBtn.classList.remove("closed");
-          signOutBtn.classList.add("open");
+          sidebar.style.right = '0';
+          openBtn.classList.add('open');
+          openBtn.classList.remove('closed');
+          signOutBtn.classList.add('open');
           updateSignOutBtn();
         }
 
         function closeSidebar() {
-          sidebar.style.right = "-400px";
-          openBtn.classList.remove("open");
-          openBtn.classList.add("closed");
-          signOutBtn.classList.remove("open");
+          sidebar.style.right = '-400px';
+          openBtn.classList.remove('open');
+          openBtn.classList.add('closed');
+          signOutBtn.classList.remove('open');
           updateSignOutBtn();
         }
 
         if (sidebar && openBtn) {
           // Initialize as closed
-          openBtn.classList.add("closed");
-          signOutBtn.classList.add("closed");
+          openBtn.classList.add('closed');
+          signOutBtn.classList.add('closed');
           updateSignOutBtn();
 
-          openBtn.addEventListener("click", () => {
-            if (sidebar.style.right === "0px") {
+          openBtn.addEventListener('click', () => {
+            if (sidebar.style.right === '0px') {
               closeSidebar();
             } else {
               openSidebar();
@@ -1566,35 +1566,35 @@ Loading logs...</pre
         }
 
         if (closeBtn) {
-          closeBtn.addEventListener("click", closeSidebar);
+          closeBtn.addEventListener('click', closeSidebar);
         }
 
-        document.body.addEventListener("show.bs.modal", () => {
-          sidebarBtns.forEach((btn) => btn.classList.add("hide-when-modal"));
+        document.body.addEventListener('show.bs.modal', () => {
+          sidebarBtns.forEach((btn) => btn.classList.add('hide-when-modal'));
         });
 
         // Listen for any modal close
-        document.body.addEventListener("hidden.bs.modal", () => {
-          sidebarBtns.forEach((btn) => btn.classList.remove("hide-when-modal"));
+        document.body.addEventListener('hidden.bs.modal', () => {
+          sidebarBtns.forEach((btn) => btn.classList.remove('hide-when-modal'));
         });
         // Social Sidebar Toggle Logic
         const socialSidebarToggle = document.getElementById(
-          "socialSidebarToggle",
+          'socialSidebarToggle',
         );
-        const socialSidebar = document.getElementById("socialSidebar");
+        const socialSidebar = document.getElementById('socialSidebar');
         const openSocialSidebarBtn = document.getElementById(
-          "openSocialSidebarBtn",
+          'openSocialSidebarBtn',
         );
         const socialSignOutSidebarBtn = document.getElementById(
-          "socialSignOutSidebarBtn",
+          'socialSignOutSidebarBtn',
         );
 
         // Load setting from localStorage
         const socialSidebarEnabled = localStorage.getItem(
-          "socialSidebarEnabled",
+          'socialSidebarEnabled',
         );
 
-        if (socialSidebarEnabled === null || socialSidebarEnabled === "true") {
+        if (socialSidebarEnabled === null || socialSidebarEnabled === 'true') {
           // socialSidebarToggle.checked = true;
           showSocialSidebarUI(true);
         } else {
@@ -1602,95 +1602,95 @@ Loading logs...</pre
           showSocialSidebarUI(false);
         }
 
-        socialSidebarToggle?.addEventListener("change", (e) => {
+        socialSidebarToggle?.addEventListener('change', (e) => {
           const enabled = e.target.checked;
-          localStorage.setItem("socialSidebarEnabled", enabled);
+          localStorage.setItem('socialSidebarEnabled', enabled);
           showSocialSidebarUI(enabled);
         });
 
         function showSocialSidebarUI(show) {
           if (show) {
-            if (socialSidebar) socialSidebar.style.display = "";
-            if (openSocialSidebarBtn) openSocialSidebarBtn.style.display = "";
+            if (socialSidebar) socialSidebar.style.display = '';
+            if (openSocialSidebarBtn) openSocialSidebarBtn.style.display = '';
           } else {
-            if (socialSidebar) socialSidebar.style.display = "none";
+            if (socialSidebar) socialSidebar.style.display = 'none';
             if (openSocialSidebarBtn)
-              openSocialSidebarBtn.style.display = "none";
+              openSocialSidebarBtn.style.display = 'none';
             if (socialSignOutSidebarBtn)
-              socialSignOutSidebarBtn.style.display = "none";
+              socialSignOutSidebarBtn.style.display = 'none';
           }
         }
       });
-      document.addEventListener("DOMContentLoaded", async () => {
-        const dontShowAgain = localStorage.getItem("dontShowEarlyAccessModal");
+      document.addEventListener('DOMContentLoaded', async () => {
+        const dontShowAgain = localStorage.getItem('dontShowEarlyAccessModal');
         if (!dontShowAgain) {
           const earlyAccessModal = new bootstrap.Modal(
-            document.getElementById("earlyAccessModal"),
+            document.getElementById('earlyAccessModal'),
           );
           earlyAccessModal.show();
         }
 
         document
-          .getElementById("dontShowAgain")
-          .addEventListener("change", (event) => {
+          .getElementById('dontShowAgain')
+          .addEventListener('change', (event) => {
             if (event.target.checked) {
-              localStorage.setItem("dontShowEarlyAccessModal", "true");
+              localStorage.setItem('dontShowEarlyAccessModal', 'true');
             } else {
-              localStorage.removeItem("dontShowEarlyAccessModal");
+              localStorage.removeItem('dontShowEarlyAccessModal');
             }
           });
       });
     </script>
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener('DOMContentLoaded', () => {
         // Vérifier si c'est le 1er avril
         const today = new Date();
         const isAprilFools = today.getMonth() === 3 && today.getDate() === 1;
 
         if (isAprilFools) {
           // Change logo in navbar
-          const appLogo = document.querySelector("#appLogo");
+          const appLogo = document.querySelector('#appLogo');
           if (appLogo) {
-            appLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
+            appLogo.src = 'https://files.gamebanana.com/bitpit/feetplanner.png';
           }
 
           // Change logo and text in credits
-          const creditsLogo = document.querySelector(".credits-logo");
+          const creditsLogo = document.querySelector('.credits-logo');
           const creditsTitle = document.querySelector(
-            "#creditsModal .display-4",
+            '#creditsModal .display-4',
           );
-          const creditsSubtitle = document.querySelector("#creditsModal .lead");
+          const creditsSubtitle = document.querySelector('#creditsModal .lead');
 
           if (creditsLogo) {
             creditsLogo.src =
-              "https://files.gamebanana.com/bitpit/feetplanner.png";
+              'https://files.gamebanana.com/bitpit/feetplanner.png';
           }
 
           if (creditsTitle) {
-            creditsTitle.textContent = "FeetPlanner";
+            creditsTitle.textContent = 'FeetPlanner';
           }
 
           if (creditsSubtitle) {
-            creditsSubtitle.textContent = "Feet Manager for SSBU";
+            creditsSubtitle.textContent = 'Feet Manager for SSBU';
           }
         }
 
         // Konami code existant
         const konamiCode = [
-          "ArrowUp",
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "ArrowLeft",
-          "ArrowRight",
-          "b",
-          "a",
+          'ArrowUp',
+          'ArrowUp',
+          'ArrowDown',
+          'ArrowDown',
+          'ArrowLeft',
+          'ArrowRight',
+          'ArrowLeft',
+          'ArrowRight',
+          'b',
+          'a',
         ];
         let konamiIndex = 0;
 
-        document.addEventListener("keydown", (e) => {
+        document.addEventListener('keydown', (e) => {
           if (e.key === konamiCode[konamiIndex]) {
             konamiIndex++;
 
@@ -1698,32 +1698,32 @@ Loading logs...</pre
               konamiIndex = 0;
 
               // Change logo in navbar
-              const appLogo = document.querySelector("#appLogo");
+              const appLogo = document.querySelector('#appLogo');
               if (appLogo) {
                 appLogo.src =
-                  "https://files.gamebanana.com/bitpit/feetplanner.png";
+                  'https://files.gamebanana.com/bitpit/feetplanner.png';
               }
 
               // Change logo and text in credits
-              const creditsLogo = document.querySelector(".credits-logo");
+              const creditsLogo = document.querySelector('.credits-logo');
               const creditsTitle = document.querySelector(
-                "#creditsModal .display-4",
+                '#creditsModal .display-4',
               );
               const creditsSubtitle = document.querySelector(
-                "#creditsModal .lead",
+                '#creditsModal .lead',
               );
 
               if (creditsLogo) {
                 creditsLogo.src =
-                  "https://files.gamebanana.com/bitpit/feetplanner.png";
+                  'https://files.gamebanana.com/bitpit/feetplanner.png';
               }
 
               if (creditsTitle) {
-                creditsTitle.textContent = "FeetPlanner";
+                creditsTitle.textContent = 'FeetPlanner';
               }
 
               if (creditsSubtitle) {
-                creditsSubtitle.textContent = "Feet Manager for SSBU";
+                creditsSubtitle.textContent = 'Feet Manager for SSBU';
               }
             }
           } else {

@@ -1,32 +1,14 @@
 {
   "productName": "FightPlanner Canary",
   "appId": "com.fightplanner.canary",
-  "directories": {
-    "output": "dist-canary"
-  },
+  "directories": { "output": "dist-canary" },
   "files": ["!dist/**"],
   "extraResources": [
-    {
-      "from": "./build",
-      "to": "build",
-      "filter": ["**/*"]
-    },
-    {
-      "from": "src/resources",
-      "to": "src/resources",
-      "filter": ["**/*"]
-    },
-    {
-      "from": "./Files",
-      "to": "Files",
-      "filter": ["**/*"]
-    }
+    { "from": "./build", "to": "build", "filter": ["**/*"] },
+    { "from": "src/resources", "to": "src/resources", "filter": ["**/*"] },
+    { "from": "./Files", "to": "Files", "filter": ["**/*"] }
   ],
   "publish": [
-    {
-      "provider": "github",
-      "owner": "FIREXDF",
-      "repo": "FightPlannerEarly"
-    }
+    { "provider": "github", "owner": "FIREXDF", "repo": "FightPlannerEarly" }
   ]
 }
