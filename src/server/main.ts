@@ -1,50 +1,50 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from "electron";
-import * as path from "path";
-import * as fs from "fs";
-import { promises as fsp } from "fs";
-import * as fse from "fs-extra";
-import AdmZip from "adm-zip";
-import { exec } from "child_process";
-import Store from "electron-store";
-import * as toml from "toml";
-import axios from "axios";
-import * as pkg from "electron-updater";
-import * as Sentry from "@sentry/node";
-import log from "electron-log";
-import { format } from "date-fns";
+import { app, BrowserWindow, ipcMain, dialog, shell, webUtils } from 'electron';
+import * as path from 'path';
+import * as fs from 'fs';
+import { promises as fsp } from 'fs';
+import * as fse from 'fs-extra';
+import AdmZip from 'adm-zip';
+import { exec } from 'child_process';
+import Store from 'electron-store';
+import * as toml from 'toml';
+import axios from 'axios';
+import * as pkg from 'electron-updater';
+import * as Sentry from '@sentry/node';
+import log from 'electron-log';
+import { format } from 'date-fns';
 
-import { Mod } from "./types/mod";
+import { Mod } from './types/mod';
 
-import discordRPC from "./discordRPC.js";
-import { createFPP } from "./createFPP.js";
-import { extractFPP } from "./extractFPP.js";
-import { GameBananaDownloader } from "./gameBananaDownloader.js";
-import { PresetManager } from "./presetManager.js";
-import { getHash } from "./hash.js";
+import discordRPC from './discordRPC.js';
+import { createFPP } from './createFPP.js';
+import { extractFPP } from './extractFPP.js';
+import { GameBananaDownloader } from './gameBananaDownloader.js';
+import { PresetManager } from './presetManager.js';
+import { getHash } from './hash.js';
 
 const { autoUpdater } = pkg;
 let tutorialWindow: Electron.BrowserWindow | undefined;
 
 Sentry.init({
-  dsn: "https://5775ecb986d21269a8960ce6459d1143@o4509832073773056.ingest.de.sentry.io/4509832076001360",
+  dsn: 'https://5775ecb986d21269a8960ce6459d1143@o4509832073773056.ingest.de.sentry.io/4509832076001360',
 });
 
-process.on("uncaughtException", (err) => {
-  console.error("Erreur non capturée :", err.message);
+process.on('uncaughtException', (err) => {
+  console.error('Erreur non capturée :', err.message);
   Sentry.captureException(err);
 });
 
-ipcMain.handle("open-tutorial-window", () => {
+ipcMain.handle('open-tutorial-window', () => {
   openTutorialWindow();
   return true;
 });
 
-log.transports.file.level = "info";
-log.transports.file.format = "[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}";
+log.transports.file.level = 'info';
+log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
 
 // Set up logging configuration with date-based filenames
-const logDirectory = path.join(app.getPath("userData"), "logs");
-const currentDate = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+const logDirectory = path.join(app.getPath('userData'), 'logs');
+const currentDate = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
 const logFilename = `fightplanner_${currentDate}.log`;
 
 // Ensure logs directory exists
@@ -54,17 +54,17 @@ if (!fs.existsSync(logDirectory)) {
 
 // Configure electron-log
 log.transports.file.resolvePathFn = () => path.join(logDirectory, logFilename);
-log.transports.file.format = "[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}";
+log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}] [{level}] {text}';
 log.transports.file.maxSize = 10 * 1024 * 1024; // 10MB
-log.transports.file.level = "info";
+log.transports.file.level = 'info';
 
 // Log application start
-log.info("Application started");
+log.info('Application started');
 log.info(`Log file: ${logFilename}`);
 
 // Remove old logs (keep last 7 days)
 async function cleanOldLogs() {
-  log.info("Cleaning old logs...");
+  log.info('Cleaning old logs...');
   try {
     const files = await fsp.readdir(logDirectory);
     const now = Date.now();
@@ -72,18 +72,18 @@ async function cleanOldLogs() {
 
     for (const file of files) {
       // Ne supprimer que les fichiers .log
-      if (!file.endsWith(".log")) continue;
+      if (!file.endsWith('.log')) continue;
 
       const filePath = path.join(logDirectory, file);
       const stats = await fsp.stat(filePath);
 
       if (now - stats.mtime.getTime() > maxAge) {
         await fsp.unlink(filePath);
-        log.info("Deleted old log file:", file);
+        log.info('Deleted old log file:', file);
       }
     }
   } catch (error) {
-    log.error("Error cleaning old logs:", error);
+    log.error('Error cleaning old logs:', error);
   }
 }
 
@@ -121,9 +121,9 @@ console.info = (...args) => {
 const store = new Store();
 
 // Constants
-const DISABLED_MODS_FOLDER_NAME = "{disabled_mod}";
-const DISABLED_PLUGINS_FOLDER_NAME = "disabled_plugins";
-const PLUGIN_EXTENSION = ".nro";
+const DISABLED_MODS_FOLDER_NAME = '{disabled_mod}';
+const DISABLED_PLUGINS_FOLDER_NAME = 'disabled_plugins';
+const PLUGIN_EXTENSION = '.nro';
 
 let mainWindow;
 let hiddenWindow;
@@ -135,11 +135,11 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on("second-instance", (event, argv) => {
+  app.on('second-instance', (event, argv) => {
     // Someone tried to run a second instance
-    if (process.platform === "win32") {
+    if (process.platform === 'win32') {
       // Check for protocol URL in the second instance's arguments
-      const protocolUrl = argv.find((arg) => arg.startsWith("fightplanner://"));
+      const protocolUrl = argv.find((arg) => arg.startsWith('fightplanner://'));
       if (protocolUrl && mainWindow) {
         handleProtocolUrl(protocolUrl);
       }
@@ -154,12 +154,12 @@ if (!gotTheLock) {
 
   if (process.defaultApp) {
     if (process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient("fightplanner", process.execPath, [
+      app.setAsDefaultProtocolClient('fightplanner', process.execPath, [
         path.resolve(process.argv[1]),
       ]);
     }
   } else {
-    app.setAsDefaultProtocolClient("fightplanner");
+    app.setAsDefaultProtocolClient('fightplanner');
   }
 
   app.whenReady().then(() => {
@@ -175,28 +175,26 @@ if (!gotTheLock) {
       createWindow();
     }
 
+    console.log('creating hidden window...');
     // Create hidden window for audio
     hiddenWindow = new BrowserWindow({
       show: false,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: true,
-      },
+      webPreferences: { nodeIntegration: true, contextIsolation: true },
     });
 
-    hiddenWindow.loadFile("./src/browser/windows/audioPlayer.html");
+    hiddenWindow.loadFile('./src/browser/windows/audioPlayer.html');
 
     // Set initial volume
-    const volume = store.get("volume", 100);
-    hiddenWindow.webContents.on("did-finish-load", () => {
+    const volume = store.get('volume', 100);
+    hiddenWindow.webContents.on('did-finish-load', () => {
       hiddenWindow.webContents.executeJavaScript(`
             setVolume(${volume});
         `);
     });
 
     // Handle protocol URL if present
-    if (process.platform === "win32") {
-      const url = process.argv.find((arg) => arg.startsWith("fightplanner:"));
+    if (process.platform === 'win32') {
+      const url = process.argv.find((arg) => arg.startsWith('fightplanner:'));
       if (url) {
         handleProtocolUrl(url);
       }
@@ -205,36 +203,36 @@ if (!gotTheLock) {
       handleProtocolUrl(initialProtocolUrl);
       initialProtocolUrl = null;
     }
-    ipcMain.handle("get-app-version", () => {
+    ipcMain.handle('get-app-version', () => {
       return app.getVersion();
     });
 
-    ipcMain.handle("get-app-path", () => {
+    ipcMain.handle('get-app-path', () => {
       return app.getAppPath();
     });
   });
 
-  app.on("activate", function () {
+  app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
-  app.on("window-all-closed", function () {
+  app.on('window-all-closed', function () {
     if (hiddenWindow && !hiddenWindow.isDestroyed()) {
       hiddenWindow.destroy();
     }
-    if (process.platform !== "darwin") {
+    if (process.platform !== 'darwin') {
       app.quit();
     }
   });
 
-  app.on("open-url", async (event, url) => {
+  app.on('open-url', async (event, url) => {
     event.preventDefault();
     handleProtocolUrl(url);
   });
 
-  app.on("second-instance", async (event, argv) => {
-    if (process.platform === "win32") {
-      const url = argv.find((arg) => arg.startsWith("fightplanner:"));
+  app.on('second-instance', async (event, argv) => {
+    if (process.platform === 'win32') {
+      const url = argv.find((arg) => arg.startsWith('fightplanner:'));
       if (url) {
         handleProtocolUrl(url);
       }
@@ -246,7 +244,7 @@ if (!gotTheLock) {
 
     const sanitizedMessage = message
       .replace(/'/g, "\\'")
-      .replace(/\n/g, "<br>");
+      .replace(/\n/g, '<br>');
     const modalScript = `
             (function() {
                 function createErrorModal(message) {
@@ -302,14 +300,14 @@ if (!gotTheLock) {
         `;
 
     mainWindow.webContents.executeJavaScript(modalScript).catch((err) => {
-      console.error("Error showing modal:", err);
+      console.error('Error showing modal:', err);
       // Fallback to basic alert if modal fails
       mainWindow.webContents.executeJavaScript(`alert("${sanitizedMessage}");`);
     });
   }
 
-  process.on("uncaughtException", (error) => {
-    console.error("Uncaught Exception:", error);
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
     setTimeout(() => {
       showErrorModal(
         `An unexpected error occurred in launch: ${error.message}. If your config is not gone you can still use FightPlanner, but please make a suggestion with the link in the settings and put your user id in the suggestion and the error .`,
@@ -317,14 +315,14 @@ if (!gotTheLock) {
     }, 1000);
   });
 
-  process.on("unhandledRejection", (reason) => {
-    console.error("Unhandled Rejection:", reason);
+  process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled Rejection:', reason);
   });
 }
 
 async function createWindow() {
   // Check if it's the first launch
-  const isFirstLaunch = !store.get("hasLaunchedBefore");
+  const isFirstLaunch = !store.get('hasLaunchedBefore');
 
   mainWindow = new BrowserWindow({
     width: 1300,
@@ -333,7 +331,7 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
@@ -341,7 +339,7 @@ async function createWindow() {
 
   await discordRPC.connect();
 
-  app.on("before-quit", () => {
+  app.on('before-quit', () => {
     if (hiddenWindow && !hiddenWindow.isDestroyed()) {
       hiddenWindow.destroy();
     }
@@ -349,14 +347,14 @@ async function createWindow() {
     discordRPC.disconnect();
   });
 
-  mainWindow.loadFile("./src/browser/windows/main.html");
+  mainWindow.loadFile('./src/browser/windows/main.html');
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
-    return { action: "deny" };
+    return { action: 'deny' };
   });
 
-  mainWindow.on("closed", () => {
+  mainWindow.on('closed', () => {
     if (hiddenWindow && !hiddenWindow.isDestroyed()) {
       hiddenWindow.destroy();
     }
@@ -366,25 +364,25 @@ async function createWindow() {
 
   // Load custom CSS if it exists
   const customCssPath = store.get(
-    "customCssPath",
-    path.join(__dirname, "custom.css"),
+    'customCssPath',
+    path.join(__dirname, 'custom.css'),
   ) as string | undefined;
 
   try {
     await fsp.access(customCssPath);
 
-    mainWindow.webContents.on("did-finish-load", async () => {
-      const customCss = await fsp.readFile(customCssPath, "utf8");
+    mainWindow.webContents.on('did-finish-load', async () => {
+      const customCss = await fsp.readFile(customCssPath, 'utf8');
 
       mainWindow.webContents.insertCSS(customCss);
       mainWindow.webContents.executeJavaScript(`
                 document.body.classList.add('custom-theme');
             `);
 
-      console.log("Custom CSS loaded");
+      console.log('Custom CSS loaded');
     });
   } catch (error) {
-    console.log("Custom CSS not found");
+    console.log('Custom CSS not found');
   }
 
   autoUpdater.checkForUpdatesAndNotify();
@@ -394,15 +392,15 @@ async function createWindow() {
     openTutorialWindow();
 
     // Mark as launched
-    store.set("hasLaunchedBefore", true);
+    store.set('hasLaunchedBefore', true);
   }
-  mainWindow.webContents.on("new-window", (event, url) => {
+  mainWindow.webContents.on('new-window', (event, url) => {
     event.preventDefault();
     shell.openExternal(url);
   });
 
-  const modsPath = store.get("modsPath", "") as string | undefined;
-  const pluginsPath = store.get("pluginsPath", "") as string | undefined;
+  const modsPath = store.get('modsPath', '') as string | undefined;
+  const pluginsPath = store.get('pluginsPath', '') as string | undefined;
 
   // Only create disabled folders if paths are set and valid
   if (modsPath && pluginsPath) {
@@ -412,8 +410,8 @@ async function createWindow() {
 
       // Validate paths before creating any folders
       if (
-        !skylinePath.toLowerCase().includes("system32") &&
-        !skylinePath.toLowerCase().includes("windows") &&
+        !skylinePath.toLowerCase().includes('system32') &&
+        !skylinePath.toLowerCase().includes('windows') &&
         (await fse.pathExists(modsPath)) &&
         (await fse.pathExists(pluginsPath))
       ) {
@@ -431,13 +429,13 @@ async function createWindow() {
           fsp
             .mkdir(disabledModsPath, { recursive: true })
             .catch((err) =>
-              console.error("Failed to create disabled mods directory:", err),
+              console.error('Failed to create disabled mods directory:', err),
             ),
           fsp
             .mkdir(disabledPluginsPath, { recursive: true })
             .catch((err) =>
               console.error(
-                "Failed to create disabled plugins directory:",
+                'Failed to create disabled plugins directory:',
                 err,
               ),
             ),
@@ -450,11 +448,11 @@ async function createWindow() {
         ]);
       }
     } catch (error) {
-      console.error("Error setting up directories:", error);
+      console.error('Error setting up directories:', error);
     }
   }
 
-  mainWindow.webContents.on("did-finish-load", () => {
+  mainWindow.webContents.on('did-finish-load', () => {
     // Inject Bootstrap if not present
     mainWindow.webContents.executeJavaScript(`
             if (typeof bootstrap === 'undefined') {
@@ -473,7 +471,7 @@ async function createWindow() {
   logAppSettings();
 
   // Handle any pending protocol URL after window is created
-  mainWindow.webContents.on("did-finish-load", () => {
+  mainWindow.webContents.on('did-finish-load', () => {
     if (initialProtocolUrl) {
       handleProtocolUrl(initialProtocolUrl);
       initialProtocolUrl = null;
@@ -484,19 +482,19 @@ async function createWindow() {
     new Date().getMonth() === 3 && new Date().getDate() === 1;
 
   if (isAprilFools) {
-    mainWindow.setTitle("FeetPlanner");
+    mainWindow.setTitle('FeetPlanner');
   }
 
-  mainWindow.on("close", (event) => {
+  mainWindow.on('close', (event) => {
     if (activeDownloads.size > 0) {
       const response = dialog.showMessageBoxSync(mainWindow, {
-        type: "warning",
-        buttons: ["Cancel", "Quit"],
+        type: 'warning',
+        buttons: ['Cancel', 'Quit'],
         defaultId: 0,
         cancelId: 0,
-        title: "Active Downloads",
+        title: 'Active Downloads',
         message:
-          "There are active downloads. Quitting now will cancel them. Do you want to quit?",
+          'There are active downloads. Quitting now will cancel them. Do you want to quit?',
       });
       if (response === 0) {
         // User selected Cancel
@@ -533,35 +531,35 @@ async function checkAndMoveOldDisabledFolder(
     }
   } catch (error) {
     console.error(
-      "Error copying and moving contents of old disabled folder:",
+      'Error copying and moving contents of old disabled folder:',
       error,
     );
   }
 }
 
 // Auto-update event handlers
-autoUpdater.on("update-available", () => {
-  log.info("Update available.");
+autoUpdater.on('update-available', () => {
+  log.info('Update available.');
   dialog.showMessageBox({
-    type: "info",
-    title: "Update available",
+    type: 'info',
+    title: 'Update available',
     message:
-      "A new update is available. It will be downloaded in the background.",
+      'A new update is available. It will be downloaded in the background.',
   });
 });
 
-autoUpdater.on("update-downloaded", async () => {
-  log.info("Update downloaded.");
+autoUpdater.on('update-downloaded', async () => {
+  log.info('Update downloaded.');
   const changelog = await fetchChangelog();
-  mainWindow.webContents.send("update-downloaded", changelog);
+  mainWindow.webContents.send('update-downloaded', changelog);
   dialog
     .showMessageBox({
-      type: "info",
-      title: "Update ready",
+      type: 'info',
+      title: 'Update ready',
       message:
-        "A new update is ready. Restart the application to apply the updates.",
+        'A new update is ready. Restart the application to apply the updates.',
       detail: changelog,
-      buttons: ["Restart", "Later"],
+      buttons: ['Restart', 'Later'],
     })
     .then((result) => {
       if (result.response === 0) {
@@ -570,22 +568,22 @@ autoUpdater.on("update-downloaded", async () => {
     });
 });
 
-console.log(app.getPath("userData"));
+console.log(app.getPath('userData'));
 
-autoUpdater.on("error", (err) => {
-  log.error("Error in auto-updater:", err);
+autoUpdater.on('error', (err) => {
+  log.error('Error in auto-updater:', err);
 });
 
 async function fetchChangelog() {
   try {
     const response = await axios.get(
-      "https://api.github.com/repos/FIREXDF/SSBUFightPlanner/releases/latest",
+      'https://api.github.com/repos/FIREXDF/SSBUFightPlanner/releases/latest',
     );
     const changelog = response.data.body;
     return changelog;
   } catch (error) {
-    console.error("Failed to fetch changelog:", error);
-    return "Failed to fetch changelog.";
+    console.error('Failed to fetch changelog:', error);
+    return 'Failed to fetch changelog.';
   }
 }
 
@@ -597,21 +595,21 @@ function openTutorialWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
-  tutorialWindow.loadFile("src/browser/windows/tutorial.html");
+  tutorialWindow.loadFile('src/browser/windows/tutorial.html');
 }
 
 // Add IPC handlers
-ipcMain.handle("tutorial-finished", () => {
+ipcMain.handle('tutorial-finished', () => {
   // Show and focus the main window
   if (mainWindow) {
     mainWindow.show();
     mainWindow.focus();
     // Rafraîchir la liste des mods après le tuto
-    mainWindow.webContents.send("refresh-mods-after-tutorial");
+    mainWindow.webContents.send('refresh-mods-after-tutorial');
   }
 
   // Close the tutorial window
@@ -622,29 +620,29 @@ ipcMain.handle("tutorial-finished", () => {
   return true;
 });
 
-ipcMain.handle("show-open-dialog", async (event, options) => {
+ipcMain.handle('show-open-dialog', async (event, options) => {
   const result = await dialog.showOpenDialog(options);
   return result;
 });
 
-ipcMain.on("download-confirmation", async (event, { confirmed, details }) => {
+ipcMain.on('download-confirmation', async (event, { confirmed, details }) => {
   const mainWindow = BrowserWindow.getAllWindows()[0];
 
   if (confirmed) {
     try {
       // Send download request to renderer process
-      mainWindow.webContents.send("start-mod-download", details.downloadLink);
+      mainWindow.webContents.send('start-mod-download', details.downloadLink);
     } catch (error) {
-      console.error("Download initiation error:", error);
+      console.error('Download initiation error:', error);
 
       // Optionally send error back to renderer
-      mainWindow.webContents.send("download-error", error.message);
+      mainWindow.webContents.send('download-error', error.message);
     }
   } else {
-    console.log("Mod download cancelled by user");
+    console.log('Mod download cancelled by user');
 
     // Optionally send cancellation notification
-    mainWindow.webContents.send("download-cancelled");
+    mainWindow.webContents.send('download-cancelled');
   }
 });
 
@@ -652,7 +650,7 @@ function extractArchive(source, destination) {
   return new Promise<void>((resolve, reject) => {
     try {
       // const sevenZipPath = await findSevenZipPath();
-      const sevenZipPath = "";
+      const sevenZipPath = '';
 
       // Construct extraction command
       const command = `"${sevenZipPath}" x "${source}" -o"${destination}" -y`;
@@ -660,9 +658,9 @@ function extractArchive(source, destination) {
       // Execute extraction
       exec(command, (error, stdout, stderr) => {
         if (error) {
-          console.error("Extraction command error:", error);
-          console.error("stdout:", stdout);
-          console.error("stderr:", stderr);
+          console.error('Extraction command error:', error);
+          console.error('stdout:', stdout);
+          console.error('stderr:', stderr);
           reject(new Error(`Extraction failed: ${error.message}`));
           return;
         }
@@ -670,21 +668,21 @@ function extractArchive(source, destination) {
         resolve();
       });
     } catch (error) {
-      console.error("Extraction setup error:", error);
+      console.error('Extraction setup error:', error);
       reject(error);
     }
   });
 }
 
 // Mod loading handler
-ipcMain.handle("load-mods", async () => {
-  const modsPath = store.get("modsPath", "") as string | null;
+ipcMain.handle('load-mods', async () => {
+  const modsPath = store.get('modsPath', '') as string | null;
 
   if (!modsPath) return [];
 
   const ultimatePath = path.dirname(modsPath);
   const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
-  const removeDot = store.get("removeDot", false);
+  const removeDot = store.get('removeDot', false);
 
   try {
     const mods: Mod[] = [];
@@ -702,7 +700,7 @@ ipcMain.handle("load-mods", async () => {
         }
 
         // Any mod with a dot prefix is considered disabled, regardless of legacy mode
-        const isDotPrefixed = file.startsWith(".");
+        const isDotPrefixed = file.startsWith('.');
         const isEnabled = !isDotPrefixed;
 
         // For display purposes, remove the dot from the name only
@@ -738,7 +736,7 @@ ipcMain.handle("load-mods", async () => {
           }
         }
       } catch (error) {
-        console.error("Error reading disabled mods folder:", error);
+        console.error('Error reading disabled mods folder:', error);
       }
     }
 
@@ -756,17 +754,17 @@ ipcMain.handle("load-mods", async () => {
     // Remove temporary sortName property before returning
     return mods.map(({ ...mod }) => mod);
   } catch (error) {
-    console.error("Error loading mods:", error);
+    console.error('Error loading mods:', error);
     return [];
   }
 });
 
 // Mod installation handler
-ipcMain.handle("install-mod", async (event, filePath) => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('install-mod', async (event, filePath) => {
+  const modsPath = store.get('modsPath') as string | undefined;
 
   if (!modsPath) {
-    throw new Error("Mods directory not set");
+    throw new Error('Mods directory not set');
   }
 
   try {
@@ -789,24 +787,20 @@ ipcMain.handle("install-mod", async (event, filePath) => {
     const ext = path.extname(filePath).toLowerCase();
 
     switch (ext) {
-      case ".zip":
+      case '.zip':
         await extractZipFile(filePath, finalDestPath);
         break;
-      case ".7z":
-      case ".rar":
+      case '.7z':
+      case '.rar':
         await extractArchive(filePath, finalDestPath);
         break;
       default:
         throw new Error(`Unsupported file type: ${ext}`);
     }
 
-    return {
-      id: uniqueModName,
-      name: uniqueModName,
-      path: finalDestPath,
-    };
+    return { id: uniqueModName, name: uniqueModName, path: finalDestPath };
   } catch (error) {
-    console.error("Mod installation error:", error);
+    console.error('Mod installation error:', error);
     throw error;
   }
 });
@@ -826,20 +820,20 @@ function extractZipFile(source, destination) {
 }
 
 // Mod toggle handler
-ipcMain.handle("toggle-mod", async (event, modId) => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('toggle-mod', async (event, modId) => {
+  const modsPath = store.get('modsPath') as string | undefined;
 
   if (!modsPath) {
-    throw new Error("Mods directory not set");
+    throw new Error('Mods directory not set');
   }
 
-  const legacyDiscovery = store.get("legacyModDiscovery", false);
+  const legacyDiscovery = store.get('legacyModDiscovery', false);
   const ultimatePath = path.dirname(modsPath);
   const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
 
   try {
     // Check if this is a dot-prefixed mod (disabled in legacy mode)
-    if (modId.startsWith(".")) {
+    if (modId.startsWith('.')) {
       // Enable: Remove the dot
       const enabledModId = modId.substring(1);
       const currentPath = path.join(modsPath, modId);
@@ -901,20 +895,20 @@ ipcMain.handle("toggle-mod", async (event, modId) => {
       }
     }
 
-    throw new Error("Mod not found");
+    throw new Error('Mod not found');
   } catch (error) {
-    console.error("Mod toggle error:", error);
-    hiddenWindow.webContents.executeJavaScript("playError()");
+    console.error('Mod toggle error:', error);
+    hiddenWindow.webContents.executeJavaScript('playError()');
     throw error;
   }
 });
 
 // Enable all mods handler
-ipcMain.handle("enable-all-mods", async () => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('enable-all-mods', async () => {
+  const modsPath = store.get('modsPath') as string | undefined;
 
   if (!modsPath) {
-    throw new Error("Mods path not set");
+    throw new Error('Mods path not set');
   }
 
   try {
@@ -933,17 +927,17 @@ ipcMain.handle("enable-all-mods", async () => {
 
     return true;
   } catch (error) {
-    console.error("Failed to enable all mods:", error);
+    console.error('Failed to enable all mods:', error);
     throw error;
   }
 });
 
 // Disable all mods handler
-ipcMain.handle("disable-all-mods", async () => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('disable-all-mods', async () => {
+  const modsPath = store.get('modsPath') as string | undefined;
 
   if (!modsPath) {
-    throw new Error("Mods path not set");
+    throw new Error('Mods path not set');
   }
 
   try {
@@ -965,17 +959,17 @@ ipcMain.handle("disable-all-mods", async () => {
 
     return true;
   } catch (error) {
-    console.error("Failed to disable all mods:", error);
+    console.error('Failed to disable all mods:', error);
     throw error;
   }
 });
 
 // Mod uninstallation handler
-ipcMain.handle("uninstall-mod", async (event, modId) => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('uninstall-mod', async (event, modId) => {
+  const modsPath = store.get('modsPath') as string | undefined;
 
   if (!modsPath) {
-    throw new Error("Mods directory not set");
+    throw new Error('Mods directory not set');
   }
 
   const ultimatePath = path.dirname(modsPath);
@@ -991,37 +985,37 @@ ipcMain.handle("uninstall-mod", async (event, modId) => {
     } else if (await fse.pathExists(disabledModPath)) {
       await fse.remove(disabledModPath);
     } else {
-      throw new Error("Mod not found");
+      throw new Error('Mod not found');
     }
 
     return true;
   } catch (error) {
-    console.error("Mod uninstallation error:", error);
-    hiddenWindow.webContents.executeJavaScript("playError()");
+    console.error('Mod uninstallation error:', error);
+    hiddenWindow.webContents.executeJavaScript('playError()');
     throw error;
   }
 });
 
 // Mod info handlers
-ipcMain.handle("get-mod-preview", async (event, modPath) => {
+ipcMain.handle('get-mod-preview', async (event, modPath) => {
   try {
-    const previewPath = path.join(modPath, "preview.webp");
+    const previewPath = path.join(modPath, 'preview.webp');
     if (await fse.pathExists(previewPath)) {
       return previewPath;
     }
     return null;
   } catch (error) {
-    console.error("Error getting mod preview:", error);
+    console.error('Error getting mod preview:', error);
     return null;
   }
 });
 
-ipcMain.handle("get-mod-info", async (event, modPath) => {
+ipcMain.handle('get-mod-info', async (event, modPath) => {
   try {
-    const infoPath = path.join(modPath, "info.toml");
+    const infoPath = path.join(modPath, 'info.toml');
     const modName = path.basename(modPath);
     if (await fse.pathExists(infoPath)) {
-      const infoContent = await fsp.readFile(infoPath, "utf8");
+      const infoContent = await fsp.readFile(infoPath, 'utf8');
       try {
         return toml.parse(infoContent);
       } catch (parseError) {
@@ -1040,42 +1034,42 @@ ipcMain.handle("get-mod-info", async (event, modPath) => {
   }
 });
 
-ipcMain.handle("save-mod-info", async (event, modPath, info) => {
+ipcMain.handle('save-mod-info', async (event, modPath, info) => {
   try {
-    const infoPath = path.join(modPath, "info.toml");
+    const infoPath = path.join(modPath, 'info.toml');
 
     // Convert the info object to TOML format
-    let tomlContent = "";
+    let tomlContent = '';
     for (const [key, value] of Object.entries(info)) {
       // Skip empty values
-      if (!value && key !== "version") continue;
+      if (!value && key !== 'version') continue;
 
-      if (key === "description") {
+      if (key === 'description') {
         tomlContent += `${key} = """\n${value}\n"""\n`;
       } else {
         tomlContent += `${key} = "${value}"\n`;
       }
     }
 
-    await fsp.writeFile(infoPath, tomlContent, "utf8");
+    await fsp.writeFile(infoPath, tomlContent, 'utf8');
     return true;
   } catch (error) {
-    console.error("Failed to save mod info:", error);
+    console.error('Failed to save mod info:', error);
     throw error;
   }
 });
 
 // Open mods folder handler
-ipcMain.handle("open-mods-folder", async () => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('open-mods-folder', async () => {
+  const modsPath = store.get('modsPath') as string | undefined;
   if (modsPath) {
     shell.openPath(modsPath);
   }
 });
 
 // Open specific mod folder handler
-ipcMain.handle("open-mod-folder", async (event, modId) => {
-  const modsPath = store.get("modsPath") as string | undefined;
+ipcMain.handle('open-mod-folder', async (event, modId) => {
+  const modsPath = store.get('modsPath') as string | undefined;
   if (modsPath && modId) {
     const ultimatePath = path.dirname(modsPath);
     const disabledModsPath = path.join(ultimatePath, DISABLED_MODS_FOLDER_NAME);
@@ -1092,58 +1086,58 @@ ipcMain.handle("open-mod-folder", async (event, modId) => {
 });
 
 // Settings handlers
-ipcMain.handle("get-mods-path", () => {
-  return store.get("modsPath", "");
+ipcMain.handle('get-mods-path', () => {
+  return store.get('modsPath', '');
 });
 
-ipcMain.handle("set-mods-path", (event, newPath) => {
-  store.set("modsPath", newPath);
-  log.info("Mods path updated:", newPath);
+ipcMain.handle('set-mods-path', (event, newPath) => {
+  store.set('modsPath', newPath);
+  log.info('Mods path updated:', newPath);
   return true;
 });
 
-ipcMain.handle("get-custom-css-path", () => {
-  return store.get("customCssPath", "");
+ipcMain.handle('get-custom-css-path', () => {
+  return store.get('customCssPath', '');
 });
 
-ipcMain.handle("set-custom-css-path", (event, newPath) => {
-  store.set("customCssPath", newPath);
+ipcMain.handle('set-custom-css-path', (event, newPath) => {
+  store.set('customCssPath', newPath);
   return true;
 });
 
-ipcMain.handle("get-custom-css-enabled", async () => {
+ipcMain.handle('get-custom-css-enabled', async () => {
   try {
-    return store.get("customCssEnabled", false);
+    return store.get('customCssEnabled', false);
   } catch (error) {
-    console.error("Failed to get custom CSS enabled state:", error);
+    console.error('Failed to get custom CSS enabled state:', error);
     throw error;
   }
 });
 
-ipcMain.handle("load-custom-css", async (event, path) => {
+ipcMain.handle('load-custom-css', async (event, path) => {
   try {
-    const customCss = await fsp.readFile(path, "utf8");
+    const customCss = await fsp.readFile(path, 'utf8');
     mainWindow.webContents.insertCSS(customCss);
   } catch (error) {
-    console.error("Failed to load custom CSS:", error);
+    console.error('Failed to load custom CSS:', error);
     throw error;
   }
 });
 
-ipcMain.handle("remove-custom-css", async () => {
+ipcMain.handle('remove-custom-css', async () => {
   try {
     mainWindow.webContents.removeInsertedCSS();
-    store.delete("customCssPath");
+    store.delete('customCssPath');
   } catch (error) {
-    console.error("Failed to remove custom CSS:", error);
+    console.error('Failed to remove custom CSS:', error);
     throw error;
   }
 });
 
-ipcMain.handle("select-custom-css-file", async () => {
+ipcMain.handle('select-custom-css-file', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ["openFile"],
-    filters: [{ name: "CSS Files", extensions: ["css"] }],
+    properties: ['openFile'],
+    filters: [{ name: 'CSS Files', extensions: ['css'] }],
   });
 
   if (result.canceled) {
@@ -1153,100 +1147,100 @@ ipcMain.handle("select-custom-css-file", async () => {
   }
 });
 
-ipcMain.handle("get-conflict-check-enabled", () => {
-  return store.get("conflictCheckEnabled", true);
+ipcMain.handle('get-conflict-check-enabled', () => {
+  return store.get('conflictCheckEnabled', true);
 });
 
-ipcMain.handle("set-conflict-check-enabled", (event, enabled) => {
-  store.set("conflictCheckEnabled", enabled);
+ipcMain.handle('set-conflict-check-enabled', (event, enabled) => {
+  store.set('conflictCheckEnabled', enabled);
   return true;
 });
 
-ipcMain.handle("get-auto-prefix-rename", () => {
-  return store.get("autoPrefixRename", false);
+ipcMain.handle('get-auto-prefix-rename', () => {
+  return store.get('autoPrefixRename', false);
 });
 
-ipcMain.handle("set-auto-prefix-rename", (event, enabled) => {
-  store.set("autoPrefixRename", enabled);
+ipcMain.handle('set-auto-prefix-rename', (event, enabled) => {
+  store.set('autoPrefixRename', enabled);
   return true;
 });
 
 // Legacy mod discovery handler
-ipcMain.handle("get-legacy-mod-discovery", () => {
-  return store.get("legacyModDiscovery", false);
+ipcMain.handle('get-legacy-mod-discovery', () => {
+  return store.get('legacyModDiscovery', false);
 });
 
-ipcMain.handle("set-legacy-mod-discovery", (event, enabled) => {
-  store.set("legacyModDiscovery", enabled);
+ipcMain.handle('set-legacy-mod-discovery', (event, enabled) => {
+  store.set('legacyModDiscovery', enabled);
   return true;
 });
 
 // Dark mode handler
-ipcMain.handle("set-dark-mode", (event, enabled) => {
-  store.set("darkMode", enabled);
+ipcMain.handle('set-dark-mode', (event, enabled) => {
+  store.set('darkMode', enabled);
   return true;
 });
 
-ipcMain.handle("get-dark-mode", () => {
-  return store.get("darkMode", false);
+ipcMain.handle('get-dark-mode', () => {
+  return store.get('darkMode', false);
 });
 
-ipcMain.handle("get-send-version-enabled", () => {
-  return store.get("sendVersionEnabled", true);
+ipcMain.handle('get-send-version-enabled', () => {
+  return store.get('sendVersionEnabled', true);
 });
 
-ipcMain.handle("set-send-version-enabled", (event, enabled) => {
-  store.set("sendVersionEnabled", enabled);
+ipcMain.handle('set-send-version-enabled', (event, enabled) => {
+  store.set('sendVersionEnabled', enabled);
   return true;
 });
 
 const activeDownloads = new Map();
 let downloadIdCounter = 0;
 
-ipcMain.handle("download-mod", async (event, downloadLink) => {
+ipcMain.handle('download-mod', async (event, downloadLink) => {
   let downloadId;
 
   try {
     downloadId = (downloadIdCounter++).toString();
-    const modsPath = store.get("modsPath") as string | undefined;
-    if (!modsPath) throw new Error("Mods path not set");
+    const modsPath = store.get('modsPath') as string | undefined;
+    if (!modsPath) throw new Error('Mods path not set');
 
     const downloader = new GameBananaDownloader(modsPath, {
       onStart: (message, modName) => {
-        event.sender.send("download-status", {
+        event.sender.send('download-status', {
           id: downloadId,
-          type: "start",
+          type: 'start',
           message,
           modName,
         });
       },
       onProgress: (message, progress, modName) => {
-        event.sender.send("download-status", {
+        event.sender.send('download-status', {
           id: downloadId,
-          type: "progress",
+          type: 'progress',
           message,
           progress: progress || 0,
           modName,
         });
       },
       onFinish: (message, modName) => {
-        event.sender.send("download-status", {
+        event.sender.send('download-status', {
           id: downloadId,
-          type: "finish",
+          type: 'finish',
           message,
           modName,
         });
         activeDownloads.delete(downloadId);
-        hiddenWindow.webContents.executeJavaScript("playFinish()");
+        hiddenWindow.webContents.executeJavaScript('playFinish()');
       },
       onError: (message) => {
-        event.sender.send("download-status", {
+        event.sender.send('download-status', {
           id: downloadId,
-          type: "error",
+          type: 'error',
           message,
         });
         activeDownloads.delete(downloadId);
-        hiddenWindow.webContents.executeJavaScript("playError()");
+        hiddenWindow.webContents.executeJavaScript('playError()');
       },
     });
 
@@ -1254,52 +1248,52 @@ ipcMain.handle("download-mod", async (event, downloadLink) => {
     const result = await downloader.downloadMod(downloadLink);
 
     if (result && result.cancelled) {
-      event.sender.send("download-status", {
+      event.sender.send('download-status', {
         id: downloadId,
-        type: "cancelled",
-        message: "Download cancelled by user",
+        type: 'cancelled',
+        message: 'Download cancelled by user',
       });
       return { cancelled: true };
     }
 
     return result;
   } catch (error) {
-    console.error("Mod download error:", error);
-    event.sender.send("download-status", {
+    console.error('Mod download error:', error);
+    event.sender.send('download-status', {
       id: downloadId,
-      type: "error",
+      type: 'error',
       message: error.message,
     });
     throw error;
   }
 });
 
-ipcMain.handle("cancel-download", async (event, downloadId) => {
+ipcMain.handle('cancel-download', async (event, downloadId) => {
   try {
     const downloader = activeDownloads.get(downloadId);
     if (downloader) {
       await downloader.cancel();
       activeDownloads.delete(downloadId);
-      event.sender.send("download-status", {
+      event.sender.send('download-status', {
         id: downloadId,
-        type: "cancelled",
-        message: "Download cancelled",
+        type: 'cancelled',
+        message: 'Download cancelled',
       });
       return true;
     }
     return false;
   } catch (error) {
-    console.error("Cancel download error:", error);
+    console.error('Cancel download error:', error);
     throw error;
   }
 });
 
-ipcMain.handle("rename-mod", async (event, { oldName, newName }) => {
-  console.log("Rename request received:", { oldName, newName });
+ipcMain.handle('rename-mod', async (event, { oldName, newName }) => {
+  console.log('Rename request received:', { oldName, newName });
 
-  const modsPath = store.get("modsPath") as string | undefined;
+  const modsPath = store.get('modsPath') as string | undefined;
   if (!modsPath) {
-    throw new Error("Mods directory not set");
+    throw new Error('Mods directory not set');
   }
 
   const ultimatePath = path.dirname(modsPath);
@@ -1321,12 +1315,12 @@ ipcMain.handle("rename-mod", async (event, { oldName, newName }) => {
       sourcePath = disabledModPath;
       destPath = path.join(disabledModsPath, newName);
     } else {
-      throw new Error("Mod folder not found");
+      throw new Error('Mod folder not found');
     }
 
     // Check if destination path already exists
     if (await fse.pathExists(destPath)) {
-      throw new Error("A mod with this name already exists");
+      throw new Error('A mod with this name already exists');
     }
 
     // Use fs.promises for renaming with better error handling
@@ -1336,20 +1330,20 @@ ipcMain.handle("rename-mod", async (event, { oldName, newName }) => {
 
     return true;
   } catch (error) {
-    console.error("Mod rename error:", error);
+    console.error('Mod rename error:', error);
 
     // More detailed error handling
-    if (error.code === "EPERM") {
+    if (error.code === 'EPERM') {
       // Try an alternative method using copy and delete
       try {
         await fse.copy(sourcePath, destPath);
         await fse.remove(sourcePath);
-        console.log("Renamed using copy and delete method");
+        console.log('Renamed using copy and delete method');
         return true;
       } catch (alternativeError) {
-        console.error("Alternative rename method failed:", alternativeError);
+        console.error('Alternative rename method failed:', alternativeError);
         throw new Error(
-          "Failed to rename mod. Please close any open files or applications using the mod.",
+          'Failed to rename mod. Please close any open files or applications using the mod.',
         );
       }
     }
@@ -1358,13 +1352,13 @@ ipcMain.handle("rename-mod", async (event, { oldName, newName }) => {
   }
 });
 
-ipcMain.handle("initialize-configurations", async () => {
+ipcMain.handle('initialize-configurations', async () => {
   try {
     // Ensure mods path is set
-    const modsPath = store.get("modsPath") as string | undefined;
+    const modsPath = store.get('modsPath') as string | undefined;
 
     if (!modsPath) {
-      throw new Error("Mods path not set");
+      throw new Error('Mods path not set');
     }
 
     // Create necessary directories
@@ -1375,7 +1369,7 @@ ipcMain.handle("initialize-configurations", async () => {
     const defaultSettings = {
       darkMode: false,
       autoUpdate: true,
-      language: "en",
+      language: 'en',
     };
 
     // Save default settings if not exists
@@ -1388,19 +1382,15 @@ ipcMain.handle("initialize-configurations", async () => {
     // Scan initial mods
     const mods = await scanInitialMods(modsPath);
 
-    console.log("Initialization complete:", {
+    console.log('Initialization complete:', {
       modsPath,
       settings: defaultSettings,
       initialMods: mods,
     });
 
-    return {
-      modsPath,
-      settings: defaultSettings,
-      initialMods: mods,
-    };
+    return { modsPath, settings: defaultSettings, initialMods: mods };
   } catch (error) {
-    console.error("Configuration initialization error:", error);
+    console.error('Configuration initialization error:', error);
     throw error;
   }
 });
@@ -1419,11 +1409,7 @@ async function scanInitialMods(modsPath) {
       const stats = await fsp.stat(fullPath);
 
       if (stats.isDirectory()) {
-        modFolders.push({
-          name: file,
-          path: fullPath,
-          enabled: true,
-        });
+        modFolders.push({ name: file, path: fullPath, enabled: true });
       }
     }
 
@@ -1436,31 +1422,27 @@ async function scanInitialMods(modsPath) {
         const stats = await fsp.stat(fullPath);
 
         if (stats.isDirectory()) {
-          modFolders.push({
-            name: file,
-            path: fullPath,
-            enabled: false,
-          });
+          modFolders.push({ name: file, path: fullPath, enabled: false });
         }
       }
     } catch (disabledError) {
       // Ignore if disabled folder doesn't exist
-      console.log("No disabled mods folder");
+      console.log('No disabled mods folder');
     }
 
     return modFolders;
   } catch (error) {
-    console.error("Initial mod scan error:", error);
+    console.error('Initial mod scan error:', error);
     return [];
   }
 }
 
-ipcMain.on("open-external", (event, url) => {
+ipcMain.on('open-external', (event, url) => {
   shell.openExternal(url);
 });
 
-ipcMain.handle("load-plugins", async () => {
-  const pluginsPath = store.get("pluginsPath", "") as string | undefined;
+ipcMain.handle('load-plugins', async () => {
+  const pluginsPath = store.get('pluginsPath', '') as string | undefined;
   if (!pluginsPath) return [];
 
   const skylinePath = path.dirname(pluginsPath);
@@ -1511,29 +1493,29 @@ ipcMain.handle("load-plugins", async () => {
 
     return plugins;
   } catch (error) {
-    console.error("Error loading plugins:", error);
+    console.error('Error loading plugins:', error);
     return [];
   }
 });
 
-ipcMain.handle("install-plugin", async (event, filePath) => {
+ipcMain.handle('install-plugin', async (event, filePath) => {
   try {
     // Input validation
     if (!filePath) {
-      throw new Error("No file path provided");
+      throw new Error('No file path provided');
     }
 
     // Handle file path from different sources
     const resolvedPath =
-      typeof filePath === "object" ? filePath.path : filePath;
-    if (typeof resolvedPath !== "string") {
+      typeof filePath === 'object' ? filePath.path : filePath;
+    if (typeof resolvedPath !== 'string') {
       throw new TypeError('The "path" argument must be of type string');
     }
 
-    const pluginsPath = store.get("pluginsPath") as string | undefined;
+    const pluginsPath = store.get('pluginsPath') as string | undefined;
 
     if (!pluginsPath) {
-      throw new Error("Plugins directory not set");
+      throw new Error('Plugins directory not set');
     }
 
     // Validate file extension
@@ -1573,21 +1555,21 @@ ipcMain.handle("install-plugin", async (event, filePath) => {
       enabled: true,
     };
   } catch (error) {
-    console.error("Plugin installation error:", error);
+    console.error('Plugin installation error:', error);
     throw error; // Let the error propagate to the renderer
   }
 });
 
-ipcMain.handle("mod:createDirectory", async (event, dirPath) => {
+ipcMain.handle('mod:createDirectory', async (event, dirPath) => {
   await fsp.mkdir(dirPath, { recursive: true });
   return true;
 });
 
-ipcMain.handle("delete-plugin", async (event, pluginId) => {
-  const pluginsPath = store.get("pluginsPath") as string | undefined;
+ipcMain.handle('delete-plugin', async (event, pluginId) => {
+  const pluginsPath = store.get('pluginsPath') as string | undefined;
 
   if (!pluginsPath) {
-    throw new Error("Plugins directory not set");
+    throw new Error('Plugins directory not set');
   }
 
   const skylinePath = path.dirname(pluginsPath);
@@ -1605,31 +1587,31 @@ ipcMain.handle("delete-plugin", async (event, pluginId) => {
     } else if (await fse.pathExists(disabledPluginPath)) {
       await fse.remove(disabledPluginPath);
     } else {
-      throw new Error("Plugin not found");
+      throw new Error('Plugin not found');
     }
     return true;
   } catch (error) {
-    console.error("Plugin deletion error:", error);
+    console.error('Plugin deletion error:', error);
     throw error;
   }
 });
 
-ipcMain.handle("get-plugins-path", () => {
-  return store.get("pluginsPath", "");
+ipcMain.handle('get-plugins-path', () => {
+  return store.get('pluginsPath', '');
 });
 
-ipcMain.handle("set-plugins-path", (event, newPath) => {
-  store.set("pluginsPath", newPath);
-  log.info("Plugins path updated:", newPath);
+ipcMain.handle('set-plugins-path', (event, newPath) => {
+  store.set('pluginsPath', newPath);
+  log.info('Plugins path updated:', newPath);
   return true;
 });
 
-ipcMain.handle("toggle-plugin", async (event, pluginId) => {
-  const pluginsPath = store.get("pluginsPath") as string | undefined;
+ipcMain.handle('toggle-plugin', async (event, pluginId) => {
+  const pluginsPath = store.get('pluginsPath') as string | undefined;
 
   if (!pluginsPath) {
     throw new Error(
-      "Plugins directory not set. Please set a plugins directory in settings first.",
+      'Plugins directory not set. Please set a plugins directory in settings first.',
     );
   }
 
@@ -1684,19 +1666,19 @@ ipcMain.handle("toggle-plugin", async (event, pluginId) => {
 
       return true; // Enabled
     } else {
-      throw new Error("Plugin not found");
+      throw new Error('Plugin not found');
     }
   } catch (error) {
-    console.error("Plugin toggle error:", error);
+    console.error('Plugin toggle error:', error);
     throw error;
   }
 });
 
-ipcMain.handle("rename-plugin", async (event, { oldName, newName }) => {
-  const pluginsPath = store.get("pluginsPath") as string | undefined;
+ipcMain.handle('rename-plugin', async (event, { oldName, newName }) => {
+  const pluginsPath = store.get('pluginsPath') as string | undefined;
 
   if (!pluginsPath) {
-    throw new Error("Plugins directory not set");
+    throw new Error('Plugins directory not set');
   }
 
   const skylinePath = path.dirname(pluginsPath);
@@ -1721,16 +1703,16 @@ ipcMain.handle("rename-plugin", async (event, { oldName, newName }) => {
       sourcePath = disabledPluginPath;
       destPath = path.join(disabledPluginsPath, newName);
     } else {
-      throw new Error("Plugin folder not found");
+      throw new Error('Plugin folder not found');
     }
 
     // Check if destination path already exists
     if (await fse.pathExists(destPath)) {
       event.sender.send(
-        "plugin-exists",
-        "A plugin with this name already exists",
+        'plugin-exists',
+        'A plugin with this name already exists',
       );
-      throw new Error("A plugin with this name already exists");
+      throw new Error('A plugin with this name already exists');
     }
 
     // Use fs.promises for renaming with better error handling
@@ -1738,19 +1720,19 @@ ipcMain.handle("rename-plugin", async (event, { oldName, newName }) => {
 
     return true;
   } catch (error) {
-    console.error("Plugin rename error:", error);
+    console.error('Plugin rename error:', error);
 
     // More detailed error handling
-    if (error.code === "EPERM") {
+    if (error.code === 'EPERM') {
       // Try an alternative method using copy and delete
       try {
         await fse.copy(sourcePath, destPath);
         await fse.remove(sourcePath);
         return true;
       } catch (alternativeError) {
-        console.error("Alternative rename method failed:", alternativeError);
+        console.error('Alternative rename method failed:', alternativeError);
         throw new Error(
-          "Failed to rename plugin. Please close any open files or applications using the plugin.",
+          'Failed to rename plugin. Please close any open files or applications using the plugin.',
         );
       }
     }
@@ -1759,20 +1741,20 @@ ipcMain.handle("rename-plugin", async (event, { oldName, newName }) => {
   }
 });
 
-ipcMain.handle("open-plugins-folder", async () => {
+ipcMain.handle('open-plugins-folder', async () => {
   try {
-    const pluginsPath = store.get("pluginsPath") as string | undefined;
+    const pluginsPath = store.get('pluginsPath') as string | undefined;
     if (!pluginsPath) {
-      throw new Error("Plugins path not set");
+      throw new Error('Plugins path not set');
     }
 
     if (await fse.pathExists(pluginsPath)) {
       await shell.openPath(pluginsPath);
     } else {
-      throw new Error("Plugins folder not found");
+      throw new Error('Plugins folder not found');
     }
   } catch (error) {
-    console.error("Failed to open plugins folder:", error);
+    console.error('Failed to open plugins folder:', error);
     throw error;
   }
 });
@@ -1799,12 +1781,12 @@ async function getAllFiles(dirPath, arrayOfFiles = []) {
 }
 
 // Update the get-mod-files handler
-ipcMain.handle("get-mod-files", async (event, modPath) => {
+ipcMain.handle('get-mod-files', async (event, modPath) => {
   try {
-    const modsPath = store.get("modsPath") as string | undefined;
+    const modsPath = store.get('modsPath') as string | undefined;
 
     if (!modsPath) {
-      throw new Error("Mods directory not set");
+      throw new Error('Mods directory not set');
     }
 
     const normalizedModPath = path.normalize(modPath);
@@ -1818,218 +1800,218 @@ ipcMain.handle("get-mod-files", async (event, modPath) => {
       !normalizedModPath.startsWith(normalizedModsPath) &&
       !normalizedModPath.startsWith(path.normalize(disabledModsPath))
     ) {
-      throw new Error("Access denied: Path is outside mods directory");
+      throw new Error('Access denied: Path is outside mods directory');
     }
 
     // Get all files recursively
     const files = await getAllFiles(modPath);
     return files.map((file) => path.relative(modPath, file));
   } catch (error) {
-    console.error("Failed to get mod files:", error);
+    console.error('Failed to get mod files:', error);
     throw error;
   }
 });
 
 // Settings handlers
-ipcMain.handle("get-discord-rpc-enabled", () => {
-  return store.get("discordRpcEnabled", true);
+ipcMain.handle('get-discord-rpc-enabled', () => {
+  return store.get('discordRpcEnabled', true);
 });
 
-ipcMain.handle("set-discord-rpc-enabled", (event, enabled) => {
-  store.set("discordRpcEnabled", enabled);
+ipcMain.handle('set-discord-rpc-enabled', (event, enabled) => {
+  store.set('discordRpcEnabled', enabled);
   return true;
 });
 
 // Discord RPC handlers
-ipcMain.handle("connect-discord-rpc", async () => {
+ipcMain.handle('connect-discord-rpc', async () => {
   try {
     await discordRPC.connect();
     return true;
   } catch (error) {
-    console.error("Failed to connect Discord RPC:", error);
+    console.error('Failed to connect Discord RPC:', error);
     throw error;
   }
 });
 
-ipcMain.handle("disconnect-discord-rpc", async () => {
+ipcMain.handle('disconnect-discord-rpc', async () => {
   try {
     discordRPC.disconnect();
     return true;
   } catch (error) {
-    console.error("Failed to disconnect Discord RPC:", error);
+    console.error('Failed to disconnect Discord RPC:', error);
     throw error;
   }
 });
 
-ipcMain.handle("set-discord-rpc-activity", async (event, activity) => {
+ipcMain.handle('set-discord-rpc-activity', async (event, activity) => {
   try {
     discordRPC.setActivity(activity);
     return true;
   } catch (error) {
-    console.error("Failed to set Discord RPC activity:", error);
+    console.error('Failed to set Discord RPC activity:', error);
     throw error;
   }
 });
 
-ipcMain.handle("update-discord-rpc-mod-count", async (event, count) => {
+ipcMain.handle('update-discord-rpc-mod-count', async (event, count) => {
   try {
     discordRPC.updateModBrowsing(count);
     return true;
   } catch (error) {
-    console.error("Failed to update Discord RPC mod count:", error);
+    console.error('Failed to update Discord RPC mod count:', error);
     throw error;
   }
 });
 
-ipcMain.handle("update-discord-rpc-mod-installation", async () => {
+ipcMain.handle('update-discord-rpc-mod-installation', async () => {
   try {
     discordRPC.updateModInstalling();
     return true;
   } catch (error) {
-    console.error("Failed to update Discord RPC mod installation:", error);
+    console.error('Failed to update Discord RPC mod installation:', error);
     throw error;
   }
 });
 
 // Emulator handlers
-ipcMain.handle("set-emulator-path", (event, path) => {
-  store.set("emulatorPath", path);
+ipcMain.handle('set-emulator-path', (event, path) => {
+  store.set('emulatorPath', path);
   return true;
 });
 
-ipcMain.handle("get-emulator-path", () => {
-  return store.get("emulatorPath", "");
+ipcMain.handle('get-emulator-path', () => {
+  return store.get('emulatorPath', '');
 });
 
-ipcMain.handle("set-game-path", (event, path) => {
-  store.set("gamePath", path);
+ipcMain.handle('set-game-path', (event, path) => {
+  store.set('gamePath', path);
   return true;
 });
 
-ipcMain.handle("get-game-path", () => {
-  return store.get("gamePath", "");
+ipcMain.handle('get-game-path', () => {
+  return store.get('gamePath', '');
 });
 
-ipcMain.handle("set-selected-emulator", (event, emulator) => {
-  store.set("selectedEmulator", emulator);
+ipcMain.handle('set-selected-emulator', (event, emulator) => {
+  store.set('selectedEmulator', emulator);
   return true;
 });
 
-ipcMain.handle("get-selected-emulator", () => {
-  return store.get("selectedEmulator", "");
+ipcMain.handle('get-selected-emulator', () => {
+  return store.get('selectedEmulator', '');
 });
 
-ipcMain.handle("set-yuzu-fullscreen", (event, enabled) => {
-  store.set("yuzuFullscreen", enabled);
+ipcMain.handle('set-yuzu-fullscreen', (event, enabled) => {
+  store.set('yuzuFullscreen', enabled);
   return true;
 });
 
-ipcMain.handle("get-yuzu-fullscreen", () => {
-  return store.get("yuzuFullscreen", false);
+ipcMain.handle('get-yuzu-fullscreen', () => {
+  return store.get('yuzuFullscreen', false);
 });
 
-ipcMain.handle("launch-game", async () => {
+ipcMain.handle('launch-game', async () => {
   try {
-    const emulatorPath = store.get("emulatorPath", "");
-    const gamePath = store.get("gamePath", "");
-    const selectedEmulator = store.get("selectedEmulator", "");
-    const yuzuFullscreen = store.get("yuzuFullscreen", false);
+    const emulatorPath = store.get('emulatorPath', '');
+    const gamePath = store.get('gamePath', '');
+    const selectedEmulator = store.get('selectedEmulator', '');
+    const yuzuFullscreen = store.get('yuzuFullscreen', false);
 
     if (!emulatorPath || !gamePath || !selectedEmulator) {
-      throw new Error("Please configure emulator and game paths first");
+      throw new Error('Please configure emulator and game paths first');
     }
 
     let command;
-    if (selectedEmulator === "yuzu") {
+    if (selectedEmulator === 'yuzu') {
       command = `"${emulatorPath}" -g "${gamePath}"${
-        yuzuFullscreen ? " -f" : ""
+        yuzuFullscreen ? ' -f' : ''
       }`;
-    } else if (selectedEmulator === "ryujinx") {
+    } else if (selectedEmulator === 'ryujinx') {
       command = `"${emulatorPath}" "${gamePath}"`;
     } else {
-      throw new Error("Invalid emulator selected");
+      throw new Error('Invalid emulator selected');
     }
 
     exec(command, { maxBuffer: 2048 * 2048 }, (error, stdout, stderr) => {
       if (error) {
-        console.error("Failed to launch game:", error);
-        console.error("stdout:", stdout);
-        console.error("stderr:", stderr);
+        console.error('Failed to launch game:', error);
+        console.error('stdout:', stdout);
+        console.error('stderr:', stderr);
         throw new Error(`Failed to launch game: ${error.message}`);
       }
     });
 
     return true;
   } catch (error) {
-    console.error("Failed to launch game:", error);
+    console.error('Failed to launch game:', error);
     throw error;
   }
 });
 
 function logAppSettings() {
   const settings = {
-    modsPath: store.get("modsPath", "Not set"),
-    pluginsPath: store.get("pluginsPath", "Not set"),
-    darkMode: store.get("darkMode", false),
-    customCssPath: store.get("customCssPath", "Not set"),
-    discordRpcEnabled: store.get("discordRpcEnabled", true),
-    conflictCheckEnabled: store.get("conflictCheckEnabled", true),
-    emulatorPath: store.get("emulatorPath", "Not set"),
-    gamePath: store.get("gamePath", "Not set"),
-    selectedEmulator: store.get("selectedEmulator", "Not set"),
+    modsPath: store.get('modsPath', 'Not set'),
+    pluginsPath: store.get('pluginsPath', 'Not set'),
+    darkMode: store.get('darkMode', false),
+    customCssPath: store.get('customCssPath', 'Not set'),
+    discordRpcEnabled: store.get('discordRpcEnabled', true),
+    conflictCheckEnabled: store.get('conflictCheckEnabled', true),
+    emulatorPath: store.get('emulatorPath', 'Not set'),
+    gamePath: store.get('gamePath', 'Not set'),
+    selectedEmulator: store.get('selectedEmulator', 'Not set'),
     appVersion: app.getVersion(),
   };
 
-  log.info("Application Settings:", JSON.stringify(settings, null, 2));
+  log.info('Application Settings:', JSON.stringify(settings, null, 2));
   return settings;
 }
 
-ipcMain.handle("get-current-log", async () => {
+ipcMain.handle('get-current-log', async () => {
   try {
     const logPath = log.transports.file.getFile().path;
-    const consoleLog = await fsp.readFile(logPath, "utf8");
+    const consoleLog = await fsp.readFile(logPath, 'utf8');
 
     // Get the last 1000 lines to avoid overwhelming the viewer
-    const lines = consoleLog.split("\n").slice(-1000);
-    return lines.join("\n");
+    const lines = consoleLog.split('\n').slice(-1000);
+    return lines.join('\n');
   } catch (error) {
-    console.error("Error reading log file:", error);
+    console.error('Error reading log file:', error);
     throw error;
   }
 });
 
-ipcMain.handle("open-logs-folder", async () => {
+ipcMain.handle('open-logs-folder', async () => {
   try {
     const logPath = path.dirname(log.transports.file.getFile().path);
     await shell.openPath(logPath);
     return true;
   } catch (error) {
-    console.error("Error opening logs folder:", error);
+    console.error('Error opening logs folder:', error);
     throw error;
   }
 });
 
-ipcMain.handle("open-current-log", async () => {
+ipcMain.handle('open-current-log', async () => {
   try {
     const logPath = log.transports.file.getFile().path;
     await shell.openPath(logPath);
     return true;
   } catch (error) {
-    console.error("Error opening current log:", error);
+    console.error('Error opening current log:', error);
     throw error;
   }
 });
 
-ipcMain.handle("clear-logs", async () => {
+ipcMain.handle('clear-logs', async () => {
   try {
     const logPath = log.transports.file.getFile().path;
     // Clear the log file by writing an empty string
-    await fsp.writeFile(logPath, "");
+    await fsp.writeFile(logPath, '');
     // Add a log entry indicating the logs were cleared
-    log.info("Logs cleared by user");
+    log.info('Logs cleared by user');
     return true;
   } catch (error) {
-    console.error("Error clearing logs:", error);
+    console.error('Error clearing logs:', error);
     throw error;
   }
 });
@@ -2042,11 +2024,11 @@ function handleProtocolUrl(url) {
   }
 
   // Get the protocol confirmation setting (true means skip confirmation)
-  const skipConfirmation = store.get("protocolConfirmEnabled", false);
+  const skipConfirmation = store.get('protocolConfirmEnabled', false);
 
   // Send URL and skipConfirmation flag to renderer
   const sendUrlToRenderer = () => {
-    mainWindow.webContents.send("protocol-url", {
+    mainWindow.webContents.send('protocol-url', {
       url: url,
       skipConfirmation: skipConfirmation,
     });
@@ -2063,26 +2045,26 @@ function handleProtocolUrl(url) {
   mainWindow.focus();
 
   if (mainWindow.webContents.isLoading()) {
-    mainWindow.webContents.once("did-finish-load", sendUrlToRenderer);
+    mainWindow.webContents.once('did-finish-load', sendUrlToRenderer);
   } else {
     sendUrlToRenderer();
   }
 }
 
-ipcMain.handle("get-protocol-confirm-enabled", () => {
-  return store.get("protocolConfirmEnabled", false);
+ipcMain.handle('get-protocol-confirm-enabled', () => {
+  return store.get('protocolConfirmEnabled', false);
 });
 
-ipcMain.handle("set-protocol-confirm-enabled", (event, enabled) => {
-  store.set("protocolConfirmEnabled", enabled);
+ipcMain.handle('set-protocol-confirm-enabled', (event, enabled) => {
+  store.set('protocolConfirmEnabled', enabled);
   return true;
 });
 
-ipcMain.handle("clear-temp-files", async () => {
+ipcMain.handle('clear-temp-files', async () => {
   try {
-    const appDataPath = app.getPath("userData");
-    const modsPath = store.get("modsPath") as string | undefined;
-    const tempLocations = [app.getPath("temp"), appDataPath, modsPath].filter(
+    const appDataPath = app.getPath('userData');
+    const modsPath = store.get('modsPath') as string | undefined;
+    const tempLocations = [app.getPath('temp'), appDataPath, modsPath].filter(
       Boolean,
     ); // Remove null/undefined paths
 
@@ -2095,7 +2077,7 @@ ipcMain.handle("clear-temp-files", async () => {
         for (const entry of entries) {
           if (
             entry.isDirectory() &&
-            entry.name.toLowerCase().startsWith("temp")
+            entry.name.toLowerCase().startsWith('temp')
           ) {
             const fullPath = path.join(location, entry.name);
             await fse.remove(fullPath);
@@ -2109,20 +2091,20 @@ ipcMain.handle("clear-temp-files", async () => {
     }
 
     if (filesRemoved) {
-      log.info("Temporary files cleared successfully");
+      log.info('Temporary files cleared successfully');
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error("Error clearing temporary files:", error);
-    log.error("Failed to clear temporary files:", error);
+    console.error('Error clearing temporary files:', error);
+    log.error('Failed to clear temporary files:', error);
     throw error;
   }
 });
 
 ipcMain.handle(
-  "rename-mod-file",
+  'rename-mod-file',
   async (event, { modPath, oldPath, newPath }) => {
     try {
       const fullOldPath = path.join(modPath, oldPath);
@@ -2135,7 +2117,7 @@ ipcMain.handle(
       try {
         await fsp.rename(fullOldPath, fullNewPath);
       } catch (error) {
-        if (error.code === "EPERM") {
+        if (error.code === 'EPERM') {
           // If rename fails due to EPERM, try copying and deleting
           await fse.copy(fullOldPath, fullNewPath);
           await fse.remove(fullOldPath);
@@ -2145,13 +2127,13 @@ ipcMain.handle(
       }
       return true;
     } catch (error) {
-      console.error("Error renaming mod file:", error);
+      console.error('Error renaming mod file:', error);
       throw error;
     }
   },
 );
 
-ipcMain.handle("delete-mod-file", async (event, { modPath, filePath }) => {
+ipcMain.handle('delete-mod-file', async (event, { modPath, filePath }) => {
   const fullPath = path.join(modPath, filePath);
   try {
     const stat = await fsp.stat(fullPath);
@@ -2164,16 +2146,16 @@ ipcMain.handle("delete-mod-file", async (event, { modPath, filePath }) => {
 
     return true;
   } catch (error) {
-    if (error.code === "ENOENT") {
-      console.warn("File or directory does not exist:", fullPath);
+    if (error.code === 'ENOENT') {
+      console.warn('File or directory does not exist:', fullPath);
       return false; // Indicate that the file or directory was not found
     }
-    console.error("Error deleting mod file:", error);
+    console.error('Error deleting mod file:', error);
     throw error;
   }
 });
 
-ipcMain.handle("write-mod-file", async (event, { filePath, content }) => {
+ipcMain.handle('write-mod-file', async (event, { filePath, content }) => {
   try {
     // File doesn't exist, check content for encoding hints
     if (
@@ -2188,7 +2170,7 @@ ipcMain.handle("write-mod-file", async (event, { filePath, content }) => {
 
       // Add BOM for UTF-16LE and write as buffer
       const bom = Buffer.from([0xff, 0xfe]);
-      const contentBuffer = Buffer.from(contentWithoutBOM, "utf16le");
+      const contentBuffer = Buffer.from(contentWithoutBOM, 'utf16le');
       const fullBuffer = Buffer.concat([bom, contentBuffer]);
 
       await fsp.writeFile(filePath, fullBuffer);
@@ -2196,22 +2178,22 @@ ipcMain.handle("write-mod-file", async (event, { filePath, content }) => {
       return true;
     }
 
-    await fsp.writeFile(filePath, content, "utf8");
+    await fsp.writeFile(filePath, content, 'utf8');
 
     return true;
   } catch (error) {
-    console.error("Error writing mod file:", error);
+    console.error('Error writing mod file:', error);
     throw error;
   }
 });
 
-ipcMain.handle("get-volume", () => {
-  return store.get("volume", 100);
+ipcMain.handle('get-volume', () => {
+  return store.get('volume', 100);
 });
 
-ipcMain.handle("set-volume", async (event, volume) => {
+ipcMain.handle('set-volume', async (event, volume) => {
   try {
-    store.set("volume", volume);
+    store.set('volume', volume);
     if (hiddenWindow && !hiddenWindow.isDestroyed()) {
       await hiddenWindow.webContents.executeJavaScript(`
                 setVolume(${volume});
@@ -2219,26 +2201,26 @@ ipcMain.handle("set-volume", async (event, volume) => {
     }
     return true;
   } catch (error) {
-    console.error("Error setting volume:", error);
+    console.error('Error setting volume:', error);
     throw error;
   }
 });
 
-ipcMain.handle("get-april-fools-enabled", () => {
-  return store.get("aprilFoolsEnabled", false);
+ipcMain.handle('get-april-fools-enabled', () => {
+  return store.get('aprilFoolsEnabled', false);
 });
 
-ipcMain.handle("set-april-fools-enabled", (event, enabled) => {
-  store.set("aprilFoolsEnabled", enabled);
+ipcMain.handle('set-april-fools-enabled', (event, enabled) => {
+  store.set('aprilFoolsEnabled', enabled);
   return true;
 });
 
 // Add these new IPC handlers
-ipcMain.handle("toggle-pause-download", async (event, id) => {
+ipcMain.handle('toggle-pause-download', async (event, id) => {
   try {
     const downloader = activeDownloads.get(id);
     if (!downloader) {
-      throw new Error("No active download found");
+      throw new Error('No active download found');
     }
 
     if (downloader.isPaused) {
@@ -2249,23 +2231,23 @@ ipcMain.handle("toggle-pause-download", async (event, id) => {
       return true; // Now paused
     }
   } catch (error) {
-    console.error("Error toggling pause state:", error);
+    console.error('Error toggling pause state:', error);
     throw error;
   }
 });
 
-ipcMain.handle("get-active-download", (event, id) => {
+ipcMain.handle('get-active-download', (event, id) => {
   return activeDownloads.has(id);
 });
 
 // Add FPP creation handler
-ipcMain.handle("create-fpp", async (event, options) => {
+ipcMain.handle('create-fpp', async (event, options) => {
   try {
-    const modsPath = store.get("modsPath") as string | undefined;
-    const pluginsPath = store.get("pluginsPath") as string | undefined;
+    const modsPath = store.get('modsPath') as string | undefined;
+    const pluginsPath = store.get('pluginsPath') as string | undefined;
 
     // Utiliser le répertoire spécifié ou téléchargements par défaut
-    const outputDir = options.outputDir || app.getPath("downloads");
+    const outputDir = options.outputDir || app.getPath('downloads');
 
     const result = await createFPP({
       ...options,
@@ -2276,42 +2258,39 @@ ipcMain.handle("create-fpp", async (event, options) => {
 
     return { success: true, path: result.outputPath };
   } catch (error) {
-    console.error("Error creating FPP:", error);
+    console.error('Error creating FPP:', error);
     return { success: false, error: error.message };
   }
 });
 
 // Add FPP handlers
-ipcMain.handle("import-fpp", async (event, filePath) => {
+ipcMain.handle('import-fpp', async (event, filePath) => {
   try {
-    const modsPath = store.get("modsPath") as string | undefined;
-    const pluginsPath = store.get("pluginsPath") as string | undefined;
+    const modsPath = store.get('modsPath') as string | undefined;
+    const pluginsPath = store.get('pluginsPath') as string | undefined;
 
-    await extractFPP(filePath, {
-      modsPath,
-      pluginsPath,
-    });
+    await extractFPP(filePath, { modsPath, pluginsPath });
 
     return { success: true };
   } catch (error) {
-    console.error("Error importing FPP:", error);
+    console.error('Error importing FPP:', error);
     return { success: false, error: error.message };
   }
 });
 
 // Add after other settings handlers
-ipcMain.handle("get-workspace-path", () => {
-  return store.get("workspacePath", "");
+ipcMain.handle('get-workspace-path', () => {
+  return store.get('workspacePath', '');
 });
 
-ipcMain.handle("set-workspace-path", (event, newPath) => {
-  store.set("workspacePath", newPath);
+ipcMain.handle('set-workspace-path', (event, newPath) => {
+  store.set('workspacePath', newPath);
   return true;
 });
 
 // Add this handler near the other mod operation handlers
-ipcMain.handle("get-disabled-mods", async () => {
-  const workspacePath = store.get("workspacePath") as string | undefined;
+ipcMain.handle('get-disabled-mods', async () => {
+  const workspacePath = store.get('workspacePath') as string | undefined;
 
   if (!workspacePath) {
     return [];
@@ -2324,28 +2303,28 @@ ipcMain.handle("get-disabled-mods", async () => {
 });
 
 // Add this handler for getting mod hash
-ipcMain.handle("get-mod-hash", async (event, modName) => {
+ipcMain.handle('get-mod-hash', async (event, modName) => {
   return getHash(modName);
 });
 
-ipcMain.on("play-loading-audio", () => {
+ipcMain.on('play-loading-audio', () => {
   hiddenWindow.webContents
-    .executeJavaScript("playLoading()")
+    .executeJavaScript('playLoading()')
     .catch(console.error);
 });
-ipcMain.on("play-conflict-audio", () => {
+ipcMain.on('play-conflict-audio', () => {
   hiddenWindow.webContents
-    .executeJavaScript("playConflict()")
+    .executeJavaScript('playConflict()')
     .catch(console.error);
 });
-ipcMain.on("stop-loading-audio", () => {
+ipcMain.on('stop-loading-audio', () => {
   hiddenWindow.webContents
-    .executeJavaScript("stopLoading()")
+    .executeJavaScript('stopLoading()')
     .catch(console.error);
 });
 
 // Add file operation handlers
-ipcMain.handle("file-exists", async (event, filePath) => {
+ipcMain.handle('file-exists', async (event, filePath) => {
   try {
     await fsp.access(filePath);
     return true;
@@ -2354,7 +2333,7 @@ ipcMain.handle("file-exists", async (event, filePath) => {
   }
 });
 
-ipcMain.handle("read-mod-file", async (event, filePath) => {
+ipcMain.handle('read-mod-file', async (event, filePath) => {
   try {
     // Read first few bytes as buffer to detect encoding
     const buffer = await fsp.readFile(filePath);
@@ -2363,22 +2342,22 @@ ipcMain.handle("read-mod-file", async (event, filePath) => {
     // Check BOM (Byte Order Mark)
     if (buffer[0] === 0xff && buffer[1] === 0xfe) {
       // UTF-16 LE BOM
-      encoding = "utf16le";
+      encoding = 'utf16le';
     } else if (buffer[0] === 0xfe && buffer[1] === 0xff) {
       // UTF-16 BE BOM
-      encoding = "utf16le"; // Node.js handles BE with 'utf16le' by swapping bytes
+      encoding = 'utf16le'; // Node.js handles BE with 'utf16le' by swapping bytes
     } else if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
       // UTF-8 BOM
-      encoding = "utf8";
+      encoding = 'utf8';
     } else {
       // No BOM, check XML declaration
-      const start = buffer.toString("utf8", 0, Math.min(200, buffer.length));
+      const start = buffer.toString('utf8', 0, Math.min(200, buffer.length));
 
       if (
         start.includes('encoding="utf-16"') ||
         start.includes("encoding='utf-16'")
       ) {
-        encoding = "utf16le";
+        encoding = 'utf16le';
       } else {
         // Try to detect if it looks like UTF-16 by checking for null bytes
         let nullCount = 0;
@@ -2387,16 +2366,16 @@ ipcMain.handle("read-mod-file", async (event, filePath) => {
         }
         // If more than 30% null bytes, likely UTF-16
         if (nullCount > 30) {
-          encoding = "utf16le";
+          encoding = 'utf16le';
         } else {
-          encoding = "utf8";
+          encoding = 'utf8';
         }
       }
     }
 
     return buffer.toString(encoding);
   } catch (error) {
-    console.error("Error reading mod file:", error);
+    console.error('Error reading mod file:', error);
     throw error;
   }
 });
