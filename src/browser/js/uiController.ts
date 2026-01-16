@@ -1441,7 +1441,7 @@ class UIController {
     }
   }
 
-  async generateModPrefix(modPath) {
+  async generateModPrefix(modPath: string) {
     try {
       // Scan for slots in the mod
       const { currentSlots, pathData } =
@@ -2873,6 +2873,8 @@ class UIController {
     try {
       this.showLoading('Scanning mod files...');
 
+      const timestamp = Date.now();
+
       const mod = await this.modManager.getMod(selectedMod);
       const { currentSlots, pathData } = await SlotScanner.scanForSlots(
         mod.path,
@@ -2925,6 +2927,11 @@ class UIController {
           }
         }
 
+        console.log(
+          'Elapsed time before scanning other mods:',
+          Date.now() - timestamp,
+        );
+
         await Promise.all(
           this.mods.map(async (mod) => {
             try {
@@ -2959,6 +2966,11 @@ class UIController {
           }),
         );
       }
+
+      console.log(
+        'Elapsed time after scanning other mods:',
+        Date.now() - timestamp,
+      );
 
       // Génération du HTML avec tous les slots détectés (y compris > c07)
       const slotsInfo = document.getElementById('currentSlotsInfo');

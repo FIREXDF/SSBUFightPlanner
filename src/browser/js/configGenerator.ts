@@ -39,16 +39,13 @@ export class ConfigGenerator {
   modDirectory: string;
   fighterName: string;
 
-  fighterData: {
-    dirs?: string[];
-    file_array?: string[];
-    vanillaC00Files?: {
-      fighter: string[];
-      camera: string[];
-      movie: string[];
-      result: string[];
-      kirbyCopy: string[];
-    };
+  fighterData = {
+    fighterFiles: [] as string[],
+    cameraFiles: [] as string[],
+    movieFiles: [] as string[],
+    resultFiles: [] as string[],
+    kirbyCopyFiles: [] as string[],
+    allFiles: [] as string[],
   };
 
   resultingConfig: {
@@ -81,8 +78,6 @@ export class ConfigGenerator {
       this.vanillaData = JSON.parse(
         await window.api.modOperations.readModFile(vanillaJsonPath),
       );
-
-      console.log('Loaded vanilla.json. Keys:', Object.keys(this.vanillaData));
     } else {
       throw new Error(`vanilla.json not found in ${filesDirectory}`);
     }
@@ -117,7 +112,6 @@ export class ConfigGenerator {
     // Step 1: Generate `new-dir-infos` and `new-dir-infos-base`
     for (const slotNumber of extraSlots) {
       const slot = `c${slotNumber.toString().padStart(2, '0')}`;
-      console.log(`Generating slot: ${slot}`);
 
       newDirInfos.push(`fighter/${this.fighterName}/${slot}`);
       newDirInfos.push(`fighter/${this.fighterName}/camera/${slot}`);
@@ -143,16 +137,6 @@ export class ConfigGenerator {
     }
 
     // Step 2: Generate `new-dir-files` by duplicating vanilla c00 files for each extra slot
-    const allVanillaFiles = this.fighterData.vanillaC00Files
-      ? [
-          ...this.fighterData.vanillaC00Files.fighter,
-          ...this.fighterData.vanillaC00Files.camera,
-          ...this.fighterData.vanillaC00Files.movie,
-          ...this.fighterData.vanillaC00Files.result,
-          ...this.fighterData.vanillaC00Files.kirbyCopy,
-        ]
-      : [];
-
     for (const slotNumber of extraSlots) {
       const cValue = `c${slotNumber.toString().padStart(2, '0')}`;
 
@@ -171,94 +155,63 @@ export class ConfigGenerator {
       });
     }
 
-    for (const slotNumber of extraSlots) {
-      const cValue = `c${slotNumber.toString().padStart(2, '0')}`;
-
-      Object.keys(this.fighterData.vanillaC00Files).forEach(
-        (fileType: keyof typeof this.fighterData.vanillaC00Files) => {
-          switch (fileType) {
-            case 'fighter': {
-              for (const file of this.fighterData.vanillaC00Files.fighter) {
-                const dirPath = `fighter/${this.fighterName}/${cValue}`;
-                const targetFile = file.replace(
-                  slotDetectionRegex,
-                  `$1${cValue}$3`,
-                );
-
-                if (!newDirFiles[dirPath].includes(targetFile)) {
-                  newDirFiles[dirPath].push(targetFile);
-                }
-              }
-
-              break;
-            }
-
-            case 'camera': {
-              for (const file of this.fighterData.vanillaC00Files.camera) {
-                const dirPath = `fighter/${this.fighterName}/camera/${cValue}`;
-                const targetFile = file.replace(
-                  slotDetectionRegex,
-                  `$1${cValue}$3`,
-                );
-
-                if (!newDirFiles[dirPath].includes(targetFile)) {
-                  newDirFiles[dirPath].push(targetFile);
-                }
-              }
-
-              break;
-            }
-
-            case 'movie': {
-              for (const file of this.fighterData.vanillaC00Files.movie) {
-                const dirPath = `fighter/${this.fighterName}/movie/${cValue}`;
-                const targetFile = file.replace(
-                  slotDetectionRegex,
-                  `$1${cValue}$3`,
-                );
-
-                if (!newDirFiles[dirPath].includes(targetFile)) {
-                  newDirFiles[dirPath].push(targetFile);
-                }
-              }
-
-              break;
-            }
-
-            case 'result': {
-              for (const file of this.fighterData.vanillaC00Files.result) {
-                const dirPath = `fighter/${this.fighterName}/result/${cValue}`;
-                const targetFile = file.replace(
-                  slotDetectionRegex,
-                  `$1${cValue}$3`,
-                );
-
-                if (!newDirFiles[dirPath].includes(targetFile)) {
-                  newDirFiles[dirPath].push(targetFile);
-                }
-              }
-
-              break;
-            }
-
-            case 'kirbyCopy': {
-              for (const file of this.fighterData.vanillaC00Files.kirbyCopy) {
-                const dirPath = `fighter/${this.fighterName}/kirbycopy/${cValue}`;
-                const targetFile = file.replace(
-                  slotDetectionRegex,
-                  `$1${cValue}$3`,
-                );
-
-                if (!newDirFiles[dirPath].includes(targetFile)) {
-                  newDirFiles[dirPath].push(targetFile);
-                }
-              }
-
-              break;
-            }
-          }
-        },
+    function _addToNewDirFiles(
+      targetCValue: string,
+      dirPath: string,
+      filePath: string,
+    ) {
+      const targetFile = filePath.replace(
+        slotDetectionRegex,
+        `$1${targetCValue}$3`,
       );
+
+      if (!newDirFiles[dirPath].includes(targetFile)) {
+        newDirFiles[dirPath].push(targetFile);
+      }
+    }
+
+    for (const slotNumber of extraSlots) {
+      const targetCValue = `c${slotNumber.toString().padStart(2, '0')}`;
+
+      for (const fighterFile of this.fighterData.fighterFiles) {
+        _addToNewDirFiles(
+          targetCValue,
+          `fighter/${this.fighterName}/${targetCValue}`,
+          fighterFile,
+        );
+      }
+
+      for (const cameraFile of this.fighterData.cameraFiles) {
+        _addToNewDirFiles(
+          targetCValue,
+          `fighter/${this.fighterName}/camera/${targetCValue}`,
+          cameraFile,
+        );
+      }
+
+      for (const movieFile of this.fighterData.movieFiles) {
+        _addToNewDirFiles(
+          targetCValue,
+          `fighter/${this.fighterName}/movie/${targetCValue}`,
+          movieFile,
+        );
+      }
+
+      for (const resultFile of this.fighterData.resultFiles) {
+        _addToNewDirFiles(
+          targetCValue,
+          `fighter/${this.fighterName}/result/${targetCValue}`,
+          resultFile,
+        );
+      }
+
+      for (const kirbyCopyFile of this.fighterData.kirbyCopyFiles) {
+        _addToNewDirFiles(
+          targetCValue,
+          `fighter/${this.fighterName}/kirbycopy/${targetCValue}`,
+          kirbyCopyFile,
+        );
+      }
     }
 
     // Step 3: Add custom mod files to `new-dir-files` by scanning the mod directory
@@ -302,13 +255,14 @@ export class ConfigGenerator {
             fixedFile.startsWith(`fighter/${this.fighterName}/model/`) ||
             fixedFile.startsWith(`fighter/${this.fighterName}/motion/`) ||
             fixedFile.startsWith(`fighter/${this.fighterName}/sound/`) ||
-            fixedFile.startsWith(`fighter/${this.fighterName}/effect/`)
+            fixedFile.startsWith(`fighter/${this.fighterName}/effect/`) ||
+            fixedFile.startsWith(`effect/fighter/${this.fighterName}/`)
           ) {
             dirPath = `fighter/${this.fighterName}/${cValue}`;
           }
 
           if (
-            allVanillaFiles.includes(
+            this.fighterData.allFiles.includes(
               fixedFile.replace(slotDetectionRegex, `$1c00$3`),
             )
           ) {
@@ -329,11 +283,9 @@ export class ConfigGenerator {
       });
     }
 
-    console.log('customModFilesSet :: ', customModFilesSet);
-
     // Step 4: Process `share-to-vanilla` by adding all vanilla "model" and "sound" files
     // that are not already present in custom mod files
-    allVanillaFiles.forEach((file) => {
+    this.fighterData.allFiles.forEach((file) => {
       if (file.includes('dummy_fighter')) {
         return;
       }
@@ -453,17 +405,6 @@ export class ConfigGenerator {
   }
 
   private initializeFighterData() {
-    // Search for any portion with the original fighter name
-    this.fighterData = {};
-
-    // Check within 'file_array' for entries related to the fighter
-    if (Array.isArray(ConfigGenerator.vanillaData.file_array)) {
-      this.fighterData.file_array =
-        ConfigGenerator.vanillaData.file_array.filter((file) =>
-          file.toLowerCase().includes(this.fighterName.toLowerCase()),
-        );
-    }
-
     const fighterDir =
       ConfigGenerator.vanillaData?.dirs?.directories?.fighter?.directories?.[
         this.fighterName
@@ -493,33 +434,37 @@ export class ConfigGenerator {
 
     // Check within 'dirs' for entries related to the fighter
     if (fighterDir) {
-      const fighterC00Files = fighterDir.c00.files || [];
-      const cameraC00Files = fighterDir.camera.directories.c00.files || [];
-      const movieC00Files = fighterDir.movie.directories.c00.files || [];
-      const resultC00Files = fighterDir.result.directories.c00.files || [];
-
-      const kirbycopyC00Files =
-        fighterDir.kirbycopy?.directories.c00.files || [];
-
-      this.fighterData.vanillaC00Files = {
-        fighter: fighterC00Files.reduce(_getFileNameFromFilesArray, []),
-        camera: cameraC00Files.reduce(_getFileNameFromFilesArray, []),
-        movie: movieC00Files.reduce(_getFileNameFromFilesArray, []),
-        result: resultC00Files.reduce(_getFileNameFromFilesArray, []),
-        kirbyCopy: kirbycopyC00Files.reduce(_getFileNameFromFilesArray, []),
-      };
-    }
-
-    if (
-      (!this.fighterData.file_array ||
-        this.fighterData.file_array.length === 0) &&
-      (!this.fighterData.dirs || this.fighterData.dirs.length === 0)
-    ) {
-      console.warn(
-        `No data found for fighter '${this.fighterName}' in vanilla.json. Available keys:`,
-        Object.keys(ConfigGenerator.vanillaData),
+      this.fighterData.fighterFiles = (fighterDir.c00.files || []).reduce(
+        _getFileNameFromFilesArray,
+        [],
       );
 
+      this.fighterData.cameraFiles = (
+        fighterDir.camera.directories.c00.files || []
+      ).reduce(_getFileNameFromFilesArray, []);
+
+      this.fighterData.movieFiles = (
+        fighterDir.movie.directories.c00.files || []
+      ).reduce(_getFileNameFromFilesArray, []);
+
+      this.fighterData.resultFiles = (
+        fighterDir.result.directories.c00.files || []
+      ).reduce(_getFileNameFromFilesArray, []);
+
+      this.fighterData.kirbyCopyFiles = (
+        fighterDir.kirbycopy?.directories.c00.files || []
+      ).reduce(_getFileNameFromFilesArray, []);
+
+      this.fighterData.allFiles = [
+        ...this.fighterData.fighterFiles,
+        ...this.fighterData.cameraFiles,
+        ...this.fighterData.movieFiles,
+        ...this.fighterData.resultFiles,
+        ...this.fighterData.kirbyCopyFiles,
+      ];
+    }
+
+    if (!this.fighterData.allFiles || this.fighterData.allFiles.length === 0) {
       throw new Error(
         `No data found for fighter '${this.fighterName}' in vanilla.json`,
       );
