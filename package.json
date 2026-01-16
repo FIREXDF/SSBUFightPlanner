@@ -15,16 +15,15 @@
     "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
   },
   "scripts": {
-    "start": "electron .",
-    "watch": "npm run build:ts -- --watch",
+    "start": "npm run build:ts && electron .",
+    "watch": "concurrently \"npm run build:ts -- --watch\" \"electron .\"",
     "build:ts": "tsc --build",
     "pack": "npm run build:ts && electron-builder --dir",
     "dist": "npm run build:ts && electron-builder",
     "build": "npm run build:ts && electron-builder --win --x64",
     "build:macos": "npm run build:ts && electron-builder --mac --arm64",
     "buildandpublish": "npm run build:ts && electron-builder --win --x64 --publish always",
-    "early": "npm run build:ts && electron-builder --win --x64 --config canary-builder.json --publish always",
-    "help": "electron-builder --help"
+    "early": "npm run build:ts && electron-builder --win --x64 --config canary-builder.json --publish always"
   },
   "dependencies": {
     "@sentry/electron": "^6.9.0",
@@ -59,6 +58,10 @@
   "build": {
     "appId": "com.shatteredchaos.fightplanner",
     "productName": "FightPlanner",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
     "publish": [
       {
         "provider": "github",
@@ -80,27 +83,19 @@
       "allowToChangeInstallationDirectory": true
     },
     "files": [
-      "**/*",
+      "dist/server/**/*",
+      "dist/client/**/*",
+      "src/resources/**/*",
+      "icon.png",
       "!**/*.{ts,map}",
       "!*.{code-workspace,log}",
       "!LICENSE.md",
       "!README.md",
-      "!electron-builder.yml",
-      "!dist/",
-      "!dist-canary/",
-      "!e2e/",
+      "!src/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/*.{md,markdown,txt}",
       "!**/node_modules/*/LICENSE",
-      "!**/node_modules/*/license",
-      "!*/node_modules/",
-      "preload.js",
-      "!gifs/",
-      "src/**/*",
-      "!custom.css",
-      "src/resources/bin/7z.exe",
-      "src/resources/reslot/ui_chara_db.txt",
-      "icon.png"
+      "!**/node_modules/*/license"
     ],
     "extraResources": [
       {

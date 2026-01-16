@@ -3,3 +3,4 @@ dist
 dist-canary
 .idea
 .DS_Store
+/release/
