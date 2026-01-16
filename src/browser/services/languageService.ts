@@ -16,12 +16,15 @@ class LanguageService {
     await this.loadTranslations(this.currentLanguage);
   }
 
-  async loadTranslations(lang) {
+  async loadTranslations(lang: string) {
     try {
       const response = await fetch(`../translations/${lang}.json`);
+
       this.translations = await response.json();
       this.currentLanguage = lang;
+
       localStorage.setItem('language', lang);
+
       this.updateUI();
     } catch (error) {
       console.error(`Failed to load translations for ${lang}:`, error);

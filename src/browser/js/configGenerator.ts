@@ -71,7 +71,7 @@ export class ConfigGenerator {
 
     const appPath = await window.api.getAppPath();
 
-    const filesDirectory = `${appPath}/files`;
+    const filesDirectory = `${appPath}/Files`;
     const vanillaJsonPath = `${filesDirectory}/vanilla.json`;
 
     if (await window.api.modOperations.fileExists(vanillaJsonPath)) {

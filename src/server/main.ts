@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, webUtils } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { promises as fsp } from 'fs';
@@ -182,7 +182,7 @@ if (!gotTheLock) {
       webPreferences: { nodeIntegration: true, contextIsolation: true },
     });
 
-    hiddenWindow.loadFile('./src/browser/windows/audioPlayer.html');
+    hiddenWindow.loadFile('./assets/windows/audioPlayer.html');
 
     // Set initial volume
     const volume = store.get('volume', 100);
@@ -208,7 +208,7 @@ if (!gotTheLock) {
     });
 
     ipcMain.handle('get-app-path', () => {
-      return app.getAppPath();
+      return app.isPackaged ? process.resourcesPath : app.getAppPath();
     });
   });
 
@@ -347,7 +347,7 @@ async function createWindow() {
     discordRPC.disconnect();
   });
 
-  mainWindow.loadFile('./src/browser/windows/main.html');
+  mainWindow.loadFile('./assets/windows/main.html');
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
@@ -599,7 +599,7 @@ function openTutorialWindow() {
     },
   });
 
-  tutorialWindow.loadFile('src/browser/windows/tutorial.html');
+  tutorialWindow.loadFile('assets/windows/tutorial.html');
 }
 
 // Add IPC handlers

@@ -15,8 +15,8 @@
     "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
   },
   "scripts": {
-    "start": "npm run build:ts && electron .",
-    "watch": "concurrently \"npm run build:ts -- --watch\" \"electron .\"",
+    "start": "electron .",
+    "watch": "npm run build:ts -- --watch",
     "build:ts": "tsc --build",
     "pack": "npm run build:ts && electron-builder --dir",
     "dist": "npm run build:ts && electron-builder",
@@ -29,6 +29,7 @@
     "@sentry/electron": "^6.9.0",
     "adm-zip": "^0.5.16",
     "axios": "^1.7.7",
+    "crc-32": "^1.2.2",
     "date-fns": "^4.1.0",
     "discord-rpc": "^4.0.1",
     "electron-log": "^5.2.2",
@@ -47,6 +48,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.5",
     "@types/sanitize-html": "^2.16.0",
+    "concurrently": "^9.2.1",
     "electron": "^36.3.2",
     "electron-builder": "^24.0.0",
     "eslint": "^9.39.2",
@@ -79,13 +81,12 @@
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": true,
-      "runAfterFinish": true,
+      "runAfterFinish": false,
       "allowToChangeInstallationDirectory": true
     },
     "files": [
-      "dist/server/**/*",
-      "dist/client/**/*",
-      "src/resources/**/*",
+      "dist/**/*",
+      "assets/**/*",
       "icon.png",
       "!**/*.{ts,map}",
       "!*.{code-workspace,log}",

@@ -635,8 +635,7 @@ export class GameBananaDownloader {
     return new Promise<void>((resolve, reject) => {
       const sevenZipPath = path.join(
         app.getAppPath(),
-        'src',
-        'resources',
+        'assets',
         'bin',
         process.platform === 'win32' ? '7z.exe' : '7z',
       );

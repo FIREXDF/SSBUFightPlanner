@@ -156,7 +156,7 @@ export class ChangeSlots {
           const pathParts = modPath.replace(/\\/g, '/').split('/');
           pathParts.pop();
 
-          const prcxmlTemplatePath = `${appPath}/src/resources/reslot/ui_chara_db.prcxml`;
+          const prcxmlTemplatePath = `${appPath}/assets/reslot/ui_chara_db.prcxml`;
 
           let prcxmlContent =
             await window.api.modOperations.readModFile(prcxmlTemplatePath);
