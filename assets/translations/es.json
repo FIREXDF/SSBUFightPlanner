@@ -1,0 +1,109 @@
+{
+  "nav": { "mods": "Mods", "plugins": "Complementos", "settings": "Ajustes" },
+  "mods": {
+    "title": "Lista de mods",
+    "search": "Buscar mods...",
+    "filters": { "enabled": "Activado", "disabled": "Desactivado" },
+    "details": {
+      "title": "Detalles del mod",
+      "selectToView": "Selecciona un mod para ver detalles",
+      "version": "Versión",
+      "author": "Autor",
+      "category": "Categoría",
+      "wifiSafe": "Compatible con Wi-Fi",
+      "description": {
+        "title": "Descripción",
+        "empty": "No hay descripción disponible",
+        "readMore": "Leer más",
+        "readLess": "Leer menos"
+      },
+      "url": "URL"
+    },
+    "actions": {
+      "install": "Instalar mod",
+      "uninstall": "Desinstalar mod",
+      "openFolder": "Abrir carpeta de mods",
+      "downloadGB": "Descargar de GameBanana"
+    }
+  },
+  "plugins": {
+    "title": "Lista de complementos",
+    "noPlugins": "No se encontraron complementos",
+    "actions": {
+      "install": "Instalar complemento",
+      "openFolder": "Abrir carpeta de complementos"
+    }
+  },
+  "settings": {
+    "discordRpc": "Activar Discord RPC",
+    "paths": {
+      "title": "Ajustes",
+      "modsDir": "Directorio de mods",
+      "pluginsDir": "Directorio de complementos",
+      "selectFolder": "Seleccionar carpeta"
+    },
+    "customize": {
+      "title": "Personalización",
+      "darkMode": "Modo oscuro",
+      "customCss": "Archivo CSS personalizado"
+    },
+    "general": {
+      "title": "Ajustes generales",
+      "language": "Idioma",
+      "conflictCheck": "Activar verificación de conflictos"
+    }
+  },
+  "modals": {
+    "credits": {
+      "title": "Créditos",
+      "version": "Versión 3.1.3",
+      "team": "Equipo de desarrollo"
+    },
+    "restart": {
+      "title": "Reinicio necesario",
+      "message": "Es necesario reiniciar para aplicar los cambios",
+      "close": "Cerrar"
+    },
+    "confirm": {
+      "title": "Confirmación",
+      "uninstall": "¿Estás seguro de que quieres desinstalar este mod?",
+      "cancel": "Cancelar",
+      "confirm": "Sí, desinstalar"
+    },
+    "download": {
+      "title": "Descargar mods",
+      "link": "Pega el enlace del mod de GameBanana aquí",
+      "add": "Agregar otro mod",
+      "cancel": "Cancelar",
+      "download": "Descargar",
+      "close": "Cerrar"
+    }
+  },
+  "metadata": {
+    "author": {
+      "name": "Autor",
+      "team": "Equipo",
+      "website": "Sitio web",
+      "contact": "Contacto",
+      "unknown": "Autor desconocido",
+      "multiple": "Múltiples autores"
+    },
+    "description": { "title": "Descripción" },
+    "version": {
+      "label": "Versión",
+      "unknown": "Versión desconocida",
+      "latest": "Última versión",
+      "outdated": "Desactualizado"
+    },
+    "category": {
+      "label": "Categoría",
+      "unknown": "Sin categorizar",
+      "character": "Personaje",
+      "stage": "Escenario",
+      "ui": "Interfaz",
+      "audio": "Audio",
+      "misc": "Varios",
+      "fighter": "Luchador"
+    }
+  }
+}

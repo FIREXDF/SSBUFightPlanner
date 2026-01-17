@@ -4,7 +4,6 @@ about: Suggest an idea for FightPlanner
 title: ''
 labels: ''
 assignees: FIREXDF
-
 ---
 
 **Is your feature request related to a problem? Please describe.**

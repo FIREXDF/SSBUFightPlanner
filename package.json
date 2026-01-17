@@ -1,128 +1,157 @@
 {
-    "name": "fightplanner",
-    "version": "3.3.26",
-    "description": "A SSBU Mod Manager",
-    "author": "Shattered Chaos",
-    "main": "main.js",
-    "license": "FOSS",
-    "keywords": [
-        "mod",
-        "manager",
-        "electron"
+  "name": "fightplanner",
+  "version": "3.3.26",
+  "description": "A SSBU Mod Manager",
+  "author": "Shattered Chaos",
+  "main": "dist/server/main.js",
+  "license": "FOSS",
+  "keywords": [
+    "mod",
+    "manager",
+    "electron"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "watch": "npm run build:ts -- --watch",
+    "build:ts": "tsc --build",
+    "pack": "npm run build:ts && electron-builder --dir",
+    "dist": "npm run build:ts && electron-builder",
+    "build": "npm run build:ts && electron-builder --win --x64",
+    "build:macos": "npm run build:ts && electron-builder --mac --arm64",
+    "buildandpublish": "npm run build:ts && electron-builder --win --x64 --publish always",
+    "early": "npm run build:ts && electron-builder --win --x64 --config canary-builder.json --publish always"
+  },
+  "dependencies": {
+    "@sentry/electron": "^6.9.0",
+    "adm-zip": "^0.5.16",
+    "axios": "^1.7.7",
+    "crc-32": "^1.2.2",
+    "date-fns": "^4.1.0",
+    "discord-rpc": "^4.0.1",
+    "electron-log": "^5.2.2",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.3.9",
+    "fs-extra": "^10.1.0",
+    "node-7z": "^3.0.0",
+    "original-fs": "^1.2.0",
+    "posthog-js": "^1.260.1",
+    "sanitize-html": "^2.15.0",
+    "toml": "^3.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/adm-zip": "^0.5.7",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.0.5",
+    "@types/sanitize-html": "^2.16.0",
+    "concurrently": "^9.2.1",
+    "electron": "^36.3.2",
+    "electron-builder": "^24.0.0",
+    "eslint": "^9.39.2",
+    "node-gyp": "^11.2.0",
+    "prettier": "3.7.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0"
+  },
+  "build": {
+    "appId": "com.shatteredchaos.fightplanner",
+    "productName": "FightPlanner",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "FIREXDF",
+        "repo": "SSBUFightPlanner"
+      }
     ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/FIREXDF/SSBUFightPlanner.git"
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "installerIcon": "./build/installerIcon.ico",
+      "installerSidebar": "./build/installerSidebar.bmp",
+      "uninstallerIcon": "./build/uninstallerIcon.ico",
+      "artifactName": "${productName}-${version}.${ext}",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": true,
+      "runAfterFinish": false,
+      "allowToChangeInstallationDirectory": true
     },
-    "scripts": {
-        "start": "electron .",
-        "pack": "electron-builder --dir",
-        "dist": "electron-builder",
-        "build": "electron-builder --win --x64",
-        "buildandpublish": "electron-builder --win --x64 --publish always",
-        "early": "electron-builder --win --x64 --config canary-builder.json --publish always",
-        "help": "electron-builder --help"
-    },
-    "dependencies": {
-        "@sentry/electron": "^6.9.0",
-        "adm-zip": "^0.5.16",
-        "axios": "^1.7.7",
-        "date-fns": "^4.1.0",
-        "discord-rpc": "^4.0.1",
-        "electron-log": "^5.2.2",
-        "electron-store": "^8.1.0",
-        "electron-updater": "^6.3.9",
-        "fs-extra": "^10.1.0",
-        "node-7z": "^3.0.0",
-        "original-fs": "^1.2.0",
-        "posthog-js": "^1.260.1",
-        "sanitize-html": "^2.15.0",
-        "toml": "^3.0.0"
-    },
-    "devDependencies": {
-        "electron": "^36.3.2",
-        "electron-builder": "^24.0.0",
-        "node-gyp": "^11.2.0"
-    },
-    "build": {
-        "appId": "com.shatteredchaos.fightplanner",
-        "productName": "FightPlanner",
-        "publish": [
-            {
-                "provider": "github",
-                "owner": "FIREXDF",
-                "repo": "SSBUFightPlanner"
-            }
-        ],
-        "nsis": {
-            "oneClick": false,
-            "perMachine": false,
-            "installerIcon": "./build/installerIcon.ico",
-            "installerSidebar": "./build/installerSidebar.bmp",
-            "uninstallerIcon": "./build/uninstallerIcon.ico",
-            "artifactName": "${productName}-${version}.${ext}",
-            "createDesktopShortcut": "always",
-            "createStartMenuShortcut": true,
-            "deleteAppDataOnUninstall": true,
-            "runAfterFinish": true,
-            "allowToChangeInstallationDirectory": true
-        },
-        "files": [
-            "**/*",
-            "!**/*.{ts,map}",
-            "!*.{code-workspace,log}",
-            "!LICENSE.md",
-            "!README.md",
-            "!electron-builder.yml",
-            "!dist/",
-            "!dist-canary/",
-            "!e2e/",
-            "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-            "!**/node_modules/*/*.{md,markdown,txt}",
-            "!**/node_modules/*/LICENSE",
-            "!**/node_modules/*/license",
-            "!*/node_modules/",
-            "preload.js",
-            "!gifs/",
-            "src/**/*",
-            "!custom.css",
-            "src/resources/bin/7z.exe",
-            "src/resources/reslot/ui_chara_db.txt"
-        ],
-        "extraResources": [
-            {
-                "from": "./build",
-                "to": "build",
-                "filter": [
-                    "**/*"
-                ]
-            },
-            {
-                "from": "src/resources",
-                "to": "src/resources",
-                "filter": [
-                    "**/*"
-                ]
-            }
-        ],
-        "compression": "maximum",
-        "protocols": {
-            "name": "fightplanner",
-            "schemes": [
-                "fightplanner"
-            ]
-        }
-    },
-    "win": {
-        "target": "nsis",
-        "icon": "build/icon.ico",
-        "publisherName": "FIREXDF",
-        "verifyUpdateCodeSignature": false,
-        "requestedExecutionLevel": "asInvoker",
-        "certificateFile": "fightplanner.pfx",
-        "certificatePassword": "F0w2Ke7?$rW#",
-        "publish": [
-            "github"
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "icon.png",
+      "!**/*.{ts,map}",
+      "!*.{code-workspace,log}",
+      "!LICENSE.md",
+      "!README.md",
+      "!src/**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/*.{md,markdown,txt}",
+      "!**/node_modules/*/LICENSE",
+      "!**/node_modules/*/license"
+    ],
+    "extraResources": [
+      {
+        "from": "./build",
+        "to": "build",
+        "filter": [
+          "**/*"
         ]
+      },
+      {
+        "from": "src/resources",
+        "to": "src/resources",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "./Files",
+        "to": "Files",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "compression": "maximum",
+    "protocols": {
+      "name": "fightplanner",
+      "schemes": [
+        "fightplanner"
+      ]
     }
+  },
+  "win": {
+    "target": "nsis",
+    "icon": "build/icon.ico",
+    "publisherName": "FIREXDF",
+    "verifyUpdateCodeSignature": false,
+    "requestedExecutionLevel": "asInvoker",
+    "certificateFile": "fightplanner.pfx",
+    "certificatePassword": "F0w2Ke7?$rW#",
+    "publish": [
+      "github"
+    ]
+  },
+  "mac": {
+    "target": {
+      "target": "dmg",
+      "arch": [
+        "arm64"
+      ]
+    },
+    "icon": "build/icon.png",
+    "category": "public.app-category.utilities",
+    "publish": [
+      "github"
+    ]
+  }
 }

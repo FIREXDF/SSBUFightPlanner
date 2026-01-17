@@ -1,0 +1,7 @@
+# Ignore artifacts:
+dist
+node_modules
+build
+Files
+package-lock.json
+src/resources

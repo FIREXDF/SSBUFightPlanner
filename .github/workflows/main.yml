@@ -3,10 +3,10 @@ name: Build Electron App
 on:
   push:
     branches:
-      - main  # Run the workflow when code is pushed to the 'main' branch
+      - main # Run the workflow when code is pushed to the 'main' branch
   pull_request:
     branches:
-      - main  # Run the workflow for pull requests to 'main'
+      - main # Run the workflow for pull requests to 'main'
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18  # Use your app's Node.js version
+          node-version: 18 # Use your app's Node.js version
 
       # Install dependencies
       - name: Install dependencies
@@ -51,7 +51,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18  # Use your app's Node.js version
+          node-version: 18 # Use your app's Node.js version
 
       # Install dependencies
       - name: Install dependencies
@@ -62,4 +62,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ElectronApp
-          path: dist/  # Path to your packaged app files
+          path: dist/ # Path to your packaged app files
