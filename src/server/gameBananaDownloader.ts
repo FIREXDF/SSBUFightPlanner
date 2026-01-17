@@ -84,205 +84,111 @@ export class GameBananaDownloader {
     throw new Error('Invalid download link');
   }
 
-  async downloadMod(downloadLink) {
-    let modName; // Declare modName at the top so it's available in catch block
-    this.tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
+  async _downloadAndExtract(modId: string, fileId: string) {
+    this.loadingCallbacks.onProgress('Getting mod information...');
+
+    const filename = await this.getFilenameFromApi(modId, fileId);
+    this.loadingCallbacks.onProgress('Downloading mod files...');
+
+    const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
+
+    // Create a temporary folder for extraction
+    fs.mkdirSync(this.tempFolder, { recursive: true });
+
+    // Download to temp folder
+    const tempArchivePath = path.join(this.tempFolder, filename);
+    await this.downloadFileWithProgress(downloadUrl, tempArchivePath);
+
+    this.loadingCallbacks.onProgress('Extracting files...');
+    // Extract to temp folder
+    await this.extractFile(tempArchivePath, this.tempFolder);
+
+    // Clean up archive files right after extraction
+    const archiveFiles = fs.readdirSync(this.tempFolder).filter((f) => {
+      const ext = path.extname(f).toLowerCase();
+      return ['.7z', '.rar', '.zip'].includes(ext);
+    });
+
+    this.loadingCallbacks.onProgress('Cleaning temporary files...');
+
+    // Remove all archive files
+    for (const file of archiveFiles) {
+      fs.unlinkSync(path.join(this.tempFolder, file));
+      console.log(`Removed archive file: ${file}`);
+    }
+
+    // Find the extracted content
+    const extractedFolders = fs
+      .readdirSync(this.tempFolder)
+      .filter(
+        (f) =>
+          f !== filename &&
+          fs.statSync(path.join(this.tempFolder, f)).isDirectory(),
+      );
+
+    console.log('Extracted folders:', extractedFolders);
+
+    if (extractedFolders.length === 0) {
+      console.error(
+        'Extraction error: No folder found after extraction. Try to install it manually.',
+      );
+
+      console.error(
+        'Contents of temp folder:',
+        fs.readdirSync(this.tempFolder),
+      );
+
+      throw new Error('No folder found after extraction');
+    }
+
+    return extractedFolders;
+  }
+
+  async _findFptFile(dir: string) {
+    const items = fs.readdirSync(dir);
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+
+      if (fs.statSync(fullPath).isDirectory()) {
+        const fptInSubdir = this._findFptFile(fullPath);
+        if (fptInSubdir) return fptInSubdir;
+      } else if (item === '.fpt') {
+        return fullPath;
+      }
+    }
+
+    return null;
+  }
+
+  async downloadMod(downloadLink: string) {
+    let modName: string | undefined;
 
     try {
+      this.tempFolder = path.join(this.modsPath, `temp_${Date.now()}`);
+
       this.isCancelled = false;
 
-      const [modId, fileId] = GameBananaDownloader.extractModAndFileId(
-        typeof downloadLink === 'string'
-          ? downloadLink
-          : downloadLink.downloadLink,
-      );
+      const [modId, fileId] =
+        GameBananaDownloader.extractModAndFileId(downloadLink);
+
       modName = await this.getModNameFromApi(modId); // Assign to outer variable
 
       this.loadingCallbacks.onStart('Starting download...', modName);
 
-      // If cancelled early, handle it
+      // If canceled early, handle it
       if (this.isCancelled) {
         this.loadingCallbacks.onFinish('Download cancelled', modName);
         return { cancelled: true, modName };
       }
 
-      this.loadingCallbacks.onProgress('Getting mod information...');
+      const extractedFolders = await this._downloadAndExtract(modId, fileId);
+      const fptFile = await this._findFptFile(this.tempFolder);
 
-      const filename = await this.getFilenameFromApi(modId, fileId);
-      this.loadingCallbacks.onProgress('Downloading mod files...');
-
-      const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
-
-      // Create a temporary folder for extraction
-      fs.mkdirSync(this.tempFolder, { recursive: true });
-
-      // Download to temp folder
-      const tempArchivePath = path.join(this.tempFolder, filename);
-      await this.downloadFileWithProgress(downloadUrl, tempArchivePath);
-
-      this.loadingCallbacks.onProgress('Extracting files...');
-      // Extract to temp folder
-      await this.extractFile(tempArchivePath, this.tempFolder);
-
-      // Clean up archive files right after extraction
-      const archiveFiles = fs.readdirSync(this.tempFolder).filter((f) => {
-        const ext = path.extname(f).toLowerCase();
-        return ['.7z', '.rar', '.zip'].includes(ext);
-      });
-      this.loadingCallbacks.onProgress('Cleaning temporary files...');
-      // Remove all archive files
-      for (const file of archiveFiles) {
-        fs.unlinkSync(path.join(this.tempFolder, file));
-        console.log(`Removed archive file: ${file}`);
-      }
-
-      // Find the extracted content
-      const extractedContents = fs
-        .readdirSync(this.tempFolder)
-        .filter(
-          (f) =>
-            f !== filename &&
-            fs.statSync(path.join(this.tempFolder, f)).isDirectory(),
-        );
-
-      console.log('Extracted folders:', extractedContents);
-
-      if (extractedContents.length === 0) {
-        console.error(
-          'Extraction error: No folder found after extraction. Try to install it manually.',
-        );
-        console.error(
-          'Contents of temp folder:',
-          fs.readdirSync(this.tempFolder),
-        );
-        throw new Error('No folder found after extraction');
-      }
-
-      // Rechercher d'abord un fichier .fpt dans tous les sous-dossiers
-      const findFptFile = (dir) => {
-        const items = fs.readdirSync(dir);
-        for (const item of items) {
-          const fullPath = path.join(dir, item);
-          if (fs.statSync(fullPath).isDirectory()) {
-            const fptInSubdir = findFptFile(fullPath);
-            if (fptInSubdir) return fptInSubdir;
-          } else if (item === '.fpt') {
-            return fullPath;
-          }
-        }
-        return null;
-      };
-
-      // Rechercher le .fpt dans tous les dossiers extraits
-      let fptFound = false;
-      for (const folder of extractedContents) {
-        const fptPath = findFptFile(path.join(this.tempFolder, folder));
-        if (fptPath) {
-          console.log('Found .fpt file at:', fptPath);
-          await this.organizeFptStructure(this.tempFolder);
-          fptFound = true;
-          break;
-        }
-      }
-
-      // Si aucun .fpt trouvé, utiliser la méthode standard
-      if (!fptFound) {
-        console.log('No .fpt file found, using standard folder structure');
-        // Check if required folders and files are in the root
-        const requiredFolders = [
-          'append',
-          'assist',
-          'boss',
-          'camera',
-          'campaign',
-          'common',
-          'effect',
-          'enemy',
-          'fighter',
-          'finalsmash',
-          'item',
-          'miihat',
-          'pokemon',
-          'prebuilt;',
-          'render',
-          'snapshot',
-          'sound',
-          'spirits',
-          'stage',
-          'standard',
-          'stream;',
-          'ui',
-        ];
-        const requiredFiles = [
-          'preview.webp',
-          'config.json',
-          'info.toml',
-          'victory.toml',
-          'Preview.webp',
-        ];
-        const missingFolders = requiredFolders.filter(
-          (folder) => !extractedContents.includes(folder),
-        );
-        const existingFiles = fs
-          .readdirSync(this.tempFolder)
-          .filter(
-            (f) => !fs.statSync(path.join(this.tempFolder, f)).isDirectory(),
-          );
-        const missingFiles = requiredFiles.filter(
-          (file) => !existingFiles.includes(file),
-        );
-
-        if (missingFolders.length > 0 || missingFiles.length > 0) {
-          console.log('Missing folders in root:', missingFolders);
-          console.log('Missing files in root:', missingFiles);
-
-          // Recursively scan subfolders
-          const findAndMoveItems = (currentPath) => {
-            const items = fs.readdirSync(currentPath);
-
-            for (const item of items) {
-              const fullPath = path.join(currentPath, item);
-              const isDirectory = fs.statSync(fullPath).isDirectory();
-
-              if (isDirectory) {
-                // Handle folders
-                if (missingFolders.includes(item)) {
-                  const destinationPath = path.join(this.tempFolder, item);
-                  if (!fs.existsSync(destinationPath)) {
-                    fs.renameSync(fullPath, destinationPath);
-                    extractedContents.push(item);
-                    console.log(`Moved folder ${item} to root`);
-                  }
-                } else {
-                  // If not a required folder, scan its contents
-                  findAndMoveItems(fullPath);
-                }
-              } else {
-                // Handle files
-                if (missingFiles.includes(item)) {
-                  const destinationPath = path.join(this.tempFolder, item);
-                  if (!fs.existsSync(destinationPath)) {
-                    fs.renameSync(fullPath, destinationPath);
-                    console.log(`Moved file ${item} to root`);
-                  }
-                } else if (item.toLowerCase().endsWith('.nro')) {
-                  // Move .nro files to temp root
-                  const destinationPath = path.join(this.tempFolder, item);
-                  if (!fs.existsSync(destinationPath)) {
-                    fs.renameSync(fullPath, destinationPath);
-                    console.log(`Moved .nro file ${item} to root`);
-                  }
-                }
-              }
-            }
-          };
-
-          // Start recursive scan from each root folder
-          for (const folder of extractedContents) {
-            const subFolderPath = path.join(this.tempFolder, folder);
-            findAndMoveItems(subFolderPath);
-          }
-        }
+      if (fptFile) {
+        console.log('Found .fpt file at:', fptFile);
+        await this.organizeFptStructure(this.tempFolder, fptFile);
+      } else {
+        await this.organizeDefaultStructure(extractedFolders);
       }
 
       // Get mod info, author, category and version before any file operations
@@ -351,7 +257,7 @@ export class GameBananaDownloader {
       fs.mkdirSync(finalArchivePath, { recursive: true });
 
       // Move all extracted folders to final destination
-      for (const folder of extractedContents) {
+      for (const folder of extractedFolders) {
         const extractedPath = path.join(this.tempFolder, folder);
         const finalFolderName = folder.replace(/\.+$/, ''); // Enlève les points finaux
         const finalPath = path.join(finalArchivePath, finalFolderName);
@@ -359,6 +265,7 @@ export class GameBananaDownloader {
         if (fs.existsSync(finalPath)) {
           fs.rmSync(finalPath, { recursive: true });
         }
+
         fs.renameSync(extractedPath, finalPath);
       }
 
@@ -624,7 +531,12 @@ export class GameBananaDownloader {
             return;
           }
 
-          await this.organizeFptStructure(extractTo);
+          const fptFile = await this._findFptFile(extractTo);
+
+          if (fptFile) {
+            await this.organizeFptStructure(extractTo, fptFile);
+          }
+
           resolve();
         },
       );
@@ -663,47 +575,143 @@ export class GameBananaDownloader {
     });
   }
 
-  async organizeFptStructure(extractTo) {
-    const findFptFile = (dir) => {
-      let result = null;
-      try {
-        const items = fs.readdirSync(dir);
+  async organizeDefaultStructure(extractedFolders: string[]) {
+    console.log('No .fpt file found, using standard folder structure');
 
-        const fptFile = items.find(
-          (item) => item === '.fpt' || item === 'tree_structure.fpt',
-        );
+    // Check if required folders and files are in the root
+    const requiredFolders = [
+      'append',
+      'assist',
+      'boss',
+      'camera',
+      'campaign',
+      'common',
+      'effect',
+      'enemy',
+      'fighter',
+      'finalsmash',
+      'item',
+      'miihat',
+      'pokemon',
+      'prebuilt;',
+      'render',
+      'snapshot',
+      'sound',
+      'spirits',
+      'stage',
+      'standard',
+      'stream;',
+      'ui',
+    ];
 
-        if (fptFile) {
-          return path.join(dir, fptFile);
+    const requiredFiles = [
+      'preview.webp',
+      'config.json',
+      'info.toml',
+      'victory.toml',
+      'Preview.webp',
+    ];
+
+    const missingFolders = requiredFolders.filter(
+      (folder) => !extractedFolders.includes(folder),
+    );
+
+    const existingFiles = fs
+      .readdirSync(this.tempFolder)
+      .filter((f) => !fs.statSync(path.join(this.tempFolder, f)).isDirectory());
+
+    const missingFiles = requiredFiles.filter(
+      (file) => !existingFiles.includes(file),
+    );
+
+    if (missingFolders.length > 0 || missingFiles.length > 0) {
+      console.log('Missing folders in root:', missingFolders);
+      console.log('Missing files in root:', missingFiles);
+
+      // Track which folders we've already found and moved
+      const movedFolders = new Set<string>();
+
+      // Recursively scan subfolders
+      const findAndMoveItems = (currentPath: string) => {
+        // Check if the path still exists (it may have been moved)
+        if (!fs.existsSync(currentPath)) {
+          return;
         }
 
+        const items = fs.readdirSync(currentPath);
+
         for (const item of items) {
-          const fullPath = path.join(dir, item);
-          if (fs.statSync(fullPath).isDirectory()) {
-            const found = findFptFile(fullPath);
-            if (found) {
-              result = found;
-              break;
+          const fullPath = path.join(currentPath, item);
+
+          // Skip if path no longer exists
+          if (!fs.existsSync(fullPath)) {
+            continue;
+          }
+
+          const isDirectory = fs.statSync(fullPath).isDirectory();
+
+          if (isDirectory) {
+            // Handle folders
+            if (missingFolders.includes(item) && !movedFolders.has(item)) {
+              const destinationPath = path.join(this.tempFolder, item);
+
+              if (!fs.existsSync(destinationPath)) {
+                fs.renameSync(fullPath, destinationPath);
+                extractedFolders.push(item);
+                movedFolders.add(item);
+                console.log(`Moved folder ${item} to root`);
+                // Don't scan into this folder since we just moved it
+                // and it's now a required folder at the root level
+                continue;
+              }
+            }
+
+            // Only scan into folders that are NOT required folders
+            // This prevents nested required folders from being moved out
+            if (!requiredFolders.includes(item)) {
+              findAndMoveItems(fullPath);
+            }
+          } else {
+            // Handle files
+            if (missingFiles.includes(item)) {
+              const destinationPath = path.join(this.tempFolder, item);
+
+              if (!fs.existsSync(destinationPath)) {
+                fs.renameSync(fullPath, destinationPath);
+                console.log(`Moved file ${item} to root`);
+              }
+            } else if (item.toLowerCase().endsWith('.nro')) {
+              // Move .nro files to temp root
+              const destinationPath = path.join(this.tempFolder, item);
+
+              if (!fs.existsSync(destinationPath)) {
+                fs.renameSync(fullPath, destinationPath);
+                console.log(`Moved .nro file ${item} to root`);
+              }
             }
           }
         }
-      } catch (error) {
-        console.error(`Error searching in directory ${dir}:`, error);
+      };
+
+      // Start recursive scan from each root folder
+      for (const folder of extractedFolders) {
+        const subFolderPath = path.join(this.tempFolder, folder);
+
+        console.log('folder :: ', folder);
+        console.log('requiredFolders :: ', requiredFolders);
+
+        // Don't scan into folders that are already required folders
+        if (!requiredFolders.includes(folder)) {
+          findAndMoveItems(subFolderPath);
+        }
       }
-      return result;
-    };
-
-    console.log('Searching for FPT file in:', extractTo);
-    const fptPath = findFptFile(extractTo);
-
-    if (!fptPath) {
-      console.log('No .fpt or tree_structure.fpt file found in any directory');
-      return;
     }
+  }
 
+  async organizeFptStructure(extractTo: string, fptFile: string) {
     try {
-      console.log('Found FPT file at:', fptPath);
-      const fptContent = fs.readFileSync(fptPath, 'utf-8');
+      console.log('Found FPT file at:', fptFile);
+      const fptContent = fs.readFileSync(fptFile, 'utf-8');
 
       const parseIndentedStructure = (content) => {
         const lines = content.split('\n');
@@ -783,7 +791,7 @@ export class GameBananaDownloader {
         }
       }
 
-      fs.unlinkSync(fptPath);
+      fs.unlinkSync(fptFile);
       console.log('File organization completed according to .fpt structure');
     } catch (error) {
       console.error('Error organizing files according to .fpt:', error);
@@ -889,11 +897,12 @@ export class GameBananaDownloader {
   }
 
   // Add this new method to check and remove empty folders
-  async removeEmptyFolders(folderPath) {
+  async removeEmptyFolders(folderPath: string) {
     const items = fs.readdirSync(folderPath);
 
     for (const item of items) {
       const fullPath = path.join(folderPath, item);
+
       if (fs.statSync(fullPath).isDirectory()) {
         // Recursively check subfolders
         await this.removeEmptyFolders(fullPath);

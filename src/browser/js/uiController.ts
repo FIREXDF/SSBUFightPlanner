@@ -1,6 +1,6 @@
 import { Mod } from '../types/mod';
 import { ModManager } from './modManager.js';
-import { SlotScanner } from './slotScanner.js';
+import { PathData, SlotScanner } from './slotScanner.js';
 import ModConflictDetector from './modConflictDetector.js';
 import { languageService } from '../services/languageService.js';
 import { ChangeSlots } from './changeSlots.js';
@@ -191,7 +191,7 @@ class UIController {
     }
 
     // Download each mod in parallel
-    links.forEach((link) => {
+    links.forEach((link: string) => {
       window.electron.downloadMod(link);
     });
 
@@ -3009,9 +3009,10 @@ class UIController {
 
       const standardSlots = Array.from({ length: 8 }, (_, i) => `c0${i}`);
 
-      const extraSlots = modDetails.currentSlots.filter(
-        (s) => !standardSlots.includes(s),
-      );
+      const extraSlots = Array.from({ length: 248 }, (_, i) => {
+        const slotNumber = i + 8;
+        return slotNumber < 10 ? `c0${slotNumber}` : `c${slotNumber}`;
+      });
 
       const allSlots = Array.from(new Set([...standardSlots, ...extraSlots]));
 
@@ -3162,6 +3163,36 @@ class UIController {
             customInput.classList.add('d-none');
           }
         });
+
+        // Add wheel event listener for scrolling to change slot selection
+        select.addEventListener(
+          'wheel',
+          function (this: HTMLSelectElement, e: WheelEvent) {
+            // Prevent the default page scroll
+            e.preventDefault();
+
+            const options = Array.from(this.options);
+            const currentIndex = this.selectedIndex;
+
+            // Determine scroll direction and calculate new index
+            let newIndex: number;
+            if (e.deltaY > 0) {
+              // Scrolling down
+              newIndex = Math.min(currentIndex + 1, options.length - 1);
+            } else {
+              // Scrolling up
+              newIndex = Math.max(currentIndex - 1, 0);
+            }
+
+            // Update selection if index changed
+            if (newIndex !== currentIndex) {
+              this.selectedIndex = newIndex;
+              // Trigger change event to handle custom slot input visibility
+              this.dispatchEvent(new Event('change'));
+            }
+          },
+          { passive: false },
+        );
       });
 
       // Handle "Copy to All" button clicks
@@ -3173,12 +3204,15 @@ class UIController {
           const cspNameElement = sourceSection.querySelector(
             '.custom-csp-name',
           ) as HTMLInputElement;
+
           const vsNameElement = sourceSection.querySelector(
             '.custom-vs-name',
           ) as HTMLInputElement;
+
           const boxingRingElement = sourceSection.querySelector(
             '.custom-boxing-ring',
           ) as HTMLInputElement;
+
           const announcerElement = sourceSection.querySelector(
             '.custom-announcer',
           ) as HTMLInputElement;
@@ -3199,10 +3233,26 @@ class UIController {
 
               // Skip the source slot itself
               if (targetSlot !== sourceSlot) {
-                cspNameElement.value = cspName;
-                vsNameElement.value = vsName;
-                boxingRingElement.value = boxingRing;
-                announcerElement.value = announcer;
+                const sectionCspNameElement = section.querySelector(
+                  '.custom-csp-name',
+                ) as HTMLInputElement;
+
+                const sectionVsNameElement = section.querySelector(
+                  '.custom-vs-name',
+                ) as HTMLInputElement;
+
+                const sectionBoxingRingElement = section.querySelector(
+                  '.custom-boxing-ring',
+                ) as HTMLInputElement;
+
+                const sectionAnnouncerElement = section.querySelector(
+                  '.custom-announcer',
+                ) as HTMLInputElement;
+
+                sectionCspNameElement.value = cspName;
+                sectionVsNameElement.value = vsName;
+                sectionBoxingRingElement.value = boxingRing;
+                sectionAnnouncerElement.value = announcer;
               }
             });
 
@@ -3358,14 +3408,30 @@ class UIController {
   }
 
   async handleChangeSlots(
-    modPath,
-    slotChanges,
-    slotsToRemove,
+    modPath: string,
+    slotChanges: Record<string, string>,
+    slotsToRemove: string[],
     finalSlots: string[],
-    pathData,
-    fighterName,
-    slotCustomNames,
-    defaultCustomNames,
+    pathData: PathData,
+    fighterName: string,
+    slotCustomNames: Record<
+      string,
+      {
+        cspName?: string;
+        vsName?: string;
+        boxingRing?: string;
+        announcer?: string;
+      }
+    >,
+    defaultCustomNames: Record<
+      string,
+      {
+        cspName?: string;
+        vsName?: string;
+        boxingRing?: string;
+        announcer?: string;
+      }
+    >,
   ) {
     try {
       this.showLoading('Changing character slots...');

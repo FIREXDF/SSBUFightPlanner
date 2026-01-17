@@ -649,7 +649,6 @@ ipcMain.on('download-confirmation', async (event, { confirmed, details }) => {
 function extractArchive(source, destination) {
   return new Promise<void>((resolve, reject) => {
     try {
-      // const sevenZipPath = await findSevenZipPath();
       const sevenZipPath = '';
 
       // Construct extraction command

@@ -3,13 +3,29 @@ import { ConfigGenerator } from './configGenerator.js';
 
 export class ChangeSlots {
   static async changeSlots(
-    modPath,
-    slotChanges,
+    modPath: string,
+    slotChanges: Record<string, string>,
     finalSlots: string[],
     pathData: PathData,
-    fighterName,
-    slotCustomNames,
-    defaultCustomNames,
+    fighterName: string,
+    slotCustomNames: Record<
+      string,
+      {
+        cspName?: string;
+        vsName?: string;
+        boxingRing?: string;
+        announcer?: string;
+      }
+    >,
+    defaultCustomNames: Record<
+      string,
+      {
+        cspName?: string;
+        vsName?: string;
+        boxingRing?: string;
+        announcer?: string;
+      }
+    >,
   ) {
     const changedPaths = [];
 
@@ -24,9 +40,6 @@ export class ChangeSlots {
 
         Object.values(pathData[fighter][currentSlot].pathsToBeModified).forEach(
           ({ original, normalized }) => {
-            console.log('[changeSlots] Original path:', original);
-            console.log('[changeSlots] Slot extracted:', currentSlot);
-
             const newSlot = slotChanges[currentSlot];
             let newNum = newSlot.replace('c', '');
             if (newNum.length === 1) newNum = '0' + newNum;
@@ -68,10 +81,6 @@ export class ChangeSlots {
           mapping.originalPath.replace(/\\/g, '/'),
           mapping.tempPath.replace(/\\/g, '/'),
         );
-
-        console.log(
-          `[changeSlots] Moved to temp: ${mapping.originalPath} -> ${mapping.tempPath}`,
-        );
       } catch (error) {
         console.error(
           `Error moving file to temp ${mapping.originalPath}:`,
@@ -92,10 +101,6 @@ export class ChangeSlots {
           modPath,
           mapping.tempPath.replace(/\\/g, '/'),
           mapping.finalPath.replace(/\\/g, '/'),
-        );
-
-        console.log(
-          `[changeSlots] Moved to final: ${mapping.tempPath} -> ${mapping.finalPath}`,
         );
 
         changedPaths.push(mapping.finalPath);
@@ -178,8 +183,8 @@ export class ChangeSlots {
           for (const slot of finalSlots) {
             const slotNum = parseInt(slot.replace('c', ''));
 
-            let announcer;
-            let customAnnouncer;
+            let announcer: string;
+            let customAnnouncer: string;
 
             if (
               slotCustomNames &&
@@ -218,6 +223,7 @@ export class ChangeSlots {
               `<hash40 index="${fighterIndex}">dummy<\\/hash40>`,
               'g',
             );
+
             prcxmlContent = prcxmlContent.replace(hashLine, structContent);
           }
 
@@ -299,7 +305,7 @@ export class ChangeSlots {
         const slotNum = parseInt(slot.replace('c', ''));
 
         if (
-          !slotCustomNames[slot] ||
+          (!(slotNum > 7) && !slotCustomNames[slot]) ||
           (!slotCustomNames[slot].cspName &&
             !slotCustomNames[slot].vsName &&
             !slotCustomNames[slot].boxingRing)
@@ -407,7 +413,11 @@ export class ChangeSlots {
       .replace(/'/g, '&apos;');
   }
 
-  static async readExistingCustomNames(modPath, fighterName, slots) {
+  static async readExistingCustomNames(
+    modPath: string,
+    fighterName: string,
+    slots: string[],
+  ) {
     const customNames = {};
     const parser = new DOMParser();
 

@@ -10,7 +10,7 @@ window.addEventListener('error', (event) => {
 });
 
 const electronAPI = {
-  downloadMod: async (url) => {
+  downloadMod: async (url: string) => {
     try {
       return await ipcRenderer.invoke('download-mod', url);
     } catch (error) {
