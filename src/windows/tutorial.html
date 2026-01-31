@@ -5,6 +5,7 @@
     <title>Welcome Tutorial</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/styles.css">
     <style>
                 /* DARK MODE OVERRIDES */
         body.dark-mode {
@@ -77,6 +78,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        /* macOS specific padding for tutorial window */
+        body.platform-darwin {
+            padding-top: 38px !important;
+        }
+        body.platform-darwin .container-fluid {
+            padding-top: 38px !important;
         }
         .tutorial-container {
             max-width: 1100px;
@@ -243,7 +251,27 @@
     </style>
 </head>
 <body>
-    <div class="container-fluid p-0" style="height:100vh;display:flex;align-items:center;justify-content:center;">
+    <!-- Custom Title Bar -->
+    <div class="custom-titlebar">
+        <div class="titlebar-drag-region">
+            <div class="titlebar-content">
+                <img src="img/icon.png" alt="FightPlanner" class="titlebar-icon">
+                <span class="titlebar-title">FightPlanner - Tutorial</span>
+            </div>
+        </div>
+        <div class="titlebar-controls">
+            <button class="titlebar-button" id="minimize-btn" title="Minimize">
+                <i class="bi bi-dash-lg"></i>
+            </button>
+            <button class="titlebar-button" id="maximize-btn" title="Maximize">
+                <i class="bi bi-square"></i>
+            </button>
+            <button class="titlebar-button titlebar-close" id="close-btn" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <div class="container-fluid p-0" style="height:100vh;display:flex;align-items:center;justify-content:center;padding-top:32px !important;">
         <div class="tutorial-container">
             <div id="progressIndicator" class="mb-3 text-center">
                 <span id="currentStep">1</span> / <span id="totalSteps">4</span>
@@ -356,5 +384,61 @@
     </div>
 
     <script src="tutorial.js"></script>
+    
+    <!-- Title Bar Controls Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Detect platform and add class to body
+        const platform = window.navigator.platform.toLowerCase();
+        if (platform.includes('mac')) {
+            document.body.classList.add('platform-darwin');
+        } else if (platform.includes('win')) {
+            document.body.classList.add('platform-win32');
+        } else if (platform.includes('linux')) {
+            document.body.classList.add('platform-linux');
+        }
+
+        const minimizeBtn = document.getElementById('minimize-btn');
+        const maximizeBtn = document.getElementById('maximize-btn');
+        const closeBtn = document.getElementById('close-btn');
+
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => {
+                window.api.window.minimize();
+            });
+        }
+
+        if (maximizeBtn) {
+            maximizeBtn.addEventListener('click', async () => {
+                window.api.window.maximize();
+                setTimeout(async () => {
+                    const isMaximized = await window.api.window.isMaximized();
+                    const icon = maximizeBtn.querySelector('i');
+                    if (isMaximized) {
+                        icon.className = 'bi bi-back';
+                    } else {
+                        icon.className = 'bi bi-square';
+                    }
+                }, 100);
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                window.api.window.close();
+            });
+        }
+
+        // Initialize maximize button icon (only on non-macOS)
+        if (!document.body.classList.contains('platform-darwin') && maximizeBtn) {
+            window.api.window.isMaximized().then(isMaximized => {
+                const icon = maximizeBtn.querySelector('i');
+                if (isMaximized) {
+                    icon.className = 'bi bi-back';
+                }
+            });
+        }
+    });
+    </script>
 </body>
 </html>

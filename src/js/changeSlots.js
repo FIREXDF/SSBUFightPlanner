@@ -1,6 +1,6 @@
 export class ChangeSlots {
-static async scanForSlots(modPath) {
-    try {
+    static async scanForSlots(modPath) {
+        try {
         const files = await window.api.modOperations.getModFiles(modPath);
         console.log('[scanForSlots] Tous les fichiers trouvés:', files);
 const slotFiles = files.filter(file => {
@@ -89,7 +89,7 @@ console.log('[scanForSlots] Slots détectés:', sortedSlots);
         };
     }
 
-static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) {
+    static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) {
     const configPath = `${modPath}\\config.json`;
     let configContent = '{}';
     let config = {
@@ -810,6 +810,50 @@ for (const tempFile of changedFiles) {
             return 'c0' + zero1Match[0].slice(1);
         }
         return null;
+    }
+
+    /**
+     * @param {string} modPath
+     * @param {string} resourceBasePath
+     * @param {Object} slotChanges - Optional slot changes to validate custom slots exist
+     */
+    static async ensureMaxSlots(modPath, resourceBasePath = 'resources/src/resources', slotChanges = {}) {
+        // Safety check: only create Max Slots if there are actually custom slots (> c07)
+        const hasCustomSlots = Object.values(slotChanges).some(slot => {
+            const slotNum = parseInt(slot.replace('c', ''));
+            return slotNum > 7;
+        });
+        
+        if (!hasCustomSlots) {
+            console.log('[ensureMaxSlots] No custom slots detected, skipping Max Slots creation');
+            return;
+        }
+
+        // Get the parent folder of the mod (the mods folder)
+        const pathParts = modPath.replace(/\\/g, '/').split('/');
+        pathParts.pop(); // Remove the mod folder name
+        const modsFolder = pathParts.join('/');
+
+        const maxSlotsPath = `${modsFolder}/Max Slots`;
+        const targetFile = `${maxSlotsPath}/ui/param/database/ui_chara_db.prcxml`;
+        const sourceFile = `${resourceBasePath}/reslot/ui_chara_db.prcxml`;
+
+        const maxSlotsExists = await window.api.modOperations.fileExists(maxSlotsPath);
+        if (!maxSlotsExists) {
+            await window.api.modOperations.createDirectory(maxSlotsPath);
+        }
+
+        const databaseDir = `${maxSlotsPath}/ui/param/database`;
+        const databaseDirExists = await window.api.modOperations.fileExists(databaseDir);
+        if (!databaseDirExists) {
+            await window.api.modOperations.createDirectory(databaseDir);
+        }
+
+        const fileExists = await window.api.modOperations.fileExists(targetFile);
+        if (!fileExists) {
+            const content = await window.api.modOperations.readModFile(sourceFile);
+            await window.api.modOperations.writeModFile(targetFile, content);
+        }
     }
 
     /**

@@ -31,7 +31,9 @@
             "install": "Install Mod",
             "uninstall": "Uninstall Mod",
             "openFolder": "Open Mods Folder",
-            "downloadGB": "Download from GameBanana"
+            "downloadGB": "Download from GameBanana",
+            "smartRename": "Smart Rename",
+            "bulkSmartRename": "Smart Rename All Mods"
         }
     },
     "plugins": {
@@ -54,7 +56,7 @@
             "title": "Appearance",
             "dark": "Dark mode",
             "css": "Personalize of the CSS",
-            "csstext": "Select your own css file for customize FightPlanner (Restart needed !)" 
+            "csstext": "Select your own css file for customize FightPlanner (Restart needed !)"
         },
         "general": {
             "title": "General Settings",
@@ -87,6 +89,17 @@
             "cancel": "Cancel",
             "download": "Download",
             "close": "Close"
+        },
+        "smartRename": {
+            "title": "Smart Rename Preview",
+            "originalName": "Original Name",
+            "newName": "New Name",
+            "selectAll": "Select All",
+            "apply": "Apply Rename",
+            "noChanges": "No mods can be renamed (no fighter data detected or names already match)",
+            "analyzing": "Analyzing mods...",
+            "success": "Successfully renamed {count} mod(s)!",
+            "error": "Failed to rename {failed} mod(s). Successfully renamed {success} mod(s)."
         }
     },
     "metadata": {
@@ -109,7 +122,6 @@
             "latest": "Latest version",
             "outdated": "Outdated"
         },
-
         "category": {
             "label": "Category",
             "unknown": "Uncategorized",

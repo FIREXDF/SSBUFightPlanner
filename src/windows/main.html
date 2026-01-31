@@ -1,12 +1,34 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>FightPlanner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
+
 <body>
+    <!-- Custom Title Bar -->
+    <div class="custom-titlebar">
+        <div class="titlebar-drag-region">
+            <div class="titlebar-content">
+                <img src="img/icon.png" alt="FightPlanner" class="titlebar-icon">
+                <span class="titlebar-title">FightPlanner</span>
+            </div>
+        </div>
+        <div class="titlebar-controls">
+            <button class="titlebar-button" id="minimize-btn" title="Minimize">
+                <i class="bi bi-dash-lg"></i>
+            </button>
+            <button class="titlebar-button" id="maximize-btn" title="Maximize">
+                <i class="bi bi-square"></i>
+            </button>
+            <button class="titlebar-button titlebar-close" id="close-btn" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
     <div class="downloads-panel" id="downloadsPanel">
         <div class="downloads-header">
             <span>Downloads</span>
@@ -27,88 +49,86 @@
         </div>
     </div>
     <!-- Top Navigation Tabs -->
-    <ul class="nav nav-tabs position-relative animate__animated animate__fadeInDown" id="mainTabs" role="tablist" style="display: flex; align-items: center;">
+    <ul class="nav nav-tabs position-relative animate__animated animate__fadeInDown" id="mainTabs" role="tablist"
+        style="display: flex; align-items: center;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="mods-tab" data-bs-toggle="pill" 
-                    data-bs-target="#mods" type="button" role="tab">
+            <button class="nav-link active" id="mods-tab" data-bs-toggle="pill" data-bs-target="#mods" type="button"
+                role="tab">
                 <i class="bi bi-grid me-2"></i><span data-i18n="nav.mods">Mods</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="plugins-tab" data-bs-toggle="pill" 
-                    data-bs-target="#plugins" type="button" role="tab">
+            <button class="nav-link" id="plugins-tab" data-bs-toggle="pill" data-bs-target="#plugins" type="button"
+                role="tab">
                 <i class="bi bi-plug me-2"></i><span data-i18n="nav.plugins">Plugins</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="characters-tab" data-bs-toggle="pill" 
-                data-bs-target="#characters" type="button" role="tab">
+            <button class="nav-link" id="characters-tab" data-bs-toggle="pill" data-bs-target="#characters"
+                type="button" role="tab">
                 <i class="bi bi-people me-2"></i><span data-i18n="nav.characters">Characters</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="settings-tab" data-bs-toggle="pill" 
-                    data-bs-target="#settings" type="button" role="tab">
-                <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Settings</span>
+            <button class="nav-link" id="settings-tab" data-bs-toggle="pill" data-bs-target="#settings" type="button"
+                role="tab">
+                <i class="bi bi-gear me-2"></i><span data-i18n="nav.settings">Preferences</span>
             </button>
         </li>
 
         <!-- Announcement Banner between tabs and icons -->
-        <li id="announcementBanner" style="display: none; flex: 1; height: 35px; margin: 0 15px; position: relative; cursor: pointer; max-width: 500px;">
-            <img id="announcementBannerImg" src="" alt="Announcement" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 5px;">
-            <button id="announcementBannerClose" style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; z-index: 11;">&times;</button>
+        <li id="announcementBanner"
+            style="display: none; flex: 1; height: 35px; margin: 0 15px; position: relative; cursor: pointer; max-width: 500px;">
+            <img id="announcementBannerImg" src="" alt="Announcement"
+                style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 5px;">
+            <button id="announcementBannerClose"
+                style="position: absolute; top: 4px; right: 4px; background: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; z-index: 11;">&times;</button>
         </li>
 
         <li class="nav-item ms-auto me-3">
 
-            <button 
-                id="showConflictsBtn" 
-                class="btn btn-warning ms-2" 
-                style="display: none;"
-                title="Show Mod Conflicts"
-            >
+            <button id="showConflictsBtn" class="btn btn-warning ms-2" style="display: none;"
+                title="Show Mod Conflicts">
                 <i class="bi bi-exclamation-triangle"></i>
             </button>
-<span id="conflictLoadingSpinner" style="display:none; align-items:center; gap:0.5em;" title="Checking for mod conflicts..." aria-label="Checking for mod conflicts">
-    <svg class="conflict-spinner" width="22" height="22" viewBox="0 0 50 50">
-        <circle cx="25" cy="25" r="20" fill="none" stroke="#ffc107" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" />
-    </svg>
-    <span class="conflict-spinner-text" style="display:none;">Checking conflicts…</span>
-</span>
-            <img 
-                src="img/icon.png" 
-                alt="App Logo" 
-                id="appLogo"
-                class="app-logo" 
-                data-bs-toggle="modal" 
-                data-bs-target="#creditsModal"
-                style="height: 30px; width: auto; cursor: pointer;"
-            >
+            <span id="conflictLoadingSpinner" style="display:none; align-items:center; gap:0.5em; position: relative;"
+                aria-label="Checking conflicts">
+                <svg class="conflict-spinner" width="22" height="22" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#ffc107" stroke-width="5" stroke-linecap="round"
+                        stroke-dasharray="31.4 31.4" />
+                </svg>
+                <span class="conflict-tooltip" id="conflictSpinnerTip">Checking conflicts…</span>
+            </span>
+            <img src="img/icon.png" alt="App Logo" id="appLogo" class="app-logo" data-bs-toggle="modal"
+                data-bs-target="#creditsModal" style="height: 30px; width: auto; cursor: pointer;">
         </li>
     </ul>
-
 
     <!-- Tab Contents -->
     <div class="tab-content h-100" id="mainTabContent">
         <!-- Social Sidebar -->
         <!-- Main Social Sidebar -->
-        <div id="socialSidebar" class="social-sidebar border-end position-fixed h-100" style="top: 0; right: -400px; width: 400px; z-index: 1060; transition: right 0.3s;">
+        <div id="socialSidebar" class="social-sidebar border-end position-fixed h-100"
+            style="top: 0; right: -400px; width: 400px; z-index: 1060; transition: right 0.3s;">
             <!-- Social Sidebar Auth Pages -->
             <div id="socialAuthContainer" class="p-4" style="height: 100%; overflow-y: auto;">
                 <!-- Login Page -->
                 <div id="socialLoginPage">
                     <div class="text-center mb-4">
-                        <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" alt="FightPlanner Logo" style="height: 60px;">
+                        <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true"
+                            alt="FightPlanner Logo" style="height: 60px;">
                         <h3 class="mt-2 mb-3">FightPlanner Social</h3>
                     </div>
                     <form id="socialLoginForm" autocomplete="off">
                         <div class="mb-3">
                             <label for="socialLoginUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="socialLoginUsername" required autocomplete="username">
+                            <input type="text" class="form-control" id="socialLoginUsername" required
+                                autocomplete="username">
                         </div>
                         <div class="mb-3">
                             <label for="socialLoginPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="socialLoginPassword" required autocomplete="current-password">
+                            <input type="password" class="form-control" id="socialLoginPassword" required
+                                autocomplete="current-password">
                         </div>
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="socialStaySignedIn">
@@ -124,21 +144,25 @@
                 <!-- Signup Page -->
                 <div id="socialSignupPage" style="display:none;">
                     <div class="text-center mb-4">
-                        <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true" alt="FightPlanner Logo" style="height: 60px;">
+                        <img src="https://github.com/FIREXDF/SSBUFightPlanner/blob/main/icon.png?raw=true"
+                            alt="FightPlanner Logo" style="height: 60px;">
                         <h3 class="mt-2 mb-3">Sign Up</h3>
                     </div>
                     <form id="socialSignupForm" autocomplete="off">
                         <div class="mb-3">
                             <label for="signupUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="signupUsername" required autocomplete="username">
+                            <input type="text" class="form-control" id="signupUsername" required
+                                autocomplete="username">
                         </div>
                         <div class="mb-3">
                             <label for="signupPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="signupPassword" required autocomplete="new-password">
+                            <input type="password" class="form-control" id="signupPassword" required
+                                autocomplete="new-password">
                         </div>
                         <div class="mb-3">
                             <label for="signupConfirmPassword" class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" id="signupConfirmPassword" required autocomplete="new-password">
+                            <input type="password" class="form-control" id="signupConfirmPassword" required
+                                autocomplete="new-password">
                         </div>
                         <button type="submit" class="btn btn-primary w-100 mb-2">Sign Up</button>
                         <div class="text-center">
@@ -151,25 +175,29 @@
             <!-- Social Sidebar Tabs -->
             <ul class="nav nav-tabs nav-justified" id="socialSidebarTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active d-flex flex-column align-items-center" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button" role="tab">
+                    <button class="nav-link active d-flex flex-column align-items-center" id="profile-tab"
+                        data-bs-toggle="tab" data-bs-target="#profile-pane" type="button" role="tab">
                         <i class="bi bi-person-circle mb-1" style="font-size: 1.5em;"></i>
                         <span>Profile</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link d-flex flex-column align-items-center" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts-pane" type="button" role="tab">
+                    <button class="nav-link d-flex flex-column align-items-center" id="posts-tab" data-bs-toggle="tab"
+                        data-bs-target="#posts-pane" type="button" role="tab">
                         <i class="bi bi-chat-left-text mb-1" style="font-size: 1.5em;"></i>
                         <span>Posts</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link d-flex flex-column align-items-center" id="friends-tab" data-bs-toggle="tab" data-bs-target="#friends-pane" type="button" role="tab">
+                    <button class="nav-link d-flex flex-column align-items-center" id="friends-tab" data-bs-toggle="tab"
+                        data-bs-target="#friends-pane" type="button" role="tab">
                         <i class="bi bi-people mb-1" style="font-size: 1.5em;"></i>
                         <span>Friends</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link d-flex flex-column align-items-center" id="find-friend-tab" data-bs-toggle="tab" data-bs-target="#find-friend-pane" type="button" role="tab">
+                    <button class="nav-link d-flex flex-column align-items-center" id="find-friend-tab"
+                        data-bs-toggle="tab" data-bs-target="#find-friend-pane" type="button" role="tab">
                         <i class="bi bi-person-plus mb-1" style="font-size: 1.5em;"></i>
                         <span>Find a Friend</span>
                     </button>
@@ -179,7 +207,8 @@
                 <!-- Profile Tab -->
                 <div class="tab-pane fade show active" id="profile-pane" role="tabpanel">
                     <div class="text-center">
-                        <img src="https://via.placeholder.com/100" alt="Profile Picture" class="rounded-circle mb-3" id="profilePicture" style="width:150px;height:150px;">
+                        <img src="https://via.placeholder.com/100" alt="Profile Picture" class="rounded-circle mb-3"
+                            id="profilePicture" style="width:150px;height:150px;">
                         <div class="mb-2"><strong>Username:</strong> <span id="profileUsername">Username</span></div>
                         <div class="mb-2"><strong>Friend Count:</strong> <span id="profileFriendCount">0</span></div>
                         <div class="mb-2"><strong>Created:</strong> <span id="profileCreated">2025-01-01</span></div>
@@ -201,7 +230,8 @@
                 <div class="tab-pane fade" id="friends-pane" role="tabpanel">
                     <ul class="list-group" id="friendsList">
                         <li class="list-group-item d-flex align-items-center">
-                            <img src="https://via.placeholder.com/40" class="rounded-circle me-2" style="width:40px;height:40px;">
+                            <img src="https://via.placeholder.com/40" class="rounded-circle me-2"
+                                style="width:40px;height:40px;">
                             <div>
                                 <div><strong>FriendUser</strong></div>
                                 <div class="small">Level 5 • Main: Link</div>
@@ -218,7 +248,8 @@
                     <ul class="list-group" id="findFriendResults">
                         <li class="list-group-item d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center">
-                                <img src="https://via.placeholder.com/40" class="rounded-circle me-2" style="width:40px;height:40px;">
+                                <img src="https://via.placeholder.com/40" class="rounded-circle me-2"
+                                    style="width:40px;height:40px;">
                                 <div>
                                     <div><strong>SearchUser</strong></div>
                                     <div class="small">Level 2 • Main: Samus</div>
@@ -231,37 +262,39 @@
                 </div>
             </div>
             <!-- Forgot Password Modal -->
-            <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true" data-bs-backdrop="true">
+            <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel"
+                aria-hidden="true" data-bs-backdrop="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="forgotPasswordModalLabel">Forgot Password</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        Contact FightPlanner admin on discord for password help.
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
-                    </div>
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="forgotPasswordModalLabel">Forgot Password</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Contact FightPlanner admin on discord for password help.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                        </div>
                     </div>
                 </div>
             </div>
             <!--Sign Out Confirmation Modal-->
-            <div class="modal fade" id="signOutConfirmModal" tabindex="-1" aria-labelledby="signOutConfirmModalLabel" aria-hidden="true">
+            <div class="modal fade" id="signOutConfirmModal" tabindex="-1" aria-labelledby="signOutConfirmModalLabel"
+                aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="signOutConfirmModalLabel">Sign Out</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        Are you sure you want to sign out?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" id="confirmSignOutBtn">Sign Out</button>
-                    </div>
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="signOutConfirmModalLabel">Sign Out</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to sign out?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmSignOutBtn">Sign Out</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -276,23 +309,20 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
                                     <h5 class="mb-0 me-3" data-i18n="mods.title">Mod List</h5>
-                                    <input 
-                                        type="text" 
-                                        id="modSearchInput" 
-                                        class="form-control form-control-sm" 
-                                        data-i18n-placeholder="mods.search"
-                                        placeholder="Search mods..."
-                                        style="width: 200px;"
-                                    >
+                                    <input type="text" id="modSearchInput" class="form-control form-control-sm"
+                                        data-i18n-placeholder="mods.search" placeholder="Search mods..."
+                                        style="width: 200px;">
                                 </div>
                                 <div class="d-flex align-items-center mb-3">
                                     <button class="btn btn-outline-secondary me-2" id="reloadList">
                                         <i class="bi bi-arrow-clockwise"></i>
                                         Reload List
                                     </button>
-                                    
+
                                     <div class="dropdown">
-                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="toggleCategories" data-bs-toggle="dropdown" data-bs-auto-close="false" aria-expanded="false">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                            id="toggleCategories" data-bs-toggle="dropdown" data-bs-auto-close="false"
+                                            aria-expanded="false">
                                             <i class="bi bi-funnel"></i>
                                             Categories
                                         </button>
@@ -303,7 +333,8 @@
                                             <button class="dropdown-item" data-category="Movesets">Movesets</button>
                                             <button class="dropdown-item" data-category="Stages">Stages</button>
                                             <button class="dropdown-item" data-category="Effects">Effects</button>
-                                            <button class="dropdown-item" data-category="Final Smash">Final Smash</button>
+                                            <button class="dropdown-item" data-category="Final Smash">Final
+                                                Smash</button>
                                             <button class="dropdown-item" data-category="UI">UI</button>
                                             <button class="dropdown-item" data-category="Param">Param</button>
                                             <button class="dropdown-item" data-category="Audio">Audio</button>
@@ -314,6 +345,12 @@
                                             </button>
                                         </div>
                                     </div>
+
+                                    <button class="btn btn-outline-info ms-2" id="bulkSmartRenameBtnHeader"
+                                        title="Smart Rename Mods">
+                                        <i class="bi bi-magic"></i>
+                                        Smart Rename
+                                    </button>
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -322,8 +359,8 @@
                             </div>
                         </div>
                     </div>
-                
-                    
+
+
                     <!-- Mod Details and Preview (Right Side) -->
                     <div class="col-4 p-3 d-flex flex-column">
                         <!-- Mod Preview -->
@@ -331,7 +368,8 @@
                             <div class="card-header">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Mod Details</h5>
-                                    <button class="btn btn-sm btn-outline-primary" id="editModInfo" style="display: none;">
+                                    <button class="btn btn-sm btn-outline-primary" id="editModInfo"
+                                        style="display: none;">
                                         <i class="bi bi-pencil-square"></i> Edit Info
                                     </button>
                                 </div>
@@ -362,7 +400,8 @@
                         <button id="gameBananaDownloadBtn" class="btn btn-success" title="Download from GameBanana">
                             <i class="bi bi-download"></i>
                         </button>
-                        <button id="launchGame" class="btn btn-info rounded-end" title="Launch Game" style="margin-left: 0;">
+                        <button id="launchGame" class="btn btn-info rounded-end" title="Launch Game"
+                            style="margin-left: 0;">
                             <i class="bi bi-play-fill"></i>
                         </button>
                         <button class="btn btn-secondary" id="createFpp" title="Create FPP Package">
@@ -391,7 +430,8 @@
                                 </div>
                             </div>
                             <div class="card-body p-0">
-                                <div class="plugin-list overflow-auto" id="pluginList" style="height: calc(100vh - 160px);">
+                                <div class="plugin-list overflow-auto" id="pluginList"
+                                    style="height: calc(100vh - 160px);">
                                 </div>
                             </div>
                         </div>
@@ -404,9 +444,32 @@
                         <button class="btn btn-secondary" id="openPluginsFolderButton" title="Open Plugins Folder">
                             <i class="bi bi-folder"></i>
                         </button>
+                        <button class="btn btn-success" id="discoverPluginsBtn" title="Discover Plugins">
+                            <i class="bi bi-cloud-download"></i>
+                        </button>
                         <button class="btn btn-primary" id="installPlugin" title="Install Plugin">
                             <i class="bi bi-plus-circle"></i>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discover Plugins Modal -->
+        <div class="modal fade" id="discoverPluginsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Discover Plugins</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="discoverPluginsList" class="list-group">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -416,39 +479,46 @@
             <div class="container-fluid p-4 h-100">
                 <div class="card h-100 animate__animated animate__fadeIn">
                     <div class="card-header">
-                        <h5 class="mb-0">Settings</h5>
-                    </div>                     
+                        <h5 class="mb-0">Preferences</h5>
+                        <small class="textmuted">Tune paths, appearance, integrations, and more.</small>
+                    </div>
                     <div class="card-body overflow-auto" style="max-height: calc(100vh - 160px);">
                         <!-- Settings Tabs Navigation -->
                         <ul class="nav nav-pills mb-3" id="settingsTabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="paths-tab" data-bs-toggle="pill" data-bs-target="#paths-content" type="button" role="tab">
-                                    <i class="bi bi-folder me-2"></i>Setup
+                                <button class="nav-link active" id="paths-tab" data-bs-toggle="pill"
+                                    data-bs-target="#paths-content" type="button" role="tab">
+                                    <i class="bi bi-folder me-2"></i>General
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="appearance-tab" data-bs-toggle="pill" data-bs-target="#appearance-content" type="button" role="tab">
-                                    <i class="bi bi-palette me-2" ></i>Appearance
+                                <button class="nav-link" id="appearance-tab" data-bs-toggle="pill"
+                                    data-bs-target="#appearance-content" type="button" role="tab">
+                                    <i class="bi bi-palette me-2"></i>Appearance
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="integration-tab" data-bs-toggle="pill" data-bs-target="#integration-content" type="button" role="tab">
-                                    <i class="bi bi-plug me-2" ></i>Features
+                                <button class="nav-link" id="integration-tab" data-bs-toggle="pill"
+                                    data-bs-target="#integration-content" type="button" role="tab">
+                                    <i class="bi bi-plug me-2"></i>Integrations
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="emulator-tab" data-bs-toggle="pill" data-bs-target="#emulator-content" type="button" role="tab">
-                                    <i class="bi bi-controller me-2" ></i>Emulator
+                                <button class="nav-link" id="emulator-tab" data-bs-toggle="pill"
+                                    data-bs-target="#emulator-content" type="button" role="tab">
+                                    <i class="bi bi-controller me-2"></i>Emulators
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="logs-tab" data-bs-toggle="pill" data-bs-target="#logs-content" type="button" role="tab">
-                                    <i class="bi bi-journal-text me-2"></i>Logs
+                                <button class="nav-link" id="logs-tab" data-bs-toggle="pill"
+                                    data-bs-target="#logs-content" type="button" role="tab">
+                                    <i class="bi bi-journal-text me-2"></i>Diagnostics
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="feedback-tab" data-bs-toggle="pill" data-bs-target="#feedback-content" type="button" role="tab">
-                                    <i class="bi bi-chat-dots me-2"></i>Feedback
+                                <button class="nav-link" id="feedback-tab" data-bs-toggle="pill"
+                                    data-bs-target="#feedback-content" type="button" role="tab">
+                                    <i class="bi bi-chat-dots me-2"></i>Support
                                 </button>
                             </li>
                         </ul>
@@ -457,8 +527,16 @@
                         <div class="tab-content" id="settingsTabsContent">
                             <!-- Paths Tab -->
                             <div class="tab-pane fade show active" id="paths-content" role="tabpanel">
-                                <div class="mb-4">
-                                    <h6 class="mb-3" data-i18n="settings.paths.title">Directory Settings</h6>
+                                <div class="settings-card mb-4">
+                                    <div class="settings-section-header">
+                                        <i class="bi bi-folder2-open"></i>
+                                        <div>
+                                            <h6 class="mb-0" data-i18n="settings.paths.title">Paths & Directories</h6>
+                                            <small class="textmuted">Configure where your mods and plugins are
+                                                stored.</small>
+                                        </div>
+                                    </div>
+
                                     <label class="form-label" data-i18n="settings.paths.modsDir">Mods Directory</label>
                                     <div class="input-group mb-3">
                                         <input type="text" class="form-control" id="modsPath" readonly>
@@ -466,8 +544,9 @@
                                             <i class="bi bi-folder2-open"></i>
                                         </button>
                                     </div>
-                                    
-                                    <label class="form-label" data-i18n="settings.paths.pluginsDir">Plugins Directory</label>
+
+                                    <label class="form-label" data-i18n="settings.paths.pluginsDir">Plugins
+                                        Directory</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="pluginsPath" readonly>
                                         <button class="btn btn-outline-primary" id="selectPluginsFolder">
@@ -479,80 +558,153 @@
 
                             <!-- Appearance Tab -->
                             <div class="tab-pane fade" id="appearance-content" role="tabpanel">
-                                <div class="mb-4">
-                                    <h6 class="mb-3" data-i18n="settings.theme.title">Theme Settings</h6>
-                                    <div class="theme-selector d-flex justify-content-center gap-4 mb-3">
-                                        <div class="theme-option" data-theme="light">
-                                            <img src="img/light.png" alt="Light theme" class="theme-image" width="240" height="135">
-                                            <div class="theme-label text-center mt-2">Light</div>
+                                <div class="settings-grid appearance-grid">
+                                    <div class="settings-card full-span">
+                                        <div class="settings-section-header">
+                                            <i class="bi bi-brightness-high"></i>
+                                            <div>
+                                                <h6 class="mb-0" data-i18n="settings.theme.title">Appearance</h6>
+                                                <small class="textmuted">Choose a theme for the app.</small>
+                                            </div>
                                         </div>
-                                        <div class="theme-option" data-theme="dark">
-                                            <img src="img/dark.png" alt="Dark theme" class="theme-image" width="240" height="135">
-                                            <div class="theme-label text-center mt-2">Dark</div>
+                                        <div class="theme-selector d-flex justify-content-center gap-4 mb-2">
+                                            <div class="theme-option" data-theme="light">
+                                                <img src="img/light.png" alt="Light theme" class="theme-image"
+                                                    width="240" height="135">
+                                                <div class="theme-label text-center mt-2">Light</div>
+                                            </div>
+                                            <div class="theme-option" data-theme="dark">
+                                                <img src="img/dark.png" alt="Dark theme" class="theme-image" width="240"
+                                                    height="135">
+                                                <div class="theme-label text-center mt-2">Dark</div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <label class="form-label" data-i18n="settings.theme.css">Custom CSS File</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="customCssPath" readonly>
-                                        <button class="btn btn-outline-primary" id="selectCustomCssFile">
-                                            <i class="bi bi-folder2-open"></i>
-                                        </button>
-                                        <button class="btn btn-outline-danger" id="removeCustomCssFile">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
+                                    <div class="settings-card">
+                                        <div class="settings-section-header">
+                                            <i class="bi bi-filetype-css"></i>
+                                            <div>
+                                                <h6 class="mb-0" data-i18n="settings.theme.css">Custom CSS File</h6>
+                                                <small class="textmuted">Load a custom CSS for advanced theming.</small>
+                                            </div>
+                                        </div>
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control" id="customCssPath" readonly>
+                                            <button class="btn btn-outline-primary" id="selectCustomCssFile">
+                                                <i class="bi bi-folder2-open"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" id="removeCustomCssFile">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </div>
+                                        <small class="textmuted" data-i18n="settings.theme.csstext">Select the custom
+                                            CSS file for styling (Restart needed)</small>
                                     </div>
-                                    <small class="textmuted" data-i18n="settings.theme.csstext">Select the custom CSS file for styling (Restart needed)</small>
-                                </div>
 
-                                <div class="mb-3">
-                                    <h6 class="mb-3">Language</h6>
-                                    <select class="form-select" id="languageSelect">
-                                        <option value="en">English</option>
-                                        <option value="es">Español</option>
-                                        <option value="fr">Français</option>
-                                        <option value="zh-TW">繁體中文</option>
-                                    </select>
+                                    <div class="settings-card">
+                                        <div class="settings-section-header">
+                                            <i class="bi bi-translate"></i>
+                                            <div>
+                                                <h6 class="mb-0">Language</h6>
+                                                <small class="textmuted">Switch the application language.</small>
+                                            </div>
+                                        </div>
+                                        <select class="form-select" id="languageSelect">
+                                            <option value="en">English</option>
+                                            <option value="es">Español</option>
+                                            <option value="fr">Français</option>
+                                            <option value="zh-TW">繁體中文</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Integration Tab -->
                             <div class="tab-pane fade" id="integration-content" role="tabpanel">
-                                <div class="mb-4">
-                                    <h6 class="mb-3">Features</h6>
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="protocolConfirmToggle">
-                                        <label class="form-check-label" for="protocolConfirmToggle">Skip Protocol Confirmation</label>
-                                        <small class="form-text textmuted d-block">Skip the confirmation dialog when opening FightPlanner links</small>
+                                <div class="settings-grid">
+                                    <div class="settings-card">
+                                        <div class="settings-section-header">
+                                            <i class="bi bi-plug"></i>
+                                            <div>
+                                                <h6 class="mb-0">Integrations</h6>
+                                                <small class="textmuted">Connect features that enhance your
+                                                    workflow.</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="protocolConfirmToggle">
+                                            <label class="form-check-label" for="protocolConfirmToggle">Skip Protocol
+                                                Confirmation</label>
+                                            <small class="form-text textmuted d-block">Skip the confirmation dialog when
+                                                opening FightPlanner links</small>
+                                        </div>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="conflictCheckToggle">
+                                            <label class="form-check-label" for="conflictCheckToggle">Enable Conflict
+                                                Check (slower loads)</label>
+                                        </div>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="discordRpcToggle">
+                                            <label class="form-check-label" for="discordRpcToggle">Enable Discord
+                                                RPC</label>
+                                        </div>
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="modsSortRecentToggle">
+                                            <label class="form-check-label" for="modsSortRecentToggle">Sort Mods by
+                                                Recent Downloads</label>
+                                            <small class="form-text textmuted d-block">When enabled, enabled/disabled
+                                                groups are ordered by most recently installed mods first.</small>
+                                        </div>
+                                        <div class="form-check form-switch mb-1">
+                                            <input class="form-check-input" type="checkbox" id="sentryToggle">
+                                            <label class="form-check-label" for="sentryToggle">Error Reporting</label>
+                                        </div>
+                                        <small class="form-text textmuted d-block mb-2">Send crash data to help improve
+                                            the app.</small>
+                                        <div class="form-check form-switch mb-1">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="legacyModDiscoveryToggle">
+                                            <label class="form-check-label" for="legacyModDiscoveryToggle">Legacy mod
+                                                discovery (faster)</label>
+                                        </div>
+                                        <small class="form-text textmuted d-block">Use dot-prefixed folders for disabled
+                                            mods instead of a separate directory.</small>
                                     </div>
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="conflictCheckToggle">
-                                        <label class="form-check-label" for="conflictCheckToggle">Enable Conflict Check (Takes longer to load mods)</label>
+
+                                    <div class="settings-card">
+                                        <div class="settings-section-header">
+                                            <i class="bi bi-sliders"></i>
+                                            <div>
+                                                <h6 class="mb-0">Audio & Maintenance</h6>
+                                                <small class="textmuted">Control sounds and clear temporary
+                                                    files.</small>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="volumeControl" class="form-label">Sound Volume</label>
+                                            <input type="range" class="form-range" id="volumeControl" min="0" max="100"
+                                                step="1">
+                                            <small class="textmuted">Adjust the volume for download sound</small>
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-danger" id="clearTempFiles">
+                                                <i class="bi bi-trash me-2"></i>Clear Temporary Files
+                                            </button>
+                                            <small class="form-text textmuted d-block">Remove all temporary files to
+                                                free up space</small>
+                                        </div>
                                     </div>
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="discordRpcToggle">
-                                        <label class="form-check-label" for="discordRpcToggle">Enable Discord RPC</label>
-                                    </div>
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="legacyModDiscoveryToggle">
-                                        <label class="form-check-label" for="legacyModDiscoveryToggle">Legacy mod discovery (faster)</label>
-                                        <small class="form-text textmuted d-block">Use dot-prefixed folders for disabled mods instead of a separate directory.</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="volumeControl" class="form-label">Sound Volume</label>
-                                        <input type="range" class="form-range" id="volumeControl" min="0" max="100" step="1">
-                                        <small class="textmuted">Adjust the volume for download sound</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <button class="btn btn-danger" id="clearTempFiles">
-                                            <i class="bi bi-trash me-2"></i>Clear Temporary Files
-                                        </button>
-                                        <small class="form-text textmuted d-block">Remove all temporary files to free up space</small>
-                                    </div>
-                                                                        <!-- Add Mod Management buttons -->
-                                    <div class="mb-3">
-                                        <label class="form-label">Mod Management</label>
-                                        <div class="d-flex gap-2">
+
+                                    <div class="settings-card">
+                                        <div class="settings-section-header">
+                                            <i class="bi bi-tools"></i>
+                                            <div>
+                                                <h6 class="mb-0">Mod Management</h6>
+                                                <small class="textmuted">Bulk enable or disable mods.</small>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 flex-wrap">
                                             <button class="btn btn-success" id="enableAllModsBtn">
                                                 <i class="bi bi-check-all me-2"></i>Enable All Mods
                                             </button>
@@ -560,22 +712,62 @@
                                                 <i class="bi bi-x-circle me-2"></i>Disable All Mods
                                             </button>
                                         </div>
-                                        <small class="form-text textmuted d-block">Quickly enable or disable all mods</small>
+                                        <small class="form-text textmuted d-block mt-2">Quickly enable or disable all
+                                            mods</small>
+
+                                        <hr class="my-3">
+
+                                        <h6 class="mb-2"><i class="bi bi-magic me-2"></i>Smart Rename Default Pattern
+                                        </h6>
+                                        <p class="small mb-2">Configure the default naming pattern for Smart
+                                            Rename. Drag to reorder:</p>
+                                        <div id="settingsPatternSortable" class="d-flex gap-2 flex-wrap mb-2">
+                                            <div class="badge bg-primary p-2 settings-pattern-item"
+                                                data-pattern="character" draggable="true" style="cursor: grab;">
+                                                <i class="bi bi-grip-vertical me-1"></i>[Character]
+                                            </div>
+                                            <div class="badge bg-success p-2 settings-pattern-item" data-pattern="slot"
+                                                draggable="true" style="cursor: grab;">
+                                                <i class="bi bi-grip-vertical me-1"></i>[Slot]
+                                            </div>
+                                            <div class="badge bg-info p-2 settings-pattern-item" data-pattern="modname"
+                                                draggable="true" style="cursor: grab;">
+                                                <i class="bi bi-grip-vertical me-1"></i>[ModName]
+                                            </div>
+                                        </div>
+                                        <div class="input-group input-group-sm mb-2" style="max-width: 200px;">
+                                            <span class="input-group-text bg-secondary text-white">Separator</span>
+                                            <input type="text" class="form-control" id="settingsPatternSeparator"
+                                                value="_" maxlength="5">
+                                        </div>
+                                        <div class="small mb-2">
+                                            Preview: <code id="settingsPatternPreview">Character_Slot_ModName</code>
+                                        </div>
+                                        <button class="btn btn-outline-primary btn-sm" id="saveDefaultPatternBtn">
+                                            <i class="bi bi-save me-2"></i>Save as Default
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Emulator Tab -->
                             <div class="tab-pane fade" id="emulator-content" role="tabpanel">
-                                <div class="mb-4">
-                                    <h6 class="mb-3">Emulator Settings</h6>
-                                    
+                                <div class="settings-card">
+                                    <div class="settings-section-header">
+                                        <i class="bi bi-controller"></i>
+                                        <div>
+                                            <h6 class="mb-0">Emulators</h6>
+                                            <small class="textmuted">Pick your emulator and set paths.</small>
+                                        </div>
+                                    </div>
+
                                     <!-- Emulator Selection -->
                                     <div class="mb-3">
                                         <label class="form-label">Select Emulator</label>
                                         <select class="form-select" id="emulatorSelect">
                                             <option value="">Select an emulator...</option>
-                                            <option value="yuzu">yuzu (any fork of yuzu should work with no problem)</option>
+                                            <option value="yuzu">yuzu (any fork of yuzu should work with no problem)
+                                            </option>
                                             <option value="ryujinx">Ryujinx</option>
                                         </select>
                                     </div>
@@ -616,24 +808,33 @@
 
                             <!-- Feedback Tab -->
                             <div class="tab-pane fade" id="feedback-content" role="tabpanel">
-                                <div class="mb-4">
-                                    <h6 class="mb-3">Suggestions & Support</h6>
+                                <div class="settings-card">
+                                    <div class="settings-section-header">
+                                        <i class="bi bi-life-preserver"></i>
+                                        <div>
+                                            <h6 class="mb-0">Support</h6>
+                                            <small class="textmuted">Get help or share your ideas.</small>
+                                        </div>
+                                    </div>
                                     <p>Got a suggestion for FightPlanner? Want a feature to be added? Let me know!</p>
-                                    <a href="https://forms.gle/ZoypQYxyMw57poXs8" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                    <a href="https://forms.gle/ZoypQYxyMw57poXs8" target="_blank"
+                                        rel="noopener noreferrer" class="btn btn-primary">
                                         <i class="bi bi-send me-2"></i>Submit Feedback
                                     </a>
-                                    
+
                                     <hr class="my-4">
-                                    
+
                                     <p>FightPlanner dev searching for people to test Early Access ! Go check it out</p>
-                                    <a href="https://forms.gle/TRkqw8g5hDaPXoc59" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                    <a href="https://forms.gle/TRkqw8g5hDaPXoc59" target="_blank"
+                                        rel="noopener noreferrer" class="btn btn-primary">
                                         <i class="bi bi-send me-2"></i>Apply for Early Access
                                     </a>
 
                                     <hr class="my-4">
 
                                     <p>FightPlanner got an official discord server ! Come join it !</p>
-                                    <a href="https://discord.gg/2zT5Rg46bG" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                    <a href="https://discord.gg/2zT5Rg46bG" target="_blank" rel="noopener noreferrer"
+                                        class="btn btn-primary">
                                         <i class="bi bi-discord me-2"></i>Join the official discord server !
                                     </a>
                                 </div>
@@ -664,7 +865,8 @@
                                             </div>
                                         </div>
                                         <div class="card-body p-2">
-                                            <pre id="logContent" class="log-content" style="max-height: 400px; overflow-y: auto;">Loading logs...</pre>
+                                            <pre id="logContent" class="log-content"
+                                                style="max-height: 400px; overflow-y: auto;">Loading logs...</pre>
                                         </div>
                                     </div>
                                 </div>
@@ -674,28 +876,25 @@
                 </div>
             </div>
         </div>
-        <!-- Replace the characters tab content -->
+        <!-- Characters tab content -->
         <div class="tab-pane fade" id="characters" role="tabpanel">
-            <div class="container-fluid p-3">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card animate__animated animate__fadeIn">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Character Usage</h5>
-                                <button class="btn btn-sm btn-outline-primary" id="refreshCharacters">
-                                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div id="characterSlotsList" class="character-slots-list">
-                                    <!-- Content will be populated by CharacterScanner -->
-                                </div>
-                            </div>
+            <div class="container-fluid py-3">
+                <div class="card animate__animated animate__fadeIn">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-people me-2"></i>Characters</h5>
+                        <button class="btn btn-sm btn-outline-primary" id="refreshCharacters">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="characterSlotsList" class="character-slots-list">
+                            <!-- Content will be populated by CharacterScanner -->
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Context Menu -->
@@ -708,6 +907,9 @@
         </a>
         <a class="dropdown-item" href="#" id="renameMod">
             <i class="bi bi-pencil me-2"></i>Rename
+        </a>
+        <a class="dropdown-item" href="#" id="smartRenameMod">
+            <i class="bi bi-magic me-2"></i>Smart Rename
         </a>
         <a class="dropdown-item" href="#" id="changeSlots">
             <i class="bi bi-arrow-left-right me-2"></i>Change Character Slot
@@ -723,184 +925,6 @@
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <script src="../js/uiController.js" type="module"></script>
     <script>
-            document.addEventListener('DOMContentLoaded', () => {
-    // Auth page switching
-    const loginPage = document.getElementById('socialLoginPage');
-    const signupPage = document.getElementById('socialSignupPage');
-    const signOutBtn = document.getElementById('socialSignOutSidebarBtn');
-    const sidebarContent = document.querySelector('.tab-content.p-3.overflow-auto');
-    const authContainer = document.getElementById('socialAuthContainer');
-
-    function showPage(page) {
-        loginPage.style.display = page === 'login' ? '' : 'none';
-        signupPage.style.display = page === 'signup' ? '' : 'none';
-    }
-
-    document.getElementById('socialShowSignup').onclick = (e) => { e.preventDefault(); showPage('signup'); };
-    document.getElementById('socialReturnToLogin1').onclick = (e) => { e.preventDefault(); showPage('login'); };
-
-    // Forgot password alert
-    document.getElementById('socialShowForgot').onclick = (e) => {
-        e.preventDefault();
-        const forgotModal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
-        forgotModal.show();
-    };
-
-    // Show/hide sign out button based on login state
-    function updateSignOutBtn() {
-    // Sidebar is open if right is '0px'
-    const sidebarOpen = sidebar.style.right === '0px';
-    // Signed in if sidebarContent is visible (not display: none)
-    const signedIn = sidebarContent && sidebarContent.style.display !== 'none';
-    // Auth container is visible if not display: none
-    const authVisible = authContainer && authContainer.style.display !== 'none';
-    if (sidebarOpen && signedIn && !authVisible) {
-        signOutBtn.style.display = '';
-    } else {
-        signOutBtn.style.display = 'none';
-    }
-}
-
-    // Show confirmation modal on click
-    signOutBtn.addEventListener('click', () => {
-        const modal = new bootstrap.Modal(document.getElementById('signOutConfirmModal'));
-        modal.show();
-    });
-
-    // Handle actual sign out
-    document.getElementById('confirmSignOutBtn').addEventListener('click', () => {
-        // Hide sidebar content, show auth
-        authContainer.style.display = '';
-        sidebarContent.style.display = 'none';
-        sidebarContent.style.opacity = 0;
-        document.getElementById('socialLoginForm').reset();
-        // Hide modal
-        bootstrap.Modal.getInstance(document.getElementById('signOutConfirmModal')).hide();
-        updateSignOutBtn();
-    });
-
-    const storedCreds = JSON.parse(localStorage.getItem('socialCreds') || '{}');
-    if (storedCreds.username && storedCreds.password) {
-        // Auto-fill and auto-login
-        document.getElementById('socialLoginUsername').value = storedCreds.username;
-        document.getElementById('socialLoginPassword').value = storedCreds.password;
-        document.getElementById('socialStaySignedIn').checked = true;
-        // Optionally, auto-submit the form:
-        // document.getElementById('socialLoginForm').dispatchEvent(new Event('submit'));
-    }
-
-    // On login, store credentials if "Stay signed in" is checked
-    document.getElementById('socialLoginForm').onsubmit = (e) => {
-        e.preventDefault();
-        const username = document.getElementById('socialLoginUsername').value;
-        const password = document.getElementById('socialLoginPassword').value;
-        const staySignedIn = document.getElementById('socialStaySignedIn').checked;
-
-        if (staySignedIn) {
-            localStorage.setItem('socialCreds', JSON.stringify({ username, password }));
-        } else {
-            localStorage.removeItem('socialCreds');
-        }
-
-        // ...existing login logic...
-        authContainer.style.display = 'none';
-        sidebarContent.style.opacity = 0;
-        sidebarContent.style.display = '';
-        sidebarContent.style.transition = 'opacity 0.5s';
-        setTimeout(() => {
-            sidebarContent.style.opacity = 1;
-            updateSignOutBtn();
-        }, 10);
-    };
-
-    // On sign out, clear stored credentials
-    document.getElementById('confirmSignOutBtn').addEventListener('click', () => {
-        localStorage.removeItem('socialCreds');
-        // ...existing sign out logic...
-        authContainer.style.display = '';
-        sidebarContent.style.display = 'none';
-        sidebarContent.style.opacity = 0;
-        document.getElementById('socialLoginForm').reset();
-        bootstrap.Modal.getInstance(document.getElementById('signOutConfirmModal')).hide();
-        updateSignOutBtn();
-    });
-
-    const sidebar = document.getElementById('socialSidebar');
-    const openBtn = document.getElementById('openSocialSidebarBtn');
-    const closeBtn = document.getElementById('closeSocialSidebarBtn');
-    const sidebarBtns = document.querySelectorAll('.social-sidebar-btn');
-
-    function openSidebar() {
-    sidebar.style.right = '0';
-    openBtn.classList.add('open');
-    openBtn.classList.remove('closed');
-    signOutBtn.classList.add('open');
-    updateSignOutBtn();
-}
-    function closeSidebar() {
-    sidebar.style.right = '-400px';
-    openBtn.classList.remove('open');
-    openBtn.classList.add('closed');
-    signOutBtn.classList.remove('open');
-    updateSignOutBtn();
-}
-
-    // Initialize as closed
-    openBtn.classList.add('closed');
-    signOutBtn.classList.add('closed');
-    updateSignOutBtn();
-
-    openBtn.addEventListener('click', () => {
-        if (sidebar.style.right === '0px') {
-            closeSidebar();
-        } else {
-            openSidebar();
-        }
-    });
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeSidebar);
-    }
-    document.body.addEventListener('show.bs.modal', () => {
-        sidebarBtns.forEach(btn => btn.classList.add('hide-when-modal'));
-    });
-
-    // Listen for any modal close
-    document.body.addEventListener('hidden.bs.modal', () => {
-        sidebarBtns.forEach(btn => btn.classList.remove('hide-when-modal'));
-        });
-    // Social Sidebar Toggle Logic
-    const socialSidebarToggle = document.getElementById('socialSidebarToggle');
-    const socialSidebar = document.getElementById('socialSidebar');
-    const openSocialSidebarBtn = document.getElementById('openSocialSidebarBtn');
-    const socialSignOutSidebarBtn = document.getElementById('socialSignOutSidebarBtn');
-
-    // Load setting from localStorage
-    const socialSidebarEnabled = localStorage.getItem('socialSidebarEnabled');
-    if (socialSidebarEnabled === null || socialSidebarEnabled === 'true') {
-        socialSidebarToggle.checked = true;
-        showSocialSidebarUI(true);
-    } else {
-        socialSidebarToggle.checked = false;
-        showSocialSidebarUI(false);
-    }
-
-    socialSidebarToggle.addEventListener('change', (e) => {
-        const enabled = e.target.checked;
-        localStorage.setItem('socialSidebarEnabled', enabled);
-        showSocialSidebarUI(enabled);
-    });
-
-    function showSocialSidebarUI(show) {
-        if (show) {
-            if (socialSidebar) socialSidebar.style.display = '';
-            if (openSocialSidebarBtn) openSocialSidebarBtn.style.display = '';
-        } else {
-            if (socialSidebar) socialSidebar.style.display = 'none';
-            if (openSocialSidebarBtn) openSocialSidebarBtn.style.display = 'none';
-            if (socialSignOutSidebarBtn) socialSignOutSidebarBtn.style.display = 'none';
-        }
-    }
-    });
         document.addEventListener('DOMContentLoaded', async () => {
 
 
@@ -924,27 +948,27 @@
             // Vérifier si c'est le 1er avril
             const today = new Date();
             const isAprilFools = today.getMonth() === 3 && today.getDate() === 1;
-            
+
             if (isAprilFools) {
                 // Change logo in navbar
                 const appLogo = document.querySelector('#appLogo');
                 if (appLogo) {
                     appLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
                 }
-                
+
                 // Change logo and text in credits
                 const creditsLogo = document.querySelector('.credits-logo');
                 const creditsTitle = document.querySelector('#creditsModal .display-4');
                 const creditsSubtitle = document.querySelector('#creditsModal .lead');
-                
+
                 if (creditsLogo) {
                     creditsLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
                 }
-                
+
                 if (creditsTitle) {
                     creditsTitle.textContent = 'FeetPlanner';
                 }
-                
+
                 if (creditsSubtitle) {
                     creditsSubtitle.textContent = 'Feet Manager for SSBU';
                 }
@@ -957,29 +981,29 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === konamiCode[konamiIndex]) {
                     konamiIndex++;
-                    
+
                     if (konamiIndex === konamiCode.length) {
                         konamiIndex = 0;
-                        
+
                         // Change logo in navbar
                         const appLogo = document.querySelector('#appLogo');
                         if (appLogo) {
                             appLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
                         }
-                        
+
                         // Change logo and text in credits
                         const creditsLogo = document.querySelector('.credits-logo');
                         const creditsTitle = document.querySelector('#creditsModal .display-4');
                         const creditsSubtitle = document.querySelector('#creditsModal .lead');
-                        
+
                         if (creditsLogo) {
                             creditsLogo.src = "https://files.gamebanana.com/bitpit/feetplanner.png";
                         }
-                        
+
                         if (creditsTitle) {
                             creditsTitle.textContent = 'FeetPlanner';
                         }
-                        
+
                         if (creditsSubtitle) {
                             creditsSubtitle.textContent = 'Feet Manager for SSBU';
                         }
@@ -992,105 +1016,114 @@
     </script>
 
     <!-- Credits Modal -->
-<div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content credits-dark">
-            <div class="modal-body d-flex align-items-center position-relative">
-                <button type="button" class="credits-close-btn" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-md-8">
-                            <!-- App Info Section -->
-                            <div class="text-center mb-5">
-                                <a href="https://gamebanana.com/tools/17950" target="_blank" rel="noopener noreferrer">
-                                    <img src="img/icon.png" 
-                                         alt="App Logo" 
-                                         class="credits-logo mb-4 animate__animated animate__fadeIn"
-                                         style="max-height: 150px;">
-                                </a>
-                                <h1 class="display-4 text-white mb-2 animate__animated animate__fadeInUp">FightPlanner</h1>
-                                <p class="lead text-white-50 animate__animated animate__fadeInUp">Mod Manager for SSBU</p>
-                                <div class="version-badge animate__animated animate__fadeInUp" id="appVersionBadge">Loading version...</div>
-                            </div>
+    <div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content credits-dark">
+                <div class="modal-body position-relative"
+                    style="padding-top: 80px; padding-bottom: 40px; overflow-y: auto;">
+                    <button type="button" class="credits-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <!-- App Info Section -->
+                                <div class="text-center mb-5">
+                                    <a href="https://gamebanana.com/tools/17950" target="_blank"
+                                        rel="noopener noreferrer">
+                                        <img src="img/icon.png" alt="App Logo"
+                                            class="credits-logo mb-4 animate__animated animate__fadeIn"
+                                            style="max-height: 150px;">
+                                    </a>
+                                    <h1 class="display-4 text-white mb-2 animate__animated animate__fadeInUp">
+                                        FightPlanner</h1>
+                                    <p class="lead text-white-50 animate__animated animate__fadeInUp">Mod Manager for
+                                        SSBU</p>
+                                    <div class="version-badge animate__animated animate__fadeInUp" id="appVersionBadge">
+                                        Loading version...</div>
+                                </div>
 
-                            <!-- Core Team Section -->
-                            <div class="team-section mb-5 animate__animated animate__fadeInUp">
-                                <h3 class="text-white text-center mb-4">Core Team</h3>
-                                <div class="credits-grid">
-                                    <div class="credits-member">
-                                        <div class="member-role">Developer</div>
-                                        <div class="member-name">FIREXDF</div>
-                                    </div>
-                                    <div class="credits-member">
-                                        <div class="member-role">Designer of the logo</div>
-                                        <div class="member-name">FloweyGaming</div>
-                                    </div>
-                                    <div class="credits-member">
-                                        <div class="member-role">Community Organizer</div>
-                                        <div class="member-name">Kerosci</div>
-                                    </div>
-                                    <div class="credits-member">
-                                        <div class="member-role">Real Hardware Helper</div>
-                                        <div class="member-name">Toni</div>
-                                    </div>
-                                    <div class="credits-member">
-                                        <div class="member-role">Real Hardware Helper</div>
-                                        <div class="member-name">Sam</div>
-                                    </div>
-                                    <div class="credits-member">
-                                        <div class="member-role">Sound Maker</div>
-                                        <div class="member-name">Cwitt</div>
+                                <!-- Core Team Section -->
+                                <div class="team-section mb-5 animate__animated animate__fadeInUp">
+                                    <h3 class="text-white text-center mb-4">Core Team</h3>
+                                    <div class="credits-grid">
+                                        <div class="credits-member">
+                                            <div class="member-role">Developer</div>
+                                            <div class="member-name">FIREXDF</div>
+                                        </div>
+                                        <div class="credits-member">
+                                            <div class="member-role">Designer</div>
+                                            <div class="member-name">FloweyGaming</div>
+                                        </div>
+                                        <div class="credits-member">
+                                            <div class="member-role">Community Organizer</div>
+                                            <div class="member-name">Kerosci</div>
+                                        </div>
+                                        <div class="credits-member">
+                                            <div class="member-role">Contributors</div>
+                                            <div class="member-name">lenoch</div>
+                                        </div>
+                                        <div class="credits-member">
+                                            <div class="member-role">Contributors</div>
+                                            <div class="member-name">Oliver Tzeng</div>
+                                        </div>
+                                        <div class="credits-member">
+                                            <div class="member-role">Contributors</div>
+                                            <div class="member-name">juggarit</div>
+                                        </div>
+                                        <div class="credits-member">
+                                            <div class="member-role">Sound Maker / Contributors</div>
+                                            <div class="member-name">Cwitt</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Testing Team Section -->
-                            <div class="testing-section mb-5 animate__animated animate__fadeInUp">
-                                <h3 class="text-white text-center mb-4">Testing Team</h3>
-                                <div class="tester-tags">
-                                    <span class="tester-tag">Chichiboo</span>
-                                    <span class="tester-tag">Jpgmafia</span>
-                                    <span class="tester-tag">ElDusst</span>
-                                    <span class="tester-tag">Squiori</span>
-                                    <span class="tester-tag">Oliver Tzeng</span>
-                                    <span class="tester-tag">Masne</span>
-                                    <span class="tester-tag">Sam</span>
-                                    <span class="tester-tag">MrMiri</span>
-                                    <span class="tester-tag">Toni</span>
-                                    <span class="tester-tag">Gamma</span>
-                                    <span class="tester-tag">Moxort</span>
-                                    <span class="tester-tag">I Am The Alien From Guam</span>
-                                    <span class="tester-tag">RestGhost</span>
-                                    <span class="tester-tag">Cwitt</span>
-                                    <span class="tester-tag">Izayuh</span>
-                                    <span class="tester-tag">Lava</span>
-                                    <span class="tester-tag">Kerosci</span>
-                                    <span class="tester-tag">Willy. B</span>
-                                    <span class="tester-tag">Picassoh</span>
-                                    <span class="tester-tag">Dantepicachu</span>
-                                    <span class="tester-tag">J-Rat15</span>
-                                    <span class="tester-tag">Ketoro</span>
-                                    <span class="tester-tag">MoonbulaDragoon</span>
-                                    <span class="tester-tag">TNephilim</span>
-                                </div>
-                            </div>
-
-                            <!-- Technologies Section -->
-                            <div class="tech-section mb-5 animate__animated animate__fadeInUp">
-                                <h3 class="text-white text-center mb-4">Built With</h3>
-                                <div class="tech-stack">
-                                    <div class="tech-item">
-                                        <i class="bi bi-code-square"></i>
-                                        <span>Electron</span>
+                                <!-- Testing Team Section -->
+                                <div class="testing-section mb-5 animate__animated animate__fadeInUp">
+                                    <h3 class="text-white text-center mb-4">Testing Team</h3>
+                                    <div class="tester-tags">
+                                        <span class="tester-tag">Chichiboo</span>
+                                        <span class="tester-tag">Jpgmafia</span>
+                                        <span class="tester-tag">ElDusst</span>
+                                        <span class="tester-tag">Squiori</span>
+                                        <span class="tester-tag">Masne</span>
+                                        <span class="tester-tag">Sam</span>
+                                        <span class="tester-tag">MrMiri</span>
+                                        <span class="tester-tag">Toni</span>
+                                        <span class="tester-tag">Gamma</span>
+                                        <span class="tester-tag">Moxort</span>
+                                        <span class="tester-tag">I Am The Alien From Guam</span>
+                                        <span class="tester-tag">RestGhost</span>
+                                        <span class="tester-tag">Cwitt</span>
+                                        <span class="tester-tag">Izayuh</span>
+                                        <span class="tester-tag">Lava</span>
+                                        <span class="tester-tag">Kerosci</span>
+                                        <span class="tester-tag">Willy. B</span>
+                                        <span class="tester-tag">Picassoh</span>
+                                        <span class="tester-tag">Dantepicachu</span>
+                                        <span class="tester-tag">J-Rat15</span>
+                                        <span class="tester-tag">Ketoro</span>
+                                        <span class="tester-tag">MoonbulaDragoon</span>
+                                        <span class="tester-tag">TNephilim</span>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Copyright Notice -->
-                            <div class="text-center mt-5">
-                                <small class="text-white-50">All rights to the logo of SSBU are owned by Nintendo™. We don't own it.</small>
+                                <!-- Technologies Section -->
+                                <div class="tech-section mb-5 animate__animated animate__fadeInUp">
+                                    <h3 class="text-white text-center mb-4">Built With</h3>
+                                    <div class="tech-stack">
+                                        <div class="tech-item">
+                                            <i class="bi bi-code-square"></i>
+                                            <span>Electron</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Copyright Notice -->
+                                <div class="text-center mt-5">
+                                    <small class="text-white-50">All rights to the logo of SSBU are owned by Nintendo™.
+                                        We don't own it.</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1098,10 +1131,10 @@
             </div>
         </div>
     </div>
-</div>
 
     <!-- Restart Needed Modal -->
-    <div class="modal fade" id="restartNeededModal" tabindex="-1" aria-labelledby="restartNeededModalLabel" aria-hidden="true">
+    <div class="modal fade" id="restartNeededModal" tabindex="-1" aria-labelledby="restartNeededModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1119,7 +1152,8 @@
     </div>
 
     <!-- Early Access Modal -->
-    <div class="modal fade" id="earlyAccessModal" tabindex="-1" aria-labelledby="earlyAccessModalLabel" aria-hidden="true">
+    <div class="modal fade" id="earlyAccessModal" tabindex="-1" aria-labelledby="earlyAccessModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1127,8 +1161,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>We are searching for people to test the early access version of FightPlanner. These versions should help make the release version more stable and with fewer errors.</p>
-                    <a href="https://forms.gle/TRkqw8g5hDaPXoc59" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                    <p>We are searching for people to test the early access version of FightPlanner. These versions
+                        should help make the release version more stable and with fewer errors.</p>
+                    <a href="https://forms.gle/TRkqw8g5hDaPXoc59" target="_blank" rel="noopener noreferrer"
+                        class="btn btn-primary">
                         <i class="bi bi-send me-2"></i>Apply for Early Access
                     </a>
                     <div class="form-check mt-3">
@@ -1150,229 +1186,416 @@
     </div>
 
     <!-- Confirmation Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmationModalLabel" data-i18n="modals.confirm.title">Confirmation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" data-i18n="modals.confirm.uninstall">
-                Are you sure you want to uninstall this mod?
-            </div>
-            <div class="modal-footer">                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="modals.confirm.cancel">Cancel</button>                <button type="button" class="btn btn-primary" id="confirmUninstallBtn" data-i18n="modals.confirm.confirm">Yes, Uninstall</button>            </div>        </div>    </div>
-</div>
-
-<!-- Change Slots Modal -->
-<div class="modal fade" id="changeSlotsModal" tabindex="-1" aria-labelledby="changeSlotsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="changeSlotsModalLabel">Change Character Slots</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="currentSlotsInfo"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmChangeSlots">Change Slots</button>
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel" data-i18n="modals.confirm.title">Confirmation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" data-i18n="modals.confirm.uninstall">
+                    Are you sure you want to uninstall this mod?
+                </div>
+                <div class="modal-footer"> <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        data-i18n="modals.confirm.cancel">Cancel</button> <button type="button" class="btn btn-primary"
+                        id="confirmUninstallBtn" data-i18n="modals.confirm.confirm">Yes, Uninstall</button> </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Select Mods Modal -->
-<div class="modal fade" id="selectModsModal" tabindex="-1" aria-labelledby="selectModsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="selectModsModalLabel">Select Mods to Change Slots</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Select the mods you want to change slots for:</p>
-                <div class="list-group">
-                    <!-- Mod list will be dynamically inserted here -->
+    <!-- Change Slots Modal -->
+    <div class="modal fade" id="changeSlotsModal" tabindex="-1" aria-labelledby="changeSlotsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changeSlotsModalLabel">Change Character Slots</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="currentSlotsInfo"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmChangeSlots">Change Slots</button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmSelectMods">Confirm</button>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- FPP Creation Modal -->
-<div class="modal fade" id="createFppModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create FightPlanner Package</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Package Name</label>
-                    <input type="text" class="form-control" id="fppName" placeholder="MyPackage">
+    <!-- Select Mods Modal -->
+    <div class="modal fade" id="selectModsModal" tabindex="-1" aria-labelledby="selectModsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="selectModsModalLabel">Select Mods to Change Slots</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Select Content to Include:</label>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="selectAllMods">
-                        <label class="form-check-label" for="selectAllMods">
-                            Select All Mods (can be slow and buggy if you got more of 50 mods.)
-                        </label>
-                    </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="selectAllPlugins">
-                        <label class="form-check-label" for="selectAllPlugins">
-                            Select All Plugins
-                        </label>
+                <div class="modal-body">
+                    <p>Select the mods you want to change slots for:</p>
+                    <div class="list-group">
+                        <!-- Mod list will be dynamically inserted here -->
                     </div>
                 </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmSelectMods">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Mods</h6>
-                        <div class="mb-2">
-                            <input type="text" class="form-control form-control-sm" id="fppModSearch" placeholder="Search mods...">
+    <!-- FPP Creation Modal -->
+    <div class="modal fade" id="createFppModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create FightPlanner Package</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Package Name</label>
+                        <input type="text" class="form-control" id="fppName" placeholder="MyPackage">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Select Content to Include:</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="selectAllMods">
+                            <label class="form-check-label" for="selectAllMods">
+                                Select All Mods (can be slow and buggy if you got more of 50 mods.)
+                            </label>
                         </div>
-                        <div class="list-group" id="fppModsList" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Mods will be dynamically added here -->
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="selectAllPlugins">
+                            <label class="form-check-label" for="selectAllPlugins">
+                                Select All Plugins
+                            </label>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Plugins</h6>
-                        <div class="mb-2">
-                            <input type="text" class="form-control form-control-sm" id="fppPluginSearch" placeholder="Search plugins...">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Mods</h6>
+                            <div class="mb-2">
+                                <input type="text" class="form-control form-control-sm" id="fppModSearch"
+                                    placeholder="Search mods...">
+                            </div>
+                            <div class="list-group" id="fppModsList" style="max-height: 300px; overflow-y: auto;">
+                                <!-- Mods will be dynamically added here -->
+                            </div>
                         </div>
-                        <div class="list-group" id="fppPluginsList" style="max-height: 300px; overflow-y: auto;">
-                            <!-- Plugins will be dynamically added here -->
+                        <div class="col-md-6">
+                            <h6>Plugins</h6>
+                            <div class="mb-2">
+                                <input type="text" class="form-control form-control-sm" id="fppPluginSearch"
+                                    placeholder="Search plugins...">
+                            </div>
+                            <div class="list-group" id="fppPluginsList" style="max-height: 300px; overflow-y: auto;">
+                                <!-- Plugins will be dynamically added here -->
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="createFppBtn">Create Package</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    .slot-group {
-        position: relative;
-    }
-    .slot-group.removed .overlay {
-        display: block;
-    }
-    .overlay {
-        display: none;
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 0, 0, 0.5);
-        z-index: 1;
-    }
-</style>
-
-<!-- Update the loading overlay with close button -->
-<div id="loading-overlay" class="loading-overlay">
-    <div class="loading-content">
-        <div id="loadingAnimationContainer" class="loading-animation-crop">
-            <lottie-player
-                src="https://cdn.lottielab.com/l/BgbVdxvgksWEgv.json"
-                background="transparent"
-                speed="2"
-                loop
-                autoplay
-                style="width: 200px; height: 200px;"
-            ></lottie-player>
-        </div>
-        <div id="loadingMessage" class="loading-message loading-message-fade"></div>
-        <button id="cancelDownloadBtn" class="btn btn-danger mt-3" style="display: none;">
-            <i class="bi bi-x-circle me-2"></i>Cancel Download
-        </button>
-    </div>
-</div>
-
-<!-- Add this before the closing body tag -->
-<div class="modal fade" id="characterImageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="characterImageModalLabel"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="characterImageLarge" src="" alt="" style="max-width: 100%; height: auto;">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="createFppBtn">Create Package</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div id="modPreviewTooltip" class="mod-preview-tooltip">
-    <img src="" alt="Mod Preview">
-</div>
+    <style>
+        .slot-group {
+            position: relative;
+        }
 
-<div class="modal fade" id="editModInfoModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Edit Mod Info</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        .slot-group.removed .overlay {
+            display: block;
+        }
+
+        .overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 0, 0, 0.5);
+            z-index: 1;
+        }
+    </style>
+
+    <!-- Update the loading overlay with close button -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div id="loadingAnimationContainer" class="loading-animation-crop">
+                <lottie-player src="https://cdn.lottielab.com/l/BgbVdxvgksWEgv.json" background="transparent" speed="2"
+                    loop autoplay style="width: 200px; height: 200px;"></lottie-player>
             </div>
-            <div class="modal-body">
-                <form id="modInfoForm">
-                    <div class="mb-3">
-                        <label class="form-label">Display Name</label>
-                        <input type="text" class="form-control" name="display_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Authors</label>
-                        <input type="text" class="form-control" name="authors" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" name="description" rows="5" required></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Version</label>
-                        <input type="text" class="form-control" name="version" pattern="^\d+\.\d+\.\d+$|^$">
-                        <small class="form-text text-muted">Format: x.y.z (e.g., 1.0.0) - Optional</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Category</label>
-                        <select class="form-select" name="category" required>
-                            <option value="Fighter">Fighter</option>
-                            <option value="Movesets">Movesets</option>
-                            <option value="Stages">Stages</option>
-                            <option value="Effects">Effects</option>
-                            <option value="Final Smash">Final Smash</option>
-                            <option value="UI">UI</option>
-                            <option value="Param">Param</option>
-                            <option value="Audio">Audio</option>
-                            <option value="Other/Misc">Other/Misc</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">GameBanana URL</label>
-                        <input type="url" class="form-control" name="url">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveModInfo">Save Changes</button>
+            <div id="loadingMessage" class="loading-message loading-message-fade"></div>
+            <button id="cancelDownloadBtn" class="btn btn-danger mt-3" style="display: none;">
+                <i class="bi bi-x-circle me-2"></i>Cancel Download
+            </button>
+        </div>
+    </div>
+
+    <!-- Add this before the closing body tag -->
+    <div class="modal fade" id="characterImageModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="characterImageModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="characterImageLarge" src="" alt="" style="max-width: 100%; height: auto;">
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <div id="modPreviewTooltip" class="mod-preview-tooltip">
+        <img src="" alt="Mod Preview">
+    </div>
+
+    <div class="modal fade" id="editModInfoModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Mod Info</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleModInfoEditor">Advanced
+                            (info.toml)</button>
+                    </div>
+                    <div id="modInfoFormView">
+                        <form id="modInfoForm">
+                            <div class="mb-3">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-control" name="display_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Authors</label>
+                                <input type="text" class="form-control" name="authors" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" rows="5" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Version</label>
+                                <input type="text" class="form-control" name="version" pattern="^\d+\.\d+\.\d+$|^$">
+                                <small class="form-text textmuted">Format: x.y.z (e.g., 1.0.0) - Optional</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" name="category" required>
+                                    <option value="Fighter">Fighter</option>
+                                    <option value="Movesets">Movesets</option>
+                                    <option value="Stages">Stages</option>
+                                    <option value="Effects">Effects</option>
+                                    <option value="Final Smash">Final Smash</option>
+                                    <option value="UI">UI</option>
+                                    <option value="Param">Param</option>
+                                    <option value="Audio">Audio</option>
+                                    <option value="Other/Misc">Other/Misc</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">GameBanana URL</label>
+                                <input type="url" class="form-control" name="url">
+                            </div>
+                        </form>
+                    </div>
+                    <div id="modInfoRawView" style="display:none;">
+                        <div class="mb-2 textmuted small">Editing raw <code>info.toml</code>. Be careful: invalid TOML
+                            will break parsing.</div>
+                        <textarea id="modInfoRawTextarea" class="form-control"
+                            style="min-height: 360px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; white-space: pre;"
+                            spellcheck="false"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveModInfo">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="smartRenamePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-magic me-2"></i>Smart Rename Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="smartRenameLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 textmuted">Analyzing mods...</p>
+                    </div>
+                    <div id="smartRenameNoChanges" class="alert alert-info" style="display:none;">
+                        <i class="bi bi-info-circle me-2"></i>No mods can be renamed (no fighter data detected or names
+                        already match).
+                    </div>
+                    <div id="smartRenameTableContainer" style="display:none;">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="smartRenameSelectAll" checked>
+                                <label class="form-check-label" for="smartRenameSelectAll">Select All</label>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"></th>
+                                        <th>Original Name</th>
+                                        <th><i class="bi bi-arrow-right"></i></th>
+                                        <th>New Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="smartRenameTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="applySmartRenameBtn" disabled>
+                        <i class="bi bi-check-lg me-2"></i>Apply Rename
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="smartRenameSelectModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-magic me-2"></i>Smart Rename - Select Mods</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6><i class="bi bi-sliders me-2"></i>Rename Pattern</h6>
+                        <p class="small mb-2">Drag to reorder the pattern components:</p>
+                        <div id="patternSortable" class="d-flex gap-2 flex-wrap mb-2">
+                            <div class="badge bg-primary p-2 pattern-item" data-pattern="character" draggable="true"
+                                style="cursor: grab;">
+                                <i class="bi bi-grip-vertical me-1"></i>[Character]
+                            </div>
+                            <div class="badge bg-success p-2 pattern-item" data-pattern="slot" draggable="true"
+                                style="cursor: grab;">
+                                <i class="bi bi-grip-vertical me-1"></i>[Slot]
+                            </div>
+                            <div class="badge bg-info p-2 pattern-item" data-pattern="modname" draggable="true"
+                                style="cursor: grab;">
+                                <i class="bi bi-grip-vertical me-1"></i>[ModName]
+                            </div>
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-secondary text-white">Separator</span>
+                            <input type="text" class="form-control" id="patternSeparator" value="_" maxlength="5"
+                                style="max-width: 80px;">
+                        </div>
+                        <div class="small">
+                            Preview: <code id="patternPreview">Character_Slot_ModName</code>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <h6><i class="bi bi-list-check me-2"></i>Select Mods to Rename</h6>
+                        <div class="btn-group btn-group-sm mb-2">
+                            <button class="btn btn-outline-primary" id="selectAllModsBtn">Select All</button>
+                            <button class="btn btn-outline-primary" id="selectEnabledModsBtn">Enabled Only</button>
+                            <button class="btn btn-outline-primary" id="selectDisabledModsBtn">Disabled Only</button>
+                            <button class="btn btn-outline-secondary" id="deselectAllModsBtn">Deselect All</button>
+                        </div>
+                    </div>
+
+                    <div id="modSelectionList" class="list-group" style="max-height: 300px; overflow-y: auto;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span class="me-auto text-muted" id="selectedModCount">0 mods selected</span>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="proceedSmartRenameBtn" disabled>
+                        <i class="bi bi-arrow-right me-2"></i>Preview Renames
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Title Bar Controls Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Detect platform and add class to body
+            const platform = window.navigator.platform.toLowerCase();
+            if (platform.includes('mac')) {
+                document.body.classList.add('platform-darwin');
+            } else if (platform.includes('win')) {
+                document.body.classList.add('platform-win32');
+            } else if (platform.includes('linux')) {
+                document.body.classList.add('platform-linux');
+            }
+
+            const minimizeBtn = document.getElementById('minimize-btn');
+            const maximizeBtn = document.getElementById('maximize-btn');
+            const closeBtn = document.getElementById('close-btn');
+
+            if (minimizeBtn) {
+                minimizeBtn.addEventListener('click', () => {
+                    window.api.window.minimize();
+                });
+            }
+
+            if (maximizeBtn) {
+                maximizeBtn.addEventListener('click', async () => {
+                    window.api.window.maximize();
+                    // Update icon based on window state
+                    setTimeout(async () => {
+                        const isMaximized = await window.api.window.isMaximized();
+                        const icon = maximizeBtn.querySelector('i');
+                        if (isMaximized) {
+                            icon.className = 'bi bi-back';
+                        } else {
+                            icon.className = 'bi bi-square';
+                        }
+                    }, 100);
+                });
+            }
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    window.api.window.close();
+                });
+            }
+
+            // Initialize maximize button icon (only on non-macOS)
+            if (!document.body.classList.contains('platform-darwin') && maximizeBtn) {
+                window.api.window.isMaximized().then(isMaximized => {
+                    const icon = maximizeBtn.querySelector('i');
+                    if (isMaximized) {
+                        icon.className = 'bi bi-back';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
+
 </html>

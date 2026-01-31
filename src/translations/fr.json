@@ -30,7 +30,9 @@
             "install": "Installer le mod",
             "uninstall": "Désinstaller le mod",
             "openFolder": "Ouvrir le dossier des mods",
-            "downloadGB": "Télécharger depuis GameBanana"
+            "downloadGB": "Télécharger depuis GameBanana",
+            "smartRename": "Renommage Intelligent",
+            "bulkSmartRename": "Renommer tous les mods"
         }
     },
     "plugins": {
@@ -80,6 +82,17 @@
             "cancel": "Annuler",
             "download": "Télécharger",
             "close": "Fermer"
+        },
+        "smartRename": {
+            "title": "Aperçu du renommage intelligent",
+            "originalName": "Nom original",
+            "newName": "Nouveau nom",
+            "selectAll": "Tout sélectionner",
+            "apply": "Appliquer le renommage",
+            "noChanges": "Aucun mod ne peut être renommé (aucune donnée de combattant détectée ou noms déjà corrects)",
+            "analyzing": "Analyse des mods...",
+            "success": "{count} mod(s) renommé(s) avec succès !",
+            "error": "Échec du renommage de {failed} mod(s). {success} mod(s) renommé(s) avec succès."
         }
     },
     "metadata": {

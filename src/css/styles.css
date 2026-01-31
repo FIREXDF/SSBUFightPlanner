@@ -1,3 +1,133 @@
+/* Custom Title Bar Styles */
+.custom-titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10000;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* macOS specific styles */
+body.platform-darwin .custom-titlebar {
+    height: 38px;
+}
+
+body.platform-darwin .titlebar-controls {
+    display: none !important; /* Hide custom controls on macOS */
+}
+
+body.platform-darwin .titlebar-content {
+    padding-left: 80px; /* Space for native macOS buttons */
+}
+
+.titlebar-drag-region {
+    flex: 1;
+    -webkit-app-region: drag;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.titlebar-content {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+}
+
+.titlebar-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.titlebar-title {
+    color: #000000;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.titlebar-controls {
+    display: flex;
+    -webkit-app-region: no-drag;
+    height: 100%;
+}
+
+.titlebar-button {
+    width: 46px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+}
+
+.titlebar-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.titlebar-button:active {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.titlebar-close:hover {
+    background-color: #e81123;
+    color: #ffffff;
+}
+
+.titlebar-close:active {
+    background-color: #f1707a;
+    color: #ffffff;
+}
+
+/* Adjust body padding for titlebar */
+body {
+    padding-top: 32px;
+}
+
+body.platform-darwin {
+    padding-top: 38px;
+}
+
+/* Dark mode adjustments */
+.dark-mode .custom-titlebar {
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+}
+
+body.dark-mode.platform-darwin .custom-titlebar {
+    background: #1e1e1e;
+    border-bottom: 1px solid #333;
+}
+
+.dark-mode .titlebar-title {
+    color: #ffffff;
+}
+
+.dark-mode .titlebar-button {
+    color: #ffffff;
+}
+
+.dark-mode .titlebar-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .titlebar-button:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -97,6 +227,41 @@
     to   { opacity: 1; }
 }
 
+/* Custom tooltip for conflict spinner (no Bootstrap) */
+#conflictLoadingSpinner .conflict-tooltip {
+    position: absolute;
+    left: -8px; /* start near spinner */
+    transform: translateX(-100%);
+    top: 50%;
+    translate: 0 -50%;
+    background: #fff;
+    color: #212529;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    display: none;
+    z-index: 2000;
+}
+
+#conflictLoadingSpinner:hover .conflict-tooltip {
+    display: block;
+}
+
+#conflictLoadingSpinner .conflict-tooltip::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    translate: 0 -50%;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent #fff;
+}
+
 .nav-tabs {
     position: relative;
     display: flex;
@@ -128,6 +293,18 @@
 .app-logo:active {
     transform: scale(1.1) rotate(0deg);
     opacity: 0.9;
+}
+
+/* Light tooltip for conflict spinner */
+.tooltip.tooltip-light .tooltip-inner {
+    background-color: #fff;
+    color: #212529;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.tooltip.tooltip-light .tooltip-arrow::before {
+    border-left-color: #fff !important;
+    border-right-color: #fff !important;
 }
 
 #creditsModal .credits-section {
@@ -1071,6 +1248,75 @@ body.dark-mode .character-slots-list .slot-info {
     opacity: 0 !important;
 }
 
+/* Settings redesign */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.settings-grid .full-span {
+    grid-column: 1 / -1;
+}
+
+.settings-card {
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.125));
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: .5rem;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+.settings-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.settings-section-header i {
+    font-size: 1.2rem;
+    color: var(--bs-primary);
+}
+
+.settings-card .form-label {
+    font-weight: 500;
+}
+
+.settings-card .input-group,
+.settings-card .form-select,
+.settings-card .form-check,
+.settings-card .form-range,
+.settings-card .btn {
+    margin-top: 6px;
+}
+
+.settings-card .btn + .btn {
+    margin-left: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .settings-card {
+        box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+}
+
+/* Force two-column layout for Appearance lower section */
+.appearance-grid {
+    grid-template-columns: 1fr 1fr;
+}
+.appearance-grid .full-span {
+    grid-column: 1 / 3; /* span both columns */
+}
+@media (max-width: 768px) {
+    .appearance-grid {
+        grid-template-columns: 1fr; /* stack on small screens */
+    }
+    .appearance-grid .full-span {
+        grid-column: 1 / -1;
+    }
+}
 .mod-preview-tooltip.visible {
     opacity: 1;
     visibility: visible;
@@ -1335,7 +1581,7 @@ body.dark-mode #confirmationModal .modal-content {
 /* Credits Modal Close Button */
 .credits-close-btn {
     position: fixed;
-    top: 20px;
+    top: 50px;
     right: 20px;
     background: rgba(255, 255, 255, 0.1);
     border: none;
@@ -1348,7 +1594,7 @@ body.dark-mode #confirmationModal .modal-content {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 1051;
+    z-index: 10001;
 }
 
 .credits-close-btn:hover {

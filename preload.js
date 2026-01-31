@@ -2,11 +2,20 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // Global error handler to ignore specific errors
 window.addEventListener('error', (event) => {
-    const errorMessage = event.message || '';
-    if (errorMessage.includes('Script failed to execute')) {
-        console.warn('Ignored error:', errorMessage);
-        event.preventDefault();
-    }
+    ipcRenderer.invoke('log-renderer-error', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error ? event.error.stack : null
+    });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    ipcRenderer.invoke('log-renderer-error', {
+        message: event.reason ? event.reason.message : 'Unhandled Rejection',
+        stack: event.reason ? event.reason.stack : null
+    });
 });
 
 contextBridge.exposeInMainWorld('electron', {
@@ -53,8 +62,17 @@ contextBridge.exposeInMainWorld('electron', {
 });
 
 contextBridge.exposeInMainWorld('api', {
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+    send: (channel, ...args) => ipcRenderer.send(channel, ...args),
+    on: (channel, callback) => ipcRenderer.on(channel, (event, ...args) => callback(...args)),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     openTutorial: () => ipcRenderer.invoke('open-tutorial-window'),
+    window: {
+        minimize: () => ipcRenderer.send('window-minimize'),
+        maximize: () => ipcRenderer.send('window-maximize'),
+        close: () => ipcRenderer.send('window-close'),
+        isMaximized: () => ipcRenderer.invoke('window-is-maximized')
+    },
     tutorial: {
         finishTutorial: () => ipcRenderer.invoke('tutorial-finished'),
         initializeConfigurations: () => ipcRenderer.invoke('initialize-configurations')
@@ -77,7 +95,8 @@ contextBridge.exposeInMainWorld('api', {
         fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),
         readModFile: (filePath) => ipcRenderer.invoke('read-mod-file', filePath),
         enableAllMods: () => ipcRenderer.invoke('enable-all-mods'),
-        disableAllMods: () => ipcRenderer.invoke('disable-all-mods')
+        disableAllMods: () => ipcRenderer.invoke('disable-all-mods'),
+        getModPath: (modId) => ipcRenderer.invoke('get-mod-path', modId)
     },
     pluginOperations: {
         loadPlugins: () => ipcRenderer.invoke('load-plugins'),
@@ -87,6 +106,7 @@ contextBridge.exposeInMainWorld('api', {
             }
             return ipcRenderer.invoke('install-plugin', filePath);
         },
+    installPluginFromUrl: (payload) => ipcRenderer.invoke('install-plugin-from-url', payload),
         deletePlugin: (pluginId) => ipcRenderer.invoke('delete-plugin', pluginId),
         togglePlugin: (pluginId) => ipcRenderer.invoke('toggle-plugin', pluginId),
         renamePlugin: (oldName, newName) => ipcRenderer.invoke('rename-plugin', { oldName, newName }),
@@ -95,6 +115,10 @@ contextBridge.exposeInMainWorld('api', {
     modDetails: {
         getPreview: (modPath) => ipcRenderer.invoke('get-mod-preview', modPath),
         getInfo: (modPath) => ipcRenderer.invoke('get-mod-info', modPath)
+    },
+    reslotter: {
+        run: (payload) => ipcRenderer.invoke('run-reslotter', payload),
+        checkPython: () => ipcRenderer.invoke('check-python')
     },
     settings: {
         getModsPath: () => ipcRenderer.invoke('get-mods-path'),
@@ -130,6 +154,9 @@ contextBridge.exposeInMainWorld('api', {
         setVolume: (volume) => ipcRenderer.invoke('set-volume', volume),
         getAprilFoolsEnabled: () => ipcRenderer.invoke('get-april-fools-enabled'),
         setAprilFoolsEnabled: (enabled) => ipcRenderer.invoke('set-april-fools-enabled', enabled),
+        // Mods sorting preferences
+        getModsSortRecentEnabled: () => ipcRenderer.invoke('get-mods-sort-recent-enabled'),
+        setModsSortRecentEnabled: (enabled) => ipcRenderer.invoke('set-mods-sort-recent-enabled', enabled),
         getLegacyModDiscovery: async () => {
             return await ipcRenderer.invoke('get-legacy-mod-discovery');
         },
@@ -166,6 +193,10 @@ contextBridge.exposeInMainWorld('api', {
         openLogsFolder: () => ipcRenderer.invoke('open-logs-folder'),
         openCurrentLog: () => ipcRenderer.invoke('open-current-log'),
         clearLogs: () => ipcRenderer.invoke('clear-logs')
+    },
+    pluginsMeta: {
+        get: () => ipcRenderer.invoke('plugins-meta:get'),
+        openFolder: () => ipcRenderer.invoke('plugins-meta:open-folder')
     },
     fppOperations: {
         createFpp: (options) => ipcRenderer.invoke('create-fpp', options),

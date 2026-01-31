@@ -21,6 +21,49 @@
             "filter": ["**/*"]
         }
     ],
+    "mac": {
+        "target": [
+            {
+                "target": "dmg",
+                "arch": ["x64", "arm64"]
+            }
+        ],
+        "icon": "build/icon.png",
+        "category": "public.app-category.utilities",
+        "darkModeSupport": true,
+        "hardenedRuntime": false,
+        "gatekeeperAssess": false
+    },
+    "dmg": {
+        "title": "${productName} ${version}",
+        "icon": "build/icon.png",
+        "background": "build/background.png",
+        "contents": [
+            {
+                "x": 96,
+                "y": 170
+            },
+            {
+                "x": 360,
+                "y": 170,
+                "type": "link",
+                "path": "/Applications"
+            }
+        ],
+        "window": {
+            "width": 540,
+            "height": 380
+        }
+    },
+    "linux": {
+        "target": [
+            "AppImage",
+            "deb",
+            "rpm"
+        ],
+        "icon": "build/icon.png",
+        "category": "Utility"
+    },
     "publish": [
       {
         "provider": "github",

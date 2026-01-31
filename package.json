@@ -1,6 +1,6 @@
 {
     "name": "fightplanner",
-    "version": "3.3.26",
+    "version": "3.3.27",
     "description": "A SSBU Mod Manager",
     "author": "Shattered Chaos",
     "main": "main.js",
@@ -19,8 +19,15 @@
         "pack": "electron-builder --dir",
         "dist": "electron-builder",
         "build": "electron-builder --win --x64",
+        "build:mac": "electron-builder --mac --x64 --arm64",
+        "build:mac:dmg": "electron-builder --mac dmg --x64 --arm64",
+        "build:linux": "electron-builder --linux --x64",
         "buildandpublish": "electron-builder --win --x64 --publish always",
+        "buildandpublish:mac": "electron-builder --mac --x64 --arm64 --publish always",
+        "buildandpublish:linux": "electron-builder --linux --x64 --publish always",
         "early": "electron-builder --win --x64 --config canary-builder.json --publish always",
+        "early:mac": "electron-builder --mac --x64 --arm64 --config canary-builder.json --publish always",
+        "early:linux": "electron-builder --linux --x64 --config canary-builder.json --publish always",
         "help": "electron-builder --help"
     },
     "dependencies": {
@@ -47,6 +54,7 @@
     "build": {
         "appId": "com.shatteredchaos.fightplanner",
         "productName": "FightPlanner",
+        "afterPack": "./build-scripts/afterPack.js",
         "publish": [
             {
                 "provider": "github",
@@ -87,6 +95,7 @@
             "src/**/*",
             "!custom.css",
             "src/resources/bin/7z.exe",
+            "src/resources/bin/7zz",
             "src/resources/reslot/ui_chara_db.txt"
         ],
         "extraResources": [
@@ -121,6 +130,65 @@
         "requestedExecutionLevel": "asInvoker",
         "certificateFile": "fightplanner.pfx",
         "certificatePassword": "F0w2Ke7?$rW#",
+        "publish": [
+            "github"
+        ]
+    },
+    "mac": {
+        "target": [
+            {
+                "target": "dmg",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            },
+            {
+                "target": "zip",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            }
+        ],
+        "icon": "build/icon.png",
+        "category": "public.app-category.utilities",
+        "darkModeSupport": true,
+        "hardenedRuntime": false,
+        "gatekeeperAssess": false,
+        "publish": [
+            "github"
+        ]
+    },
+    "dmg": {
+        "title": "${productName} ${version}",
+        "icon": "build/icon.png",
+        "background": "build/background.png",
+        "contents": [
+            {
+                "x": 96,
+                "y": 170
+            },
+            {
+                "x": 360,
+                "y": 170,
+                "type": "link",
+                "path": "/Applications"
+            }
+        ],
+        "window": {
+            "width": 540,
+            "height": 380
+        }
+    },
+    "linux": {
+        "target": [
+            "AppImage",
+            "deb",
+            "rpm"
+        ],
+        "icon": "build/icon.png",
+        "category": "Utility",
         "publish": [
             "github"
         ]
