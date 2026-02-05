@@ -35,3 +35,7 @@ Clone the repository
 And run those command
 `npm install`
 `npm run build`
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=FIREXDF/SSBUFightPlanner&type=date&legend=bottom-right)](https://www.star-history.com/#FIREXDF/SSBUFightPlanner&type=date&legend=bottom-right)
