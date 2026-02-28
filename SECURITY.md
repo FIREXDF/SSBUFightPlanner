@@ -24,7 +24,7 @@ You can report it securely using **one of the following methods**:
 - This allows private discussion and responsible disclosure
 
 ### Email
-- **Email:** firexdf.contact.pro@gmail.com
+- **Email:** firexdf@shtrdchs.fr or firexdf.contact.pro@gmail.com
 
 When reporting a vulnerability, please include:
 - A clear description of the issue
