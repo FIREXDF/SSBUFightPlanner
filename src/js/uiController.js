@@ -205,7 +205,7 @@ showToast(message, type = 'success') {
     if (!toastContainer) {
         toastContainer = document.createElement('div');
         toastContainer.id = 'toastContainer';
-        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3 mt-5';
         document.body.appendChild(toastContainer);
     }
 
@@ -833,6 +833,10 @@ renderModList(mods) {
     }
     
 
+window.electron.onGameBananaPairingSuccess(() => {
+    this.showToast('Successfully paired with GameBanana!', 'success');
+});
+
 window.electron.onProtocolUrl(async (data) => {
     try {
         const { url, skipConfirmation } = data;
@@ -848,9 +852,10 @@ window.electron.onProtocolUrl(async (data) => {
             // Show confirmation modal with optional GameBanana thumbnail
             // Try to fetch GameBanana thumbnail using the mod id extracted from the protocol URL
             const modId = (typeof modUrl === 'object' && modUrl?.id) ? modUrl.id : null;
+            const modType = (typeof modUrl === 'object' && modUrl?.type) ? modUrl.type : null;
             let thumbnailUrl = null;
             try {
-                thumbnailUrl = await this.fetchGameBananaThumbnail(modId);
+                thumbnailUrl = await this.fetchGameBananaThumbnail(modId, modType);
                 if (thumbnailUrl) {
                     console.log('Protocol mod thumbnail URL:', thumbnailUrl);
                 } else {
@@ -928,28 +933,35 @@ window.electron.onProtocolUrl(async (data) => {
 
 function parseFightPlannerUrl(url) {
     try {
-        // Remove the protocol prefix
-        const cleanUrl = url.replace('fightplanner:', '');
+        // Remove the protocol prefix (handle both fightplanner: and fightplanner://)
+        let cleanUrl = url.replace(/^fightplanner:\/\//, '').replace(/^fightplanner:/, '');
 
-        // Split the URL components
-        const [gbUrl, type, id, fileExt] = cleanUrl.split(',');
+        // Split the URL components and remove any empty parts caused by double commas (,,)
+        const parts = cleanUrl.split(',').filter(p => p.trim() !== '');
+        const gbUrl = parts[0];
+        const type = parts[1];
+        const id = parts[2];
+        const fileExt = parts[3];
 
         // Extract the download ID (mmdl number)
         const downloadId = gbUrl.split('/').pop();
 
         // Depending on the type, construct the appropriate GameBanana URL
         let properGbUrl;
-        if (type.toLowerCase() === 'mod') {
-            properGbUrl = `https://gamebanana.com/mods/download/${id}#FileInfo_${downloadId}`;
-        } else if (type.toLowerCase() === 'sound') {
-            properGbUrl = `https://gamebanana.com/sounds/download/${id}#FileInfo_${downloadId}`;
+        const typeLc = type ? type.toLowerCase() : 'mod';
+        const validTypes = ['mod', 'sound', 'skin', 'gui', 'map', 'effect', 'prefab', 'app', 'wip'];
+        
+        if (validTypes.includes(typeLc)) {
+            properGbUrl = `https://gamebanana.com/${typeLc}s/download/${id}#FileInfo_${downloadId}`;
         } else {
-            throw new Error('Unsupported content type');
+            // Default to mods/ for unknown types (GameBanana frequently uses Mods as a catch-all)
+            properGbUrl = `https://gamebanana.com/mods/download/${id}#FileInfo_${downloadId}`;
+            console.warn(`[GameBanana] Unknown content type: ${type}. Defaulting to 'mods'`);
         }
 
         return {
             downloadLink: properGbUrl,
-            type: type,
+            type: typeLc,
             id: id,
             fileExt: fileExt
         };
@@ -1586,10 +1598,23 @@ async promptDialog(title, message, defaultValue) {
     }
 
     // Fetch the first GameBanana thumbnail URL for a given Mod ID
-    async fetchGameBananaThumbnail(modId) {
+    async fetchGameBananaThumbnail(modId, itemType = 'mod') {
         try {
             if (!modId) return null;
-            const apiUrl = `https://gamebanana.com/apiv11/Mod/${encodeURIComponent(modId)}?_csvProperties=%40gbprofile`;
+            const normalizedType = String(itemType || 'mod').toLowerCase();
+            const resourceNameMap = {
+                app: 'App',
+                effect: 'Effect',
+                gui: 'Gui',
+                map: 'Map',
+                mod: 'Mod',
+                prefab: 'Prefab',
+                skin: 'Skin',
+                sound: 'Sound',
+                wip: 'Wip'
+            };
+            const resourceName = resourceNameMap[normalizedType] || 'Mod';
+            const apiUrl = `https://gamebanana.com/apiv11/${resourceName}/${encodeURIComponent(modId)}?_csvProperties=%40gbprofile`;
 
             // 7s timeout to avoid hanging the confirm modal
             const controller = new AbortController();

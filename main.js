@@ -353,6 +353,85 @@ const DISABLED_MODS_FOLDER_NAME = '{disabled_mod}';
 const DISABLED_PLUGINS_FOLDER_NAME = 'disabled_plugins';
 const PLUGIN_EXTENSION = '.nro';
 
+let gbPollingInterval = null;
+const processedRemoteInstalls = new Set();
+let GAMEBANANA_MANAGER_ALIAS = 'FightPlanner';
+
+function startGameBananaPolling() {
+    if (gbPollingInterval) return;
+    
+    const secretKey = store.get('gb_secret_key');
+    const memberId = store.get('gb_member_id');
+    
+    if (!secretKey || !memberId) {
+        return;
+    }
+    
+    log.info('[GameBanana] Starting background polling for remote installs...');
+    
+    const poll = async () => {
+        try {
+            // Appending a timestamp and cache headers to ensure Axios/Electron doesn't cache the API response
+            const timestamp = Date.now();
+            const url = `https://gamebanana.com/apiv11/RemoteInstall/${memberId}/${secretKey}/${GAMEBANANA_MANAGER_ALIAS}?_t=${timestamp}`;
+            const response = await axios.get(url, {
+                headers: { 
+                    'User-Agent': `FightPlanner`,
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                validateStatus: null
+            });
+            
+            if (response.status === 200) {
+                if (Array.isArray(response.data)) {
+                    log.info(`[GameBanana] Polled remote install API. Found ${response.data.length} items. Payload: ${JSON.stringify(response.data)}`);
+                    for (const requestStr of response.data) {
+                        if (typeof requestStr === 'string' && !processedRemoteInstalls.has(requestStr)) {
+                            processedRemoteInstalls.add(requestStr);
+                            
+                            if (processedRemoteInstalls.size > 100) {
+                                const firstItem = processedRemoteInstalls.values().next().value;
+                                processedRemoteInstalls.delete(firstItem);
+                            }
+                            
+                            log.info(`[GameBanana] Found new remote install request: ${requestStr}`);
+                            
+                            if (mainWindow && !mainWindow.isDestroyed()) {
+                                // Prepend fightplanner:// so uiController's parseFightPlannerUrl works naturally
+                                const simulatedUrl = `fightplanner://${requestStr}`;
+                                log.info(`[GameBanana] Forwarding simulated URL to UI: ${simulatedUrl}`);
+                                mainWindow.webContents.send('protocol-url', {
+                                    url: simulatedUrl,
+                                    skipConfirmation: store.get('protocolConfirmEnabled', false)
+                                });
+                            } else {
+                                log.warn(`[GameBanana] Could not forward, mainWindow is missing or destroyed.`);
+                            }
+                        } else {
+                            if (typeof requestStr !== 'string') {
+                                log.warn(`[GameBanana] Unexpected item type in payload: ${typeof requestStr}`, requestStr);
+                            } else {
+                                log.info(`[GameBanana] Skipping already processed item: ${requestStr}`);
+                            }
+                        }
+                    }
+                } // End of for loop
+            } else if (response.data && response.data._sErrorCode) {
+                log.warn(`[GameBanana] API Error Handled: ${response.data._sErrorCode} - ${response.data._sErrorMessage}`);
+            } else {
+                log.warn(`[GameBanana] Unexpected API HTTP status: ${response.status}`);
+            }
+        } catch (error) {
+            log.warn(`[GameBanana] Polling error: ${error.message}`);
+        }
+    };
+    
+    gbPollingInterval = setInterval(poll, 10000);
+    poll();
+}
+
 let mainWindow;
 let hiddenWindow;
 let initialProtocolUrl = null;
@@ -1314,6 +1393,8 @@ async function createWindow() {
 
     // After window ready, check plugins updates in background
     setTimeout(() => { checkPluginUpdatesOnStartup(); }, 1000);
+
+    startGameBananaPolling();
 }
 
 async function checkAndMoveOldDisabledFolder(folderPath, newDisabledFolderPath) {
@@ -2997,6 +3078,45 @@ function handleProtocolUrl(url) {
         initialProtocolUrl = url;
         createWindow();
         return;
+    }
+    
+    try {
+        let isPairing = false;
+        let pMemberId = null;
+        let pSecretKey = null;
+
+        let dataStr = url.replace(/^fightplanner:\/\//, '').replace(/^fightplanner:/, '').replace(/\/$/, "");
+        
+        if (dataStr.includes(',')) {
+            const parts = dataStr.split(',');
+            
+            if (parts[0] === 'registerKey' && parts.length >= 3) {
+                pMemberId = parts[1].trim();
+                pSecretKey = parts[2].trim();
+                isPairing = true;
+            } else if (parts.length === 2 && !url.includes('?')) {
+                // Fallback for previous manual format: [secret_key],[member_id]
+                pSecretKey = parts[0].trim();
+                pMemberId = parts[1].trim();
+                isPairing = true;
+            }
+        }
+
+        if (isPairing && pSecretKey && pMemberId) {
+            store.set('gb_secret_key', pSecretKey);
+            store.set('gb_member_id', pMemberId);
+            
+            log.info(`[GameBanana] Successfully paired with Member ID: ${pMemberId}`);
+            
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('gamebanana-pairing-success');
+            }
+            
+            startGameBananaPolling();
+            return;
+        }
+    } catch (e) {
+        log.error('[GameBanana] Error parsing pairing URL:', e);
     }
     
     // Get the protocol confirmation setting (true means skip confirmation)

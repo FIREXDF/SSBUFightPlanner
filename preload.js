@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, changelog) => callback(changelog)),
     onProtocolUrl: (callback) => ipcRenderer.on('protocol-url', (event, url) => callback(url)),
+    onGameBananaPairingSuccess: (callback) => ipcRenderer.on('gamebanana-pairing-success', () => callback()),
     onDownloadStatus: (callback) => 
         ipcRenderer.on('download-status', (_, status) => callback(status)),
     cancelDownload: async (id) => {

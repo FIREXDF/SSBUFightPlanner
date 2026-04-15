@@ -1,12 +1,12 @@
 const axios = require('axios');
 const fs = require('fs');
-const fse = require('fs-extra');  // Add this import
+const fse = require('fs-extra');
 const path = require('path');
 const child_process = require('child_process');
 const Store = require('electron-store');
 const store = new Store();
-const Seven = require('node-7z'); // Replace node-unar with node-7z
-const AdmZip = require('adm-zip'); // Add adm-zip import
+const Seven = require('node-7z');
+const AdmZip = require('adm-zip');
 const electron = require('electron');
 const app = electron.app || electron.remote.app;
 const { dialog } = electron.remote || electron;
@@ -14,7 +14,6 @@ const { dialog } = electron.remote || electron;
 class GameBananaDownloader {
   constructor(modsPath, loadingCallbacks = {}) {
     this.modsPath = modsPath;
-    // Add loading callback handlers
     this.loadingCallbacks = {
       onStart: loadingCallbacks.onStart || (() => {}),
       onProgress: loadingCallbacks.onProgress || (() => {}),
@@ -27,7 +26,86 @@ class GameBananaDownloader {
     this.isCleaningUp = false;
     this.isPaused = false;
     this.lastDownloadedBytes = 0;
-    this.downloadedChunks = new Map(); // Store downloaded chunks
+    this.downloadedChunks = new Map();
+  }
+
+  static normalizeItemType(itemType) {
+    const normalized = String(itemType || 'mod').toLowerCase();
+    const aliases = {
+      apps: 'app',
+      effects: 'effect',
+      guis: 'gui',
+      maps: 'map',
+      mods: 'mod',
+      prefabs: 'prefab',
+      skins: 'skin',
+      sounds: 'sound',
+      wips: 'wip'
+    };
+
+    return aliases[normalized] || normalized || 'mod';
+  }
+
+  static getApiResourceName(itemType) {
+    const normalized = GameBananaDownloader.normalizeItemType(itemType);
+    const resourceNameMap = {
+      app: 'App',
+      effect: 'Effect',
+      gui: 'Gui',
+      map: 'Map',
+      mod: 'Mod',
+      prefab: 'Prefab',
+      skin: 'Skin',
+      sound: 'Sound',
+      wip: 'Wip'
+    };
+
+    return resourceNameMap[normalized] || 'Mod';
+  }
+
+  static extractDownloadInfo(downloadLink) {
+    const rawLink = typeof downloadLink === 'string'
+      ? downloadLink
+      : (downloadLink?.downloadLink || '');
+    const explicitType = typeof downloadLink === 'object' ? downloadLink?.type : null;
+    const fallbackType = GameBananaDownloader.normalizeItemType(explicitType);
+    const patterns = [
+      {
+        pattern: /https:\/\/gamebanana\.com\/(?<type>mods|sounds|skins|guis|maps|effects|prefabs|apps|wips)\/download\/(?<itemId>\d+)(?:#FileInfo_(?<fileId>\d+))?/i,
+        inferType: true
+      },
+      {
+        pattern: /https:\/\/gamebanana\.com\/(?<type>mods|sounds|skins|guis|maps|effects|prefabs|apps|wips)\/(?<itemId>\d+)/i,
+        inferType: true
+      },
+      {
+        pattern: /https:\/\/gamebanana\.com\/dl\/(?<itemId>\d+)(?:#FileInfo_(?<fileId>\d+))?/i,
+        inferType: false
+      }
+    ];
+
+    for (const { pattern, inferType } of patterns) {
+      const match = rawLink.match(pattern);
+      if (!match) continue;
+
+      const groups = match.groups || {};
+      return {
+        itemType: inferType ? GameBananaDownloader.normalizeItemType(groups.type) : fallbackType,
+        itemId: groups.itemId || '',
+        fileId: groups.fileId || ''
+      };
+    }
+
+    throw new Error('Invalid download link');
+  }
+
+  buildApiUrl(itemType, itemId, suffix = '', csvProperties = '%40gbprofile') {
+    const resourceName = GameBananaDownloader.getApiResourceName(itemType);
+    const encodedItemId = encodeURIComponent(itemId);
+    const normalizedSuffix = suffix ? `/${suffix}` : '';
+    const query = csvProperties ? `?_csvProperties=${csvProperties}` : '';
+
+    return `https://gamebanana.com/apiv11/${resourceName}/${encodedItemId}${normalizedSuffix}${query}`;
   }
 
   async cancel() {
@@ -53,21 +131,8 @@ class GameBananaDownloader {
   }
 
   static extractModAndFileId(downloadLink) {
-    const patterns = [
-      /https:\/\/gamebanana\.com\/dl\/(\d+)(?:#FileInfo_(\d+))?/,
-      /https:\/\/gamebanana\.com\/mods\/download\/(\d+)(?:#FileInfo_(\d+))?/,
-      /https:\/\/gamebanana\.com\/sounds\/download\/(\d+)(?:#FileInfo_(\d+))?/,
-      /https:\/\/gamebanana\.com\/mods\/(\d+)/
-    ];
-
-    for (const pattern of patterns) {
-      const match = downloadLink.match(pattern);
-      if (match) {
-        return [match[1], match[2] || ''];
-      }
-    }
-
-    throw new Error('Invalid download link');
+    const { itemId, fileId } = GameBananaDownloader.extractDownloadInfo(downloadLink);
+    return [itemId, fileId];
   }
 
   async downloadMod(downloadLink) {
@@ -77,10 +142,8 @@ class GameBananaDownloader {
     try {
       this.isCancelled = false;
 
-      const [modId, fileId] = GameBananaDownloader.extractModAndFileId(
-  typeof downloadLink === 'string' ? downloadLink : downloadLink.downloadLink
-);
-      modName = await this.getModNameFromApi(modId); // Assign to outer variable
+      const { itemId: modId, fileId, itemType } = GameBananaDownloader.extractDownloadInfo(downloadLink);
+      modName = await this.getModNameFromApi(modId, itemType); // Assign to outer variable
       
       this.loadingCallbacks.onStart('Starting download...', modName);
 
@@ -92,7 +155,7 @@ class GameBananaDownloader {
 
       this.loadingCallbacks.onProgress('Getting mod information...');
       
-      const filename = await this.getFilenameFromApi(modId, fileId);
+      const filename = await this.getFilenameFromApi(modId, fileId, itemType);
       this.loadingCallbacks.onProgress('Downloading mod files...');
 
       const downloadUrl = `https://gamebanana.com/dl/${fileId || modId}`;
@@ -234,12 +297,12 @@ class GameBananaDownloader {
       }
   
       // Get mod info, author, category and version before any file operations
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const apiUrl = this.buildApiUrl(itemType, modId);
       const response = await axios.get(apiUrl);
       const modProfileUrl = response.data._sProfileUrl;
-      const modAuthor = await this.getModAuthorFromApi(modId);
-      const modCategory = await this.getModCategoryFromApi(modId);
-      const modVersion = await this.getModVersionFromApi(modId);
+      const modAuthor = await this.getModAuthorFromApi(modId, itemType);
+      const modCategory = await this.getModCategoryFromApi(modId, itemType);
+      const modVersion = await this.getModVersionFromApi(modId, itemType);
 
       // Handle info.toml and preview.webp while in temp folder
       const tempInfoPath = path.join(this.tempFolder, 'info.toml');
@@ -247,7 +310,7 @@ class GameBananaDownloader {
 
       // Handle preview.webp download if needed
       if (!fs.existsSync(tempPreviewPath)) {
-        await this.downloadImage(modId, this.tempFolder);
+        await this.downloadImage(modId, this.tempFolder, itemType);
       }
 
       // Handle info.toml url, author, category and version addition
@@ -467,16 +530,20 @@ async downloadFileWithProgress(url, destPath, retries = 3, retryDelay = 1000) {
   }
 }
 
-  async downloadImage(modId, modFolder) {
+  async downloadImage(modId, modFolder, itemType = 'mod') {
     try {
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const apiUrl = this.buildApiUrl(itemType, modId);
       const response = await axios.get(apiUrl);
 
       const imageData = response.data._aPreviewMedia?._aImages || [];
       if (imageData.length > 0) {
         const imageFile = imageData[0]._sFile;
         if (imageFile) {
-          const imageUrl = `https://images.gamebanana.com/img/ss/mods/${imageFile}`;
+          const imageNode = imageData[0];
+          const baseUrl = imageNode._sBaseUrl || imageNode._sbaseUrl || 'https://images.gamebanana.com/img/ss/mods';
+          const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+          const normalizedFile = String(imageFile).startsWith('/') ? String(imageFile).slice(1) : String(imageFile);
+          const imageUrl = `${normalizedBase}/${normalizedFile}`;
           const tempImageDestPath = path.join(modFolder, imageFile);
           
           console.log(`Downloading image from: ${imageUrl}`);
@@ -785,9 +852,9 @@ async downloadFileWithProgress(url, destPath, retries = 3, retryDelay = 1000) {
     }
   }
 
-  async getFilenameFromApi(modId, fileId) {
+  async getFilenameFromApi(modId, fileId, itemType = 'mod') {
     try {
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}/DownloadPage`;
+      const apiUrl = this.buildApiUrl(itemType, modId, 'DownloadPage', '');
       const response = await axios.get(apiUrl);
 
       const files = response.data._aFiles;
@@ -869,9 +936,9 @@ async downloadFileWithProgress(url, destPath, retries = 3, retryDelay = 1000) {
   }
 
   // Add this new method to fetch the mod name from GameBanana
-  async getModNameFromApi(modId) {
+  async getModNameFromApi(modId, itemType = 'mod') {
     try {
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=_sName`;
+      const apiUrl = this.buildApiUrl(itemType, modId, '', '_sName');
       const response = await axios.get(apiUrl);
       let modName = response.data._sName || `mod_${modId}`;
       // Supprime le point final si présent (ex: "PS5 R.O.B." -> "PS5 R.O.B")
@@ -884,9 +951,9 @@ async downloadFileWithProgress(url, destPath, retries = 3, retryDelay = 1000) {
   }
     
   // Add this new method to fetch the mod author from GameBanana
-  async getModAuthorFromApi(modId) {
+  async getModAuthorFromApi(modId, itemType = 'mod') {
     try {
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const apiUrl = this.buildApiUrl(itemType, modId);
       const response = await axios.get(apiUrl);
       return response.data._aSubmitter?._sName || 'Unknown Author';
     } catch (error) {
@@ -896,9 +963,9 @@ async downloadFileWithProgress(url, destPath, retries = 3, retryDelay = 1000) {
   }
 
   // Add this new method to fetch the mod category from GameBanana
-  async getModCategoryFromApi(modId) {
+  async getModCategoryFromApi(modId, itemType = 'mod') {
     try {
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const apiUrl = this.buildApiUrl(itemType, modId);
       const response = await axios.get(apiUrl);
       const category = response.data._aSuperCategory?._sName || 'Unknown Category';
       
@@ -911,9 +978,9 @@ async downloadFileWithProgress(url, destPath, retries = 3, retryDelay = 1000) {
   }
 
   // Add this new method to fetch the mod version from GameBanana
-  async getModVersionFromApi(modId) {
+  async getModVersionFromApi(modId, itemType = 'mod') {
     try {
-      const apiUrl = `https://gamebanana.com/apiv11/Mod/${modId}?_csvProperties=%40gbprofile`;
+      const apiUrl = this.buildApiUrl(itemType, modId);
       const response = await axios.get(apiUrl);
       const version = response.data._aAdditionalInfo?._sVersion || '';
       

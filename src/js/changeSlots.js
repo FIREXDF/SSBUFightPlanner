@@ -14,8 +14,7 @@ const slotFiles = files.filter(file => {
             /^c\d/i.test(fileName) &&
             !fileName.includes('.'); // évite les fichiers
         if (isFighterSlotFolder) return true;
-        // Sinon, on ignore tout le reste dans fighter
-        return false;
+        return this.extractSlot(fileName) !== null;
     }
 
     // Sinon (hors fighter), on garde les fichiers qui matchent 0X, 0XX, 0XXX
@@ -87,6 +86,23 @@ console.log('[scanForSlots] Slots détectés:', sortedSlots);
             deletedFilesCount,
             changedFilesCount
         };
+    }
+
+    static isSlotAwarePath(filePath) {
+        const normalizedPath = String(filePath || '').replace(/\\/g, '/');
+        if (!normalizedPath) {
+            return false;
+        }
+
+        const pathParts = normalizedPath.split('/');
+        const fileName = pathParts[pathParts.length - 1] || '';
+        const isDirectoryLike = !fileName.includes('.');
+
+        if (pathParts.includes('fighter') && isDirectoryLike) {
+            return /^c\d{2,3}$/i.test(fileName);
+        }
+
+        return this.extractSlot(fileName) !== null;
     }
 
     static async addMissingFilesToConfig(modPath, fighterName, targetAlt, allFiles) {
@@ -185,8 +201,8 @@ console.log('[scanForSlots] Slots détectés:', sortedSlots);
 
             // Cas 2 : fichier slot ailleurs (ex: ui/replace_patch/chara/chara_0_eflame_only_04.bntx)
             const isSlotFile =
-                !pathParts.includes('fighter') &&
-                /0\d/.test(fileName);
+                !isFighterSlotFolder &&
+                this.extractSlot(fileName) !== null;
 
             // On ne renomme que si l'un des deux cas est vrai
             if (isFighterSlotFolder || isSlotFile) {
@@ -777,14 +793,52 @@ for (const tempFile of changedFiles) {
         }
     }
 
+    static fileTargetsSlot(filePath, slot) {
+        const normalizedSlot = String(slot || '').toLowerCase();
+        if (!normalizedSlot) {
+            return false;
+        }
+
+        const normalizedPath = String(filePath || '').replace(/\\/g, '/');
+        const pathParts = normalizedPath.split('/');
+        const fileName = pathParts[pathParts.length - 1]?.toLowerCase() || '';
+
+        // Fighter slots live in explicit cXX/cXXX directories. Only match exact segments there.
+        if (pathParts.includes('fighter') && /^c\d{2,3}$/i.test(fileName)) {
+            return fileName === normalizedSlot;
+        }
+
+        return this.extractSlot(normalizedPath) === normalizedSlot;
+    }
+
     static async removeSlot(modPath, slot, files) {
+        const targets = files
+            .filter(file => this.fileTargetsSlot(file, slot))
+            .sort((a, b) => a.length - b.length);
+
         let deletedFiles = 0;
-        for (const file of files) {
-            if (file.includes(slot) || (file.endsWith('.bntx') && file.includes(slot.replace('c', '')))) {
-                await window.api.modOperations.deleteModFile(modPath, file);
-                deletedFiles++;
+        const deletedDirectories = [];
+
+        for (const file of targets) {
+            const normalizedFile = file.replace(/\\/g, '/');
+
+            if (deletedDirectories.some(dir => normalizedFile.startsWith(`${dir}/`))) {
+                continue;
+            }
+
+            const deleted = await window.api.modOperations.deleteModFile(modPath, file);
+            if (!deleted) {
+                continue;
+            }
+
+            deletedFiles++;
+
+            const fileName = normalizedFile.split('/').pop()?.toLowerCase() || '';
+            if (/^c\d{2,3}$/i.test(fileName)) {
+                deletedDirectories.push(normalizedFile);
             }
         }
+
         return deletedFiles;
     }
 

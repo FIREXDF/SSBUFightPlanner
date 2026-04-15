@@ -1,6 +1,6 @@
 {
     "name": "fightplanner",
-    "version": "3.3.27",
+    "version": "3.3.29",
     "description": "A SSBU Mod Manager",
     "author": "Shattered Chaos",
     "main": "main.js",
